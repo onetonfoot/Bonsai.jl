@@ -143,26 +143,30 @@ Base.IteratorSize(::Type{TrieIterator}) = Base.SizeUnknown()
 
 function get_handler(t :: Trie, prefix :: AbstractString, handler :: Function = x -> "404")
     node = t
+    route = Union{String, Symbol}[]
     for char in spliturl(prefix)
         if haskey(node.children, char)
             node = node.children[char]
+            push!(route, char)
             continue
         end
-        node = firstsymbol(node.children)
-        if node == nothing
-            return handler
+        key, node = firstsymbol(node.children)
+        if isnothing(node)
+            return (handler, []) 
+        else
+            push!(route, key)
         end
     end
-    node.is_key ? node.value : handler
+    node.is_key ? (node.value, route) : (handler, [])
 end
 
 function firstsymbol(t)
     for (key, value) in t
         if key isa Symbol
-            return value
+            return (key, value)
         end
     end
-    nothing
+    (nothing, nothing)
 end
 
 # TODO move into another file/module along with other functions for manipultaing the URL

@@ -22,10 +22,15 @@ function Router()
     ) |> Router
 end
 
-function (router::Router)(handler, path :: AbstractString; method=GET)
+function (router :: Router)(handler, path :: AbstractString; method=GET)
+    !isvalidpath(path) && error("Invalid path: $path")
     routes = router.routes[method]
     routes[path] = handler
     path
 end
 
-
+function isvalidpath(path :: AbstractString)
+    # TODO this isn't the most robust will let things like "//" pass
+    re = r"^[/.:a-zA-Z0-9-]+$"
+    match(re, path).match == path
+end
