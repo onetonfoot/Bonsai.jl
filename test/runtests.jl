@@ -26,7 +26,7 @@ using Tree: has_handler, isvalidpath
     @test !has_handler(trie, "/anything")
 end
 
-@testset "ambigous routes" begin
+@testset "ambiguous routes" begin
 
     trie = Tree.Trie{Function}()
     four_oh_four = ctx -> "404"
