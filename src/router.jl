@@ -26,11 +26,13 @@ function (router :: Router)(handler, path :: AbstractString; method=GET)
     !isvalidpath(path) && error("Invalid path: $path")
     routes = router.routes[method]
     routes[path] = handler
+    @assert has_handler(routes, path)
     path
 end
 
 function isvalidpath(path :: AbstractString)
     # TODO this isn't the most robust will let things like "//" pass
     re = r"^[/.:a-zA-Z0-9-]+$"
-    match(re, path).match == path
+    m = match(re, path)
+    m != nothing && m.match == path
 end

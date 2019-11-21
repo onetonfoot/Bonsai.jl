@@ -42,6 +42,10 @@ function start(router; port=8081, four_oh_four = x -> "404")
         @debug context
         context |> handler |> create_response
     end
+
+    #For some reason this request is needed to update Routes in the sever?
+    @assert HTTP.get("http://localhost:$port/").status == 200
+
     server
 end
 

@@ -141,6 +141,7 @@ path(t::Trie, str::AbstractString) = TrieIterator(t, str)
 Base.IteratorSize(::Type{TrieIterator}) = Base.SizeUnknown()
 
 
+
 function get_handler(t :: Trie, prefix :: AbstractString, handler :: Function = x -> "404")
     node = t
     route = Union{String, Symbol}[]
@@ -158,6 +159,12 @@ function get_handler(t :: Trie, prefix :: AbstractString, handler :: Function = 
         end
     end
     node.is_key ? (node.value, route) : (handler, [])
+end
+
+function has_handler(t :: Trie, path :: AbstractString)
+    f = x -> "404"
+    (handler, _ ) = get_handler(t, path, f)
+    handler != f
 end
 
 function firstsymbol(t)
