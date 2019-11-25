@@ -2,7 +2,7 @@
 # using Pkg
 # Pkg.activate("./")
 using Test, Tree, HTTP
-using Tree: has_handler, isvalidpath
+using Tree: has_handler, isvalidpath, http_serve, ws_serve
 
 # For debug mode
 # using Logging
@@ -69,7 +69,7 @@ end
         "Jello!"
     end
 
-    server = start(router)
+    server = http_serve(router)
 
     res = HTTP.get("http://localhost:8081/hello")
     @test String(res.body) == "Hello"
@@ -101,7 +101,7 @@ end
         ctx.path_params == Dict(:fried => "kfc" ,:chicken => "isgreat")
     end
 
-    server = start(router)
+    server = http_serve(router)
 
     @test HTTP.get("http://localhost:8081/hello/m8").body |> String == "true"
     @test HTTP.get("http://localhost:8081/kfc/isgreat").body |> String == "true"
@@ -116,7 +116,7 @@ end
         ctx.query_params[:and] == "peas"
     end
 
-    server = start(router)
+    server = http_serve(router)
 
     @test HTTP.get("http://localhost:8081/rice?and=peas").body |> String == "true"
 

@@ -49,26 +49,25 @@ function ws_serve(f :: Function;
     server = Sockets.listen(UInt16(port))
 
     task = @async HTTP.listen(Sockets.localhost, port; server=server, verbose=verbose) do http
-        HTTP.WebSockets.upgrade(f, http; binary=binary)
+        HTTP.WebSockets.upgrade(http; binary=binary) do ws
+            while !eof(ws)
+                # TODO allow user to apply function to ws and data hear
+                data = readavailable(ws)
+                write(ws, data)
+            end
+        end
     end
 
     check_server_started(server, task)
+    @info "Started websocket server on port: $port"
     server
 end
 
 
-function http_serve(f :: Function; port = 8081, timeout=3.0)
+function http_serve(router :: Router; port = 8081, timeout=3.0, four_oh_four = x -> "404")
+
     server = Sockets.listen(UInt16(port))
-    task = @async HTTP.serve(f, Sockets.localhost, port; server=server) 
-    check_server_started(server, task, timeout)
-    server
-end
-
-
-function start(router; http_port = 8081, ws_port = http_port + 1, four_oh_four = x -> "404")
-    @info "Starting server on port: $http_port"
-
-    http_server = http_serve() do request
+    task = @async HTTP.serve(Sockets.localhost, port; server=server) do request
         trie = router.routes[request.method]
         uri =  URI(request.target)
         handler, route = get_handler(trie, String(uri.path), four_oh_four)
@@ -78,27 +77,10 @@ function start(router; http_port = 8081, ws_port = http_port + 1, four_oh_four =
     end
 
     #For some reason this request is needed to update Routes in the sever
-    @assert HTTP.get("http://localhost:$http_port/").status == 200
+    @assert HTTP.get("http://localhost:$port/").status == 200
+    check_server_started(server, task, timeout)
 
-    # TODO if you want to start just a http or just  ws server
-    # Should split into ws_start and HTTP start that just take a router
-    ws_server = ws_serve(port=ws_port) do ws
-        while !eof(ws)
-            data = readavailable(ws)
-            write(ws, data)
-        end
-    end
-
-
-    Server(http_server, ws_server)
+    server
 end
 
-struct Server
-    http_server
-    ws_server
-end
-
-function stop(server::Server) 
-    close(server.http_server)
-    close(server.ws_server)
-end
+stop(server) = close(server)
