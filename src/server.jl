@@ -31,7 +31,7 @@ function create_response(data :: Any)
 end
 
 
-function check_server_started(server, task::Task, timeout=3.0)
+function check_server_started(server, task :: Task, timeout=3.0)
 
     task_failed = timedwait(() -> !istaskdone(task), float(timeout))
 
@@ -42,18 +42,14 @@ function check_server_started(server, task::Task, timeout=3.0)
 end
 
 function ws_serve(f :: Function;
-    port = 8081,
-    binary=false, verbose=false, timeout=3
-    )
+    port = 8081, binary=false, verbose=false, timeout=3)
 
     server = Sockets.listen(UInt16(port))
 
     task = @async HTTP.listen(Sockets.localhost, port; server=server, verbose=verbose) do http
         HTTP.WebSockets.upgrade(http; binary=binary) do ws
             while !eof(ws)
-                # TODO allow user to apply function to ws and data hear
-                data = readavailable(ws)
-                write(ws, data)
+                f(ws)
             end
         end
     end
@@ -79,6 +75,7 @@ function http_serve(router :: Router; port = 8081, timeout=3.0, four_oh_four = x
     #For some reason this request is needed to update Routes in the sever
     @assert HTTP.get("http://localhost:$port/").status == 200
     check_server_started(server, task, timeout)
+    @info "Started HTTP server on port: $port"
 
     server
 end

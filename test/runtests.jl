@@ -4,6 +4,7 @@
 using Test, Tree, HTTP
 using Tree: has_handler, isvalidpath, http_serve, ws_serve
 
+
 # For debug mode
 # using Logging
 # logger = ConsoleLogger(stdout, Logging.Debug)
@@ -121,4 +122,20 @@ end
     @test HTTP.get("http://localhost:8081/rice?and=peas").body |> String == "true"
 
     stop(server)
+end
+
+
+@testset "ws echo" begin
+    server = ws_serve(port=8082) do ws
+        data = readavailable(ws)
+        write(ws, data)
+    end
+
+    HTTP.WebSockets.open("ws://127.0.0.1:8082") do ws
+        write(ws, "Hello")
+        x = readavailable(ws)
+        @test String(x) == "Hello"
+    end
+    close(server);
+
 end
