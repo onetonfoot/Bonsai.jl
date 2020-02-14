@@ -4,12 +4,12 @@ import Base: setindex!, haskey, getindex, keys, getproperty, get, iterate
 
 mutable struct Trie{T}
     value::T
-    children::Dict{Union{String, Symbol},Trie{T}}
+    children::Dict{Union{String,Symbol},Trie{T}}
     is_key::Bool
 
     function Trie{T}() where T
         self = new{T}()
-        self.children = Dict{Union{String, Symbol},Trie{T}}()
+        self.children = Dict{Union{String,Symbol},Trie{T}}()
         self.is_key = false
         self
     end
@@ -24,7 +24,7 @@ mutable struct Trie{T}
 
     function Trie{T}(kv) where T
         t = Trie{T}()
-        for (k,v) in kv
+        for (k, v) in kv
             t[k] = v
         end
         return t
@@ -80,14 +80,14 @@ function subtrie(t::Trie, prefix::AbstractString)
     node
 end
 
-function keys(t::Trie, prefix::AbstractString="", found=AbstractString[])
+function keys(t::Trie, prefix::AbstractString = "", found = AbstractString[])
     if t.is_key
         push!(found, prefix)
     end
-    for (char,child) in t.children
+    for (char, child) in t.children
         suffix = char == "/" ? "" : "/"
         char = char isa String ? char : ":$(char)"
-        keys(child, string(prefix,char) * suffix, found)
+        keys(child, string(prefix, char) * suffix, found)
     end
     found
 end
@@ -108,7 +108,7 @@ end
 
 function keys_with_prefix(t::Trie, prefix::AbstractString)
     st = subtrie(t, prefix)
-    st != nothing ? keys(st,prefix) : []
+    st != nothing ? keys(st, prefix) : []
 end
 
 # The state of a TrieIterator is a pair (t::Trie, i::Int),
@@ -142,9 +142,9 @@ Base.IteratorSize(::Type{TrieIterator}) = Base.SizeUnknown()
 
 
 
-function get_handler(t :: Trie, prefix :: AbstractString, handler :: Function = x -> "404")
+function get_handler(t::Trie, prefix::AbstractString, handler::Function = x->"404")
     node = t
-    route = Union{String, Symbol}[]
+    route = Union{String,Symbol}[]
     for char in spliturl(prefix)
         if haskey(node.children, char)
             node = node.children[char]
@@ -161,9 +161,9 @@ function get_handler(t :: Trie, prefix :: AbstractString, handler :: Function = 
     node.is_key ? (node.value, route) : (handler, [])
 end
 
-function has_handler(t :: Trie, path :: AbstractString)
-    f = x -> "404"
-    (handler, _ ) = get_handler(t, path, f)
+function has_handler(t::Trie, path::AbstractString)
+    f = x->"404"
+    (handler, _) = get_handler(t, path, f)
     handler != f
 end
 
@@ -182,10 +182,10 @@ function spliturl(s::AbstractString)
     fragments = splitpath(s)
     path = map(fragments) do fragment
         if fragment[1] == ':'
-           Symbol(fragment[2:end])
+            Symbol(fragment[2:end])
         else
             fragment
         end
     end 
-    convert(Array{Union{String, Symbol}}, path)
+    convert(Array{Union{String,Symbol}}, path)
 end
