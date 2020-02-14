@@ -24,7 +24,7 @@ function create_response(data::AbstractDict)
 end
 
 function create_response(data::Any)
-    @warn "Unknown response type will pretend its json"
+    @warn "Unknown response type will pretend its json, please override `create_response` or return a `Response` from your router function"
     response = data |> JSON.json |> Response
     HTTP.setheader(response, "Content-Type" => "application/json")
     response
