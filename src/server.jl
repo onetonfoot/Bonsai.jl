@@ -3,12 +3,13 @@ using HTTP:Sockets
 using HTTP.Sockets: IPAddr
 using HTTP.Streams: Stream
 using HTTP.URIs:  URI
+using HTTP.Messages: Response
 import JSON
 
 include("router.jl")
 include("context.jl")
 
-create_response(response::HTTP.Response) = response
+create_response(response::Response) = response
 
 function create_response(data::AbstractString)
     response = HTTP.Response(data)
@@ -28,7 +29,6 @@ function create_response(data::Any)
     HTTP.setheader(response, "Content-Type" => "application/json")
     response
 end
-
 
 function check_server_started(server, task::Task, timeout = 3.0)
 

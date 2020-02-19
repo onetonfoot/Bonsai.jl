@@ -1,7 +1,14 @@
 module Tree
 
 include("server.jl")
+# from server.jl
+export stop, http_serve
 
-export Router, stop
+# from router.jl
+export Router, GET, POST, PUT, PATCH, DELETE, OPTIONS
+
+# from context.jl
+export Context, json_payload
 
 end # module
+

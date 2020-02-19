@@ -1,6 +1,16 @@
-using Test, HTTP
-include("linter_fix.jl")
-using Tree: has_handler, isvalidpath, http_serve, ws_serve
+# TODO write a macro to handle this! @lint_fix using Tree
+# julia> Pkg.dir(string(Tree))
+if isdefined(@__MODULE__,:LanguageServer)
+    include("../src/Tree.jl")
+    using .Tree: has_handler, isvalidpath,  ws_serve 
+    using .Tree
+else
+    using Tree: has_handler, isvalidpath, ws_serve
+    using Tree
+
+end
+
+using Test, HTTP, JSON
 
 # For debug mode
 # using Logging
@@ -117,6 +127,22 @@ end
     server = http_serve(router)
 
     @test HTTP.get("http://localhost:8081/rice?and=peas").body |> String == "true"
+
+    stop(server)
+end
+
+@testset "json_payload" begin
+    router = Router()
+
+    router("/post", method=POST) do ctx::Tree.Context
+        json_payload(ctx) 
+    end
+
+    server = Tree.http_serve(router)
+
+    d = Dict("some" => "json")
+    res = HTTP.post("http://localhost:8081/post", [],  JSON.json(d))
+    @test res.body |> String |> JSON.parse |> x -> x == d
 
     stop(server)
 end

@@ -1,5 +1,6 @@
 include("trie.jl")
 
+
 const GET     = "GET"
 const POST    = "POST"
 const PUT     = "PUT"
@@ -21,7 +22,7 @@ function Router()
     ) |> Router
 end
 
-function (router::Router)(handler, path::AbstractString; method = GET)
+function (router::Router)(handler::Function, path::AbstractString; method = GET)
     !isvalidpath(path) && error("Invalid path: $path")
     routes = router.routes[method]
     routes[path] = handler

@@ -1,5 +1,5 @@
-using HTTP: Request
 using HTTP.URIs: URI
+using HTTP.Messages: Request
 
 struct Context
     request::Request
@@ -39,4 +39,9 @@ function Context(request::Request, uri::URI, matched_path::Array)
     r_params = isempty(matched_path) ? Dict() : path_params(uri, matched_path)
     q_params = isempty(matched_path) ? Dict() : query_params(uri)
     Context(request, q_params, r_params, uri)
+end
+
+function json_payload(context::Context; parser=JSON.parse)
+    @assert context.request.method === POST "Method not post"
+    copy(context.request.body) |> String |> parser
 end

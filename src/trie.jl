@@ -62,7 +62,7 @@ end
 
 function getindex(t::Trie, key::AbstractString)
     node = subtrie(t, key)
-    if node != nothing && node.is_key
+    if node !== nothing && node.is_key
         return node.value
     end
     throw(KeyError("key not found: $key"))
@@ -94,12 +94,12 @@ end
 
 function haskey(t::Trie, key::AbstractString)
     node = subtrie(t, key)
-    node != nothing && node.is_key
+    node !== nothing && node.is_key
 end
 
 function get(t::Trie, key::AbstractString, notfound)
     node = subtrie(t, key)
-    if node != nothing && node.is_key
+    if node !== nothing && node.is_key
         return node.value
     end
     notfound
@@ -108,7 +108,7 @@ end
 
 function keys_with_prefix(t::Trie, prefix::AbstractString)
     st = subtrie(t, prefix)
-    st != nothing ? keys(st, prefix) : []
+    st !== nothing ? keys(st, prefix) : []
 end
 
 # The state of a TrieIterator is a pair (t::Trie, i::Int),
