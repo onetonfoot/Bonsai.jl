@@ -1,5 +1,4 @@
 import HTTP
-using HTTP: Response
 using HTTP:Sockets
 using HTTP.Sockets: IPAddr
 using HTTP.Streams: Stream
@@ -9,23 +8,23 @@ import JSON
 include("router.jl")
 include("context.jl")
 
-create_response(response::Response) = response
+create_response(response::HTTP.Response) = response
 
 function create_response(data::AbstractString)
-    response = Response(data)
+    response = HTTP.Response(data)
     HTTP.setheader(response, "Content-Type" => "text/html")
     response
 end
 
 function create_response(data::AbstractDict)
-    response = data |> JSON.json |> Response
+    response = data |> JSON.json |> HTTP.Response
     HTTP.setheader(response, "Content-Type" => "application/json")
     response
 end
 
 function create_response(data::Any)
     @warn "Unknown response type will pretend its json, please override `create_response` or return a `Response` from your router function"
-    response = data |> JSON.json |> Response
+    response = data |> JSON.json |> HTTP.Response
     HTTP.setheader(response, "Content-Type" => "application/json")
     response
 end

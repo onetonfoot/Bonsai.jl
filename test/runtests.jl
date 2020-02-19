@@ -1,9 +1,6 @@
-# using Revise
-# using Pkg
-# Pkg.activate("./")
-using Test, Tree, HTTP
+using Test, HTTP
+include("linter_fix.jl")
 using Tree: has_handler, isvalidpath, http_serve, ws_serve
-
 
 # For debug mode
 # using Logging

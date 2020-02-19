@@ -2,6 +2,6 @@ module Tree
 
 include("server.jl")
 
-export Router, start, stop
+export Router, stop
 
 end # module
