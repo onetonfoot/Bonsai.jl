@@ -2,6 +2,7 @@ import Base: setindex!, haskey, getindex, keys, getproperty, get, iterate
 
 # Adapted from https://github.com/JuliaCollections/DataStructures.jl/blob/master/src/trie.jl
 
+
 mutable struct Trie{T}
     value::T
     children::Dict{Union{String,Symbol},Trie{T}}
@@ -141,6 +142,7 @@ path(t::Trie, str::AbstractString) = TrieIterator(t, str)
 Base.IteratorSize(::Type{TrieIterator}) = Base.SizeUnknown()
 
 
+# TODO this is type unstable should return a handler!
 
 function get_handler(t::Trie, prefix::AbstractString, handler::Function = x->"404")
     node = t

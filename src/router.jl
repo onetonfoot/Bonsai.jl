@@ -1,4 +1,5 @@
 include("trie.jl")
+include("handler.jl")
 
 
 const GET     = "GET"
@@ -9,26 +10,29 @@ const DELETE  = "DELETE"
 const OPTIONS = "OPTIONS"
 
 mutable struct Router
-    routes::Dict{String,Trie{Function}}
+    routes::Dict{String,Trie{Handler}}
 end
 
 function Router()
-    Dict{String,Trie{Function}}(GET     => Trie{Function}(),
-        POST    => Trie{Function}(),
-        PUT     => Trie{Function}(),
-        PATCH   => Trie{Function}(),
-        DELETE  => Trie{Function}(),
-        OPTIONS => Trie{Function}(),
+    Dict{String,Trie{Handler}}(
+        GET     => Trie{Handler}(),
+        POST    => Trie{Handler}(),
+        PUT     => Trie{Handler}(),
+        PATCH   => Trie{Handler}(),
+        DELETE  => Trie{Handler}(),
+        OPTIONS => Trie{Handler}(),
     ) |> Router
 end
+
 
 function (router::Router)(handler::Function, path::AbstractString; method = GET)
     !isvalidpath(path) && error("Invalid path: $path")
     routes = router.routes[method]
-    routes[path] = handler
+    routes[path] = Handler(handler)
     @assert has_handler(routes, path)
     path
 end
+
 
 function isvalidpath(path::AbstractString)
     # TODO this isn't the most robust will let things like "//" pass

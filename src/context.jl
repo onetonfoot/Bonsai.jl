@@ -1,16 +1,17 @@
 using HTTP.URIs: URI
 using HTTP.Messages: Request
 
-struct Context
-    request::Request
-    query_params::Dict{Symbol,String}
-    path_params::Dict{Symbol,String}
-    uri::URI
-end
+# TODO refactor this to remove the Context struct
+# instead should overload functions to query_params etc from the request struct
 
-function query_params(uri::URI)
+url(req::Request) = URI(req.target)
 
+
+
+function query_params(req::Request)
+    uri = url(req)
     dict = Dict{Symbol,String}()
+
     if isempty(uri.query)
         return dict
     end
@@ -22,7 +23,14 @@ function query_params(uri::URI)
     dict
 end
 
-function path_params(uri::URI, matched_path::Array) 
+function json_payload(request::Request; parser=JSON.parse)
+    @assert request.method === POST "Method not post"
+    copy(request.body) |> String |> parser
+end
+
+
+function path_params(req::Request, matched_path::Array) 
+    uri = url(req)
     path = splitpath(String(uri.path))
     @assert length(path) == length(matched_path)
     dict = Dict{Symbol,String}()
@@ -32,16 +40,4 @@ function path_params(uri::URI, matched_path::Array)
         end
     end
     dict
-end
-
-function Context(request::Request, uri::URI, matched_path::Array)
-    path = String(uri.path)
-    r_params = isempty(matched_path) ? Dict() : path_params(uri, matched_path)
-    q_params = isempty(matched_path) ? Dict() : query_params(uri)
-    Context(request, q_params, r_params, uri)
-end
-
-function json_payload(context::Context; parser=JSON.parse)
-    @assert context.request.method === POST "Method not post"
-    copy(context.request.body) |> String |> parser
 end

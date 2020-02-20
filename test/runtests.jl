@@ -101,12 +101,12 @@ end
 
     router = Router()
 
-    router("/hello/:world") do ctx
-        ctx.path_params[:world] == "m8"
+    router("/hello/:world") do req
+        path_params(req)[:world] == "m8"
     end
 
-    router("/:fried/:chicken") do ctx
-        ctx.path_params == Dict(:fried => "kfc" ,:chicken => "isgreat")
+    router("/:fried/:chicken") do req
+        path_params(req)== Dict(:fried => "kfc" ,:chicken => "isgreat")
     end
 
     server = http_serve(router)
@@ -117,11 +117,12 @@ end
     stop(server)
 end
 
+
 @testset "query params" begin
     router = Router()
 
-    router("/rice") do ctx
-        ctx.query_params[:and] == "peas"
+    router("/rice") do req
+        query_params(req)[:and] == "peas"
     end
 
     server = http_serve(router)
@@ -134,8 +135,8 @@ end
 @testset "json_payload" begin
     router = Router()
 
-    router("/post", method=POST) do ctx::Tree.Context
-        json_payload(ctx) 
+    router("/post", method=POST) do req
+        json_payload(req) 
     end
 
     server = Tree.http_serve(router)

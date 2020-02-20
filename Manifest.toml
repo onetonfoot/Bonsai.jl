@@ -9,6 +9,11 @@ git-tree-sha1 = "5b08ed6036d9d3f0ee6369410b830f8873d4024c"
 uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 version = "0.5.8"
 
+[[Cassette]]
+git-tree-sha1 = "f6a148cadd38ba328bd2c03442037ef801a6aa05"
+uuid = "7057c7e9-c182-5462-911a-8362d720325c"
+version = "0.3.1"
+
 [[Dates]]
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"

@@ -8,7 +8,7 @@ export stop, http_serve
 export Router, GET, POST, PUT, PATCH, DELETE, OPTIONS
 
 # from context.jl
-export Context, json_payload
+export json_payload, path_params, query_params
 
 end # module
 
