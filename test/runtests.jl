@@ -111,8 +111,8 @@ end
 
     server = http_serve(router)
 
-    @test_skip HTTP.get("http://localhost:8081/hello/m8").body |> String == "true"
-    @test_skip HTTP.get("http://localhost:8081/kfc/isgreat").body |> String == "true"
+    @test HTTP.get("http://localhost:8081/hello/m8").body |> String == "true"
+    @test HTTP.get("http://localhost:8081/kfc/isgreat").body |> String == "true"
 
     stop(server)
 end

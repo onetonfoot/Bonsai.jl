@@ -25,17 +25,3 @@ function json_payload(request::Request; parser=JSON.parse)
     @assert request.method === POST "Method not post"
     copy(request.body) |> String |> parser
 end
-
-
-function path_params(req::Request, matched_path::Array) 
-    uri = url(req)
-    path = splitpath(String(uri.path))
-    @assert length(path) == length(matched_path)
-    dict = Dict{Symbol,String}()
-    for (key, value) in zip(matched_path, path)
-        if key isa Symbol
-            dict[key] = value
-        end
-    end
-    dict
-end

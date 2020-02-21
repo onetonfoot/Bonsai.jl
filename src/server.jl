@@ -75,7 +75,7 @@ function http_serve(router::Router; port = 8081, timeout = 3.0, four_o_four = fo
         trie = router.routes[request.method]
         uri =  URI(request.target)
         handler, route = get_handler(trie, String(uri.path), four_o_four)
-        Cassette.overdub(HandlerCtx() ,handler, request) |> x -> _create_response(x, uri.path)
+        Cassette.overdub(HandlerCtx(metadata=HandlerMetadata(route)) ,handler, request) |> x -> _create_response(x, uri.path)
     end
 
     # For some reason this request is needed to update Routes in the sever
