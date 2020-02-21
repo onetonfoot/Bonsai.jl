@@ -9,12 +9,8 @@ import JSON
 include("router.jl")
 include("context.jl")
 
-create_response(response::Response) = response  
+# TODO need unit tests for create_response
 
-function create_response(data::Any)
-    @warn "Unknown response $(typeof(data)), pretending it is a string"
-    create_response(repr(data))
-end
 
 function create_response(data::AbstractString)
     response = HTTP.Response(data)
@@ -28,6 +24,18 @@ function create_response(data::AbstractDict)
     response
 end
 
+create_response(data::Any) = data  
+
+function _create_response(data::Any, path)
+    response = create_response(data)
+
+    if response isa Response
+        response
+    else
+        @warn "Unknown response $(typeof(data)) for $path pretending it is a string"
+        create_response(repr(data))
+    end
+end
 
 function check_server_started(server, task::Task, timeout = 3.0)
 
@@ -67,7 +75,7 @@ function http_serve(router::Router; port = 8081, timeout = 3.0, four_o_four = fo
         trie = router.routes[request.method]
         uri =  URI(request.target)
         handler, route = get_handler(trie, String(uri.path), four_o_four)
-        Cassette.overdub(HandlerCtx() ,handler, request) |> create_response
+        Cassette.overdub(HandlerCtx() ,handler, request) |> x -> _create_response(x, uri.path)
     end
 
     # For some reason this request is needed to update Routes in the sever
