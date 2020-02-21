@@ -1,6 +1,4 @@
 include("trie.jl")
-include("handler.jl")
-
 
 const GET     = "GET"
 const POST    = "POST"

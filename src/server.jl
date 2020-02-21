@@ -13,7 +13,7 @@ create_response(response::Response) = response
 
 function create_response(data::Any)
     @warn "Unknown response $(typeof(data)), pretending it is a string"
-    create_response(repr(string))
+    create_response(repr(data))
 end
 
 function create_response(data::AbstractString)
@@ -58,7 +58,7 @@ function ws_serve(f::Function;
 end
 
 
-function http_serve(router::Router; port = 8081, timeout = 3.0, four_oh_four = x->"404")
+function http_serve(router::Router; port = 8081, timeout = 3.0, four_o_four = four_o_four)
 
     router.routes
 
@@ -66,7 +66,7 @@ function http_serve(router::Router; port = 8081, timeout = 3.0, four_oh_four = x
     task = @async HTTP.serve(Sockets.localhost, port; server = server) do request
         trie = router.routes[request.method]
         uri =  URI(request.target)
-        handler, route = get_handler(trie, String(uri.path), four_oh_four)
+        handler, route = get_handler(trie, String(uri.path), four_o_four)
         Cassette.overdub(HandlerCtx() ,handler, request) |> create_response
     end
 

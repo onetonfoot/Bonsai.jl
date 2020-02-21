@@ -1,6 +1,9 @@
 using Cassette
 using HTTP.Messages: Request
 
+
+# TODO consider overiding == to compared structs fn field
+
 struct Handler 
     fn::Function
 end

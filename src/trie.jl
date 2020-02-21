@@ -1,6 +1,7 @@
 import Base: setindex!, haskey, getindex, keys, getproperty, get, iterate
 
 # Adapted from https://github.com/JuliaCollections/DataStructures.jl/blob/master/src/trie.jl
+include("handler.jl")
 
 
 mutable struct Trie{T}
@@ -144,7 +145,10 @@ Base.IteratorSize(::Type{TrieIterator}) = Base.SizeUnknown()
 
 # TODO this is type unstable should return a handler!
 
-function get_handler(t::Trie, prefix::AbstractString, handler::Function = x->"404")
+
+const four_o_four = Handler(x-> "404")
+
+function get_handler(t::Trie, prefix::AbstractString, handler::Handler = four_o_four)
     node = t
     route = Union{String,Symbol}[]
     for char in spliturl(prefix)
@@ -164,9 +168,9 @@ function get_handler(t::Trie, prefix::AbstractString, handler::Function = x->"40
 end
 
 function has_handler(t::Trie, path::AbstractString)
-    f = x->"404"
-    (handler, _) = get_handler(t, path, f)
-    handler != f
+    global four_o_four
+    (handler, _) = get_handler(t, path, four_o_four)
+    handler.fn != four_o_four.fn
 end
 
 function firstsymbol(t)
