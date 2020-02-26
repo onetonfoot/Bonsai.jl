@@ -6,11 +6,8 @@ using HTTP.URIs:  URI
 using HTTP.Messages: Response
 import JSON
 
-include("router.jl")
-include("context.jl")
-
 # TODO need unit tests for create_response
-
+include("app.jl")
 
 function create_response(data::AbstractString)
     response = HTTP.Response(data)
@@ -66,11 +63,12 @@ function ws_serve(f::Function;
 end
 
 
-function http_serve(router::Router; port = 8081, timeout = 3.0, four_o_four = four_o_four)
+function http_serve(app::App; port = 8081, timeout = 3.0, four_o_four = four_o_four)
 
-    router.routes
-
+    router = app.router
     server = Sockets.listen(UInt16(port))
+    app.server = server
+
     task = @async HTTP.serve(Sockets.localhost, port; server = server) do request
         trie = router.routes[request.method]
         uri =  URI(request.target)
@@ -87,4 +85,4 @@ function http_serve(router::Router; port = 8081, timeout = 3.0, four_o_four = fo
 end
 
 # TODO: Should warn if server is already closed
-stop(server) = close(server)
+stop(app::App) = close(app.server)

@@ -1,6 +1,10 @@
 module Tree
 
 include("server.jl")
+
+#from app.jl
+export App
+
 # from server.jl
 export stop, http_serve
 
