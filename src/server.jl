@@ -63,7 +63,12 @@ function ws_serve(f::Function;
 end
 
 
-function http_serve(app::App; port = 8081, timeout = 3.0, four_o_four = four_o_four)
+"""
+Starts the app
+
+start(app::App)
+"""
+function start(app::App; port = 8081, timeout = 3.0, four_o_four = four_o_four)
 
     router = app.router
     server = Sockets.listen(UInt16(port))
@@ -73,7 +78,7 @@ function http_serve(app::App; port = 8081, timeout = 3.0, four_o_four = four_o_f
         trie = router.routes[request.method]
         uri =  URI(request.target)
         handler, route = get_handler(trie, String(uri.path), four_o_four)
-        Cassette.overdub(HandlerCtx(metadata=HandlerMetadata(route)) ,handler, request) |> x -> _create_response(x, uri.path)
+        Cassette.overdub(HandlerCtx(metadata = HandlerMetadata(route)), handler, request) |> x->_create_response(x, uri.path)
     end
 
     # For some reason this request is needed to update Routes in the sever
@@ -85,4 +90,5 @@ function http_serve(app::App; port = 8081, timeout = 3.0, four_o_four = four_o_f
 end
 
 # TODO: Should warn if server is already closed
+"""Stops the app"""
 stop(app::App) = close(app.server)

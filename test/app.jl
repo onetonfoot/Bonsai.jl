@@ -1,4 +1,4 @@
-if isdefined(@__MODULE__,:LanguageServer)
+if isdefined(@__MODULE__, :LanguageServer)
     include("../src/Tree.jl")
     using .Tree: has_handler, isvalidpath,  ws_serve, Handler
     using .Tree
@@ -7,6 +7,7 @@ else
     using Tree
 
 end
+
 
 using Test, HTTP, JSON
 
@@ -22,7 +23,7 @@ using Test, HTTP, JSON
         "Jello!"
     end
 
-    http_serve(app)
+    start(app)
 
     res = HTTP.get("http://localhost:8081/hello")
     @test String(res.body) == "Hello"
@@ -51,10 +52,10 @@ end
     end
 
     app("/:fried/:chicken") do req
-        path_params(req)== Dict(:fried => "kfc" ,:chicken => "isgreat")
+        path_params(req) == Dict(:fried => "kfc", :chicken => "isgreat")
     end
 
-    server = http_serve(app)
+    server = start(app)
 
     @test HTTP.get("http://localhost:8081/hello/m8").body |> String == "true"
     @test HTTP.get("http://localhost:8081/kfc/isgreat").body |> String == "true"
@@ -70,7 +71,7 @@ end
         query_params(req)[:and] == "peas"
     end
 
-    http_serve(app)
+    start(app)
 
     @test HTTP.get("http://localhost:8081/rice?and=peas").body |> String == "true"
 
@@ -80,15 +81,15 @@ end
 @testset "json_payload" begin
     app = App()
 
-    app("/post", method=POST) do req
+    app("/post", POST) do req
         json_payload(req) 
     end
 
-    server = Tree.http_serve(app)
+    server = Tree.start(app)
 
     d = Dict("some" => "json")
     res = HTTP.post("http://localhost:8081/post", [],  JSON.json(d))
-    @test res.body |> String |> JSON.parse |> x -> x == d
+    @test res.body |> String |> JSON.parse |> x->x == d
 
     stop(app)
 end
@@ -106,7 +107,7 @@ end
         app.session["key"]
     end
 
-    http_serve(app)
+    start(app)
 
     HTTP.get("http://localhost:8081/set")
     @test HTTP.get("http://localhost:8081/get").body |> String == "value"

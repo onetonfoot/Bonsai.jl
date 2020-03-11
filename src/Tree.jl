@@ -2,11 +2,11 @@ module Tree
 
 include("server.jl")
 
-#from app.jl
+# from app.jl
 export App
 
 # from server.jl
-export stop, http_serve
+export stop, start
 
 # from router.jl
 export Router, GET, POST, PUT, PATCH, DELETE, OPTIONS
