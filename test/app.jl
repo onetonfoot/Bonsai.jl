@@ -84,7 +84,7 @@ end
         json_payload(req) 
     end
 
-    server = Tree.start(app)
+    server = start(app)
 
     d = Dict("some" => "json")
     res = HTTP.post("http://localhost:8081/post", [],  JSON.json(d))

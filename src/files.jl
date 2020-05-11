@@ -1,13 +1,12 @@
 include("mime_types.jl")
 using FilePathsBase, FilePaths
-using HTTP.Messages: Response
 using HTTP
 
 struct Folder
     path::AbstractPath
     function Folder(path) 
-        !isdir(path) && @warn "can't find folder $path "
-        new(p"path")
+        !isdir(joinpath(cwd(),path)) && @warn "can't find folder $(joinpath(cwd(),path))"
+        new(Path(path))
     end
 end
 

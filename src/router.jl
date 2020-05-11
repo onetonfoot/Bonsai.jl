@@ -34,7 +34,9 @@ end
 
 function isvalidpath(path::AbstractString)
     # TODO this isn't the most robust will let things like "//" pass
-    re = r"^[/.:a-zA-Z0-9-]+$"
+    # https://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
+    re = r"^[/a-zA-Z0-9-_.-~!$&'()*+,;@]+$"
     m = match(re, path)
-    m !== nothing && m.match == path
+    uri = URI(path)
+    m !== nothing && m.match == path && uri.path == path
 end

@@ -21,7 +21,7 @@ using Test, HTTP, JSON
 
 @testset "has_handler" begin
 
-    trie = Tree.Trie{Handler}()
+    trie = Bonsai.Trie{Handler}()
     four_oh_four = Handler(ctx->"404")
     trie["/:a/:b"] = Handler(ctx->"a b")
     trie["/rice/:b"] = Handler(ctx->"a b")
@@ -35,7 +35,7 @@ end
 
 @testset "ambiguous routes" begin
 
-    trie = Tree.Trie{Function}()
+    trie = Bonsai.Trie{Function}()
     four_oh_four = ctx->"404"
     trie["/:a/:b"] = ctx->"a b"
     trie["/rice/:b"] = ctx->"a b"
@@ -47,7 +47,7 @@ end
 
 @testset "isvalidpath" begin
     @test isvalidpath("/:something/else")
-    @test !isvalidpath("/:something_else")
+    @test isvalidpath("/:something_else")
     @test !isvalidpath("/invalid path")
     @test !isvalidpath("/invalid?a=b")
 end
