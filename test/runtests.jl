@@ -2,7 +2,7 @@ include("router.jl")
 include("app.jl")
 
 @testset "ws echo" begin
-    server = ws_serve(port=8082) do ws
+    server = ws_serve(port = 8082) do ws
         data = readavailable(ws)
         write(ws, data)
     end
@@ -13,5 +13,4 @@ include("app.jl")
         @test String(x) == "Hello"
     end
     close(server);
-
 end

@@ -9,13 +9,13 @@ import JSON
 # TODO need unit tests for create_response
 include("app.jl")
 
-function create_response(data::AbstractString)
+function create_response(data::AbstractString)::Response
     response = HTTP.Response(data)
     HTTP.setheader(response, "Content-Type" => "text/plain")
     response
 end
 
-function create_response(data::AbstractDict)
+function create_response(data::AbstractDict)::Response
     response = data |> JSON.json |> HTTP.Response
     HTTP.setheader(response, "Content-Type" => "application/json")
     response
@@ -64,15 +64,21 @@ end
 
 
 """
-Starts the app
+Starts the application
 
-start(app::App)
+Args:
+* app::App
+
+Kw Args:
+* port - the port you want to server on
+* four_o_four - handler for unmatched routes
 """
-function start(app::App; port = 8081, timeout = 3.0, four_o_four = four_o_four)
+function start(app::App; port = 8081, four_o_four = four_o_four)
 
     router = app.router
     server = Sockets.listen(UInt16(port))
     app.server = server
+    timeout = 5.0
 
     task = @async HTTP.serve(Sockets.localhost, port; server = server) do request
         trie = router.routes[request.method]

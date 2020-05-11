@@ -1,11 +1,10 @@
 if isdefined(@__MODULE__, :LanguageServer)
     include("../src/Tree.jl")
-    using .Tree: has_handler, isvalidpath,  ws_serve, Handler
-    using .Tree
+    using .Bonsai: has_handler, isvalidpath,  ws_serve, Handler
+    using .Bonsai
 else
-    using Tree: has_handler, isvalidpath, ws_serve, Handler
-    using Tree
-
+    using Bonsai: has_handler, isvalidpath, ws_serve, Handler
+    using Bonsai
 end
 
 

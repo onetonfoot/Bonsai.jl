@@ -1,12 +1,12 @@
 # if isdefined(@__MODULE__, :LanguageServer)
 #     include("../src/Tree.jl")
-#     using .Tree
+#     using .Bonsai
 # else
-#     using Tree
+#     using Bonsai
 
 # end
 using Documenter
 push!(LOAD_PATH,"../src/")
-using Tree
+using Bonsai
 
 makedocs(sitename = "Tree")

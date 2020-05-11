@@ -1,4 +1,4 @@
-module Tree
+module Bonsai
 
 include("server.jl")
 
@@ -13,6 +13,9 @@ export Router, GET, POST, PUT, PATCH, DELETE, OPTIONS
 
 # from context.jl
 export json_payload, path_params, query_params
+
+#from mime_types.jl
+export MIME_TYPES
 
 end # module
 

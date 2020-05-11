@@ -3,8 +3,6 @@ using HTTP.URIs: URI, queryparams
 using HTTP.Messages: Request
 using Cassette
 
-include("context.jl")
-
 Cassette.@context HandlerCtx
 
 struct Handler 
