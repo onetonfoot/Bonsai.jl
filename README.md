@@ -64,7 +64,7 @@ By default the file will be served from the index, but you can specify a route w
 app("/page", p"page.html")
 ```
 
-The mime type will be infered from the extension, the supported mime type can be found [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types). If the mime type is unsuported it can be added to the global `MIME_TYPES`.
+The MIME type will be infered from the extension, the supported MIME types can be found [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types). If the MIME type is unsuported it can be added to the global `MIME_TYPES`.
 
 ## Folders
 

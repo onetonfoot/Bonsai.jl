@@ -79,7 +79,6 @@ function start(app::App; port = 8081, four_o_four = four_o_four)
     router = app.router
     server = Sockets.listen(UInt16(port))
     app.server = server
-    timeout = 5.0
 
     @info "Starting HTTP server on port: $port"
 
@@ -93,6 +92,7 @@ function start(app::App; port = 8081, four_o_four = four_o_four)
     app.server_task = task
     # For some reason this request is needed to update Routes in the sever
     @assert HTTP.get("http://localhost:$port/").status == 200
+    timeout = 10.0
     check_server_started(server, task, timeout)
 
     server
