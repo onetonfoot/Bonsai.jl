@@ -1,0 +1,7 @@
+name = "WebSite"
+uuid = "274ae1ce-9c72-4e6d-ad2d-eca79d66f129"
+authors = ["Dom <onetonfoot@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+Bonsai = "30a8ad1e-2947-4f5c-9f0c-168e614e8e53"

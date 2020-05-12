@@ -57,6 +57,7 @@ function ws_serve(f::Function;
         end
     end
 
+
     check_server_started(server, task)
     @info "Started websocket server on port: $port"
     server
@@ -80,6 +81,8 @@ function start(app::App; port = 8081, four_o_four = four_o_four)
     app.server = server
     timeout = 5.0
 
+    @info "Starting HTTP server on port: $port"
+
     task = @async HTTP.serve(Sockets.localhost, port; server = server) do request
         trie = router.routes[request.method]
         uri =  URI(request.target)
@@ -87,10 +90,10 @@ function start(app::App; port = 8081, four_o_four = four_o_four)
         Cassette.overdub(HandlerCtx(metadata = HandlerMetadata(route)), handler, request) |> x->_create_response(x, uri.path)
     end
 
+    app.server_task = task
     # For some reason this request is needed to update Routes in the sever
     @assert HTTP.get("http://localhost:$port/").status == 200
     check_server_started(server, task, timeout)
-    @info "Started HTTP server on port: $port"
 
     server
 end
@@ -98,3 +101,5 @@ end
 # TODO: Should warn if server is already closed
 """Stops the app"""
 stop(app::App) = close(app.server)
+
+Base.wait(app::App) = wait(app.server_task)

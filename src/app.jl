@@ -8,10 +8,11 @@ mutable struct App{S}
     router::Router
     session::S
     server::Union{Nothing,TCPServer}
+    server_task::Union{Nothing, Task}
 end
 
 # TODO Dict is not thread safe :/ need to find a cross platform soultion
-App(;session = Dict()) = App(Router(), session, nothing)
+App(;session = Dict()) = App(Router(), session, nothing, nothing)
 
 function (app::App)(handler, path, method::AbstractString = GET)     
     app.router(handler, path ; method = method)
@@ -40,8 +41,6 @@ function (app::App)(route::AbstractString, path::AbstractPath)
     app.router(handler, route)
 end
 
-(app::App)(folder::Folder; recursive=true, filter_fn=file->true) = app(string(folder.path), folder; recursive=recursive, filter_fn=filter_fn)
-
 """
 Args:
 
@@ -54,9 +53,8 @@ Kw Args:
 """
 function (app::App)(route::AbstractString , folder::Folder; recursive=true, filter_fn=file->true)
 
-    folder = f"files/"
     files = if recursive
-        files =filter(filter_fn, collect(walkpath(folder.path)))
+        files = filter(filter_fn, collect(walkpath(folder.path)))
         filter!(isfile, files)
     else
         files = map(x ->folder.path / x,  readdir(folder.path))
@@ -64,7 +62,9 @@ function (app::App)(route::AbstractString , folder::Folder; recursive=true, filt
         filter!(isfile, files)
     end
 
-    routes = map(x -> joinpath(route, x.segments[2:end]...), files)
+    routes = map(files) do file
+        replace(string(file), Regex("^" * string(folder.path)) => route)
+    end
 
     for (route, file) in zip(routes, files)
         app(route, file)

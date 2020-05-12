@@ -64,18 +64,9 @@ By default the file will be served from the index, but you can specify a route w
 app("/page", p"page.html")
 ```
 
-The mime type will be infered from the extension, the supported mime type can be found [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types). If the mime type is 
-unsuported it can be added to the global `MIME_TYPES`.
+The mime type will be infered from the extension, the supported mime type can be found [here](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types). If the mime type is unsuported it can be added to the global `MIME_TYPES`.
 
 ## Folders
-
-Serving folders
-
-```julia
-app(f"images")
-```
-
-Serving from a specific route
 
 ```julia
 app("/img", f"images")
@@ -83,7 +74,7 @@ app("/img", f"images")
 
 ## Create Response
 
-After your your handler is called if it's return type isn't a `Response` it will be made into one by
+After your handler is called if it's return type isn't a `Response` it will be made into one by
 calling `create_response`. You can overload `create_reponse` for your specific type to have more control.
 
 ```julia

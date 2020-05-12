@@ -18,7 +18,7 @@ export json_payload, path_params, query_params
 export MIME_TYPES
 
 #from files.jl
-export @f_str
+export @f_str, Folder
 
 end # module
 
