@@ -1,5 +1,8 @@
 # Bonsai
 
+[![Build Status](https://travis-ci.com/onetonfoot/Bonsai.jl.svg?branch=master)](https://travis-ci.com/onetonfoot/Bonsai.jl)
+[![Coverage Status](https://coveralls.io/repos/github/onetonfoot/Bonsai.jl/badge.svg?branch=master)](https://coveralls.io/github/onetonfoot/Bonsai.jl?branch=master)
+
 ## Getting started
 
 Create a instance of the app, add a route then starting the server
