@@ -2,19 +2,7 @@ include("mime_types.jl")
 using FilePathsBase, FilePaths
 using HTTP
 
-struct Folder
-    path::AbstractPath
-    function Folder(path) 
-        !isdir(path) && @warn "can't find folder $(joinpath(cwd(),path))"
-        new(Path(normpath(path)))
-    end
-end
-
-macro f_str(str)
-    Folder(str)
-end
-
-#TODO implement 
+# TODO: implement 
 function safe_path(root, path)
     joinpath(root, path)
 end

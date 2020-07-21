@@ -26,12 +26,6 @@ end
 
 """
 Args:
-* path - path to the file to be served
-"""
-(app::App)(path::AbstractPath) = app("/$(path.segments[end])", path)
-
-"""
-Args:
 * route - route the file should be served from
 * path  - path to the file to be served
 """
@@ -51,22 +45,28 @@ Kw Args:
 * recursive - if the folder should be recusively served
 * filter_fn(path::Path)::Boolean - a function which should return a Boolean indicating if the file should be served
 """
-function (app::App)(route::AbstractString , folder::Folder; recursive=true, filter_fn=file->true)
+function (app::App)(route::AbstractString , path::AbstractPath; recursive=true, filter_fn=file->true)
+    if isdir(path)
+        files = if recursive
+            files = filter(filter_fn, collect(walkpath(path)))
+            filter!(isfile, files)
+        else
+            files = map(x ->path / x,  readdir(path))
+            filter!(filter_fn, files)
+            filter!(isfile, files)
+        end
 
-    files = if recursive
-        files = filter(filter_fn, collect(walkpath(folder.path)))
-        filter!(isfile, files)
+        routes = map(files) do file
+            r = replace(string(file), Regex("^" * string(path)) => route)
+            replace(r, "//"=>"/")
+        end
+
+        for (route, file) in zip(routes, files)
+            app(route, file)
+        end
     else
-        files = map(x ->folder.path / x,  readdir(folder.path))
-        filter!(filter_fn, files)
-        filter!(isfile, files)
-    end
-
-    routes = map(files) do file
-        replace(string(file), Regex("^" * string(folder.path)) => route)
-    end
-
-    for (route, file) in zip(routes, files)
-        app(route, file)
+        handler = create_file_handler(path)
+        !isfile(path) && @warn "Can't find file $path"
+        app.router(handler, route)
     end
 end

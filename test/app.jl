@@ -1,13 +1,5 @@
-if isdefined(@__MODULE__, :LanguageServer)
-    include("../src/Tree.jl")
-    using .Bonsai: has_handler, isvalidpath,  ws_serve, Handler
-    using .Bonsai
-else
-    using Bonsai: has_handler, isvalidpath, ws_serve, Handler
-    using Bonsai
-end
-
-
+using Bonsai: has_handler, isvalidpath, Handler
+using Bonsai
 using Test, HTTP, JSON
 
 @testset "server" begin

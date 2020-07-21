@@ -4,10 +4,12 @@ using HTTP.Sockets: IPAddr
 using HTTP.Streams: Stream
 using HTTP.URIs:  URI
 using HTTP.Messages: Response
+using HTTP.Handlers
 import JSON
 
 # TODO need unit tests for create_response
 include("app.jl")
+include("web_socket.jl")
 
 function create_response(data::AbstractString)::Response
     response = HTTP.Response(data)
@@ -44,25 +46,6 @@ function check_server_started(server, task::Task, timeout = 3.0)
     end;
 end
 
-function ws_serve(f::Function;
-    port = 8081, binary = false, verbose = false, timeout = 3)
-
-    server = Sockets.listen(UInt16(port))
-
-    task = @async HTTP.listen(Sockets.localhost, port; server = server, verbose = verbose) do http
-        HTTP.WebSockets.upgrade(http; binary = binary) do ws
-            while !eof(ws)
-                f(ws)
-            end
-        end
-    end
-
-
-    check_server_started(server, task)
-    @info "Started websocket server on port: $port"
-    server
-end
-
 
 """
 Starts the application
@@ -82,20 +65,27 @@ function start(app::App; port = 8081, four_o_four = four_o_four)
 
     @info "Starting HTTP server on port: $port"
 
-    task = @async HTTP.serve(Sockets.localhost, port; server = server) do request
-        trie = router.routes[request.method]
-        uri =  URI(request.target)
-        handler, route = get_handler(trie, String(uri.path), four_o_four)
-        Cassette.overdub(HandlerCtx(metadata = HandlerMetadata(route)), handler, request) |> x->_create_response(x, uri.path)
+    task = @async HTTP.serve(Sockets.localhost, port; server = server, stream=true) do stream::HTTP.Stream
+        if HTTP.WebSockets.is_upgrade(stream.message)
+            ws = ws_upgrade(stream)
+            return ws_handler(ws)
+        else
+            fn = RequestHandlerFunction() do request
+                trie = router.routes[request.method]
+                uri =  URI(request.target)
+                handler, route = get_handler(trie, String(uri.path), four_o_four)
+                Cassette.overdub(HandlerCtx(metadata = HandlerMetadata(route)), handler, request) |> x->_create_response(x, uri.path)
+            end
+            HTTP.handle(fn, stream)
+        end
     end
 
     app.server_task = task
     # For some reason this request is needed to update Routes in the sever
-    @assert HTTP.get("http://localhost:$port/").status == 200
-    timeout = 10.0
-    check_server_started(server, task, timeout)
-
-    server
+    # @assert HTTP.get("http://localhost:$port/").status == 200
+    # timeout = 10.0
+    # check_server_started(server, task, timeout)
+    app
 end
 
 # TODO: Should warn if server is already closed
