@@ -5,7 +5,7 @@
 
 ## Getting started
 
-Create a instance of the app, add a route then starting the server
+Create an instance of the app, add a route and then start the server
 
 ```julia
 app = App()
