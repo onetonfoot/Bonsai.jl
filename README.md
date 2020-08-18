@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/onetonfoot/Bonsai.jl.svg?branch=master)](https://travis-ci.com/onetonfoot/Bonsai.jl)
 [![Coverage Status](https://coveralls.io/repos/github/onetonfoot/Bonsai.jl/badge.svg?branch=master)](https://coveralls.io/github/onetonfoot/Bonsai.jl?branch=master)
 
-## Getting started
+# Getting started
 
 It's as simple as
 
@@ -31,7 +31,7 @@ create_response(t::Mytype)::HTTP.Response
 
 This is already defined for `AbstractString` and `AbstractDict`, were the Content-Type header is set as `text/plain` and `application/json` respectively.
 
-## Routing and Query Parameters
+# Routing and Query Parameters
 
 Routes can be defined for multiple methods by passing an array
 
