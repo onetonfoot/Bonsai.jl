@@ -1,7 +1,8 @@
 using HTTP.Messages: Request
 using HTTP.URIs: URI, queryparams
-using HTTP.Messages: Request
+using HTTP.WebSockets: WebSocket
 using Cassette
+
 
 Cassette.@context HandlerCtx
 
@@ -15,6 +16,7 @@ struct HandlerMetadata
 end
 
 (handler::Handler)(request::Request) = handler.fn(request)
+(handler::Handler)(ws::WebSocket) = handler.fn(ws)
 
 
 path_params(req::Request) = error("overdub failed!")

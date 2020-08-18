@@ -8,8 +8,8 @@ using HTTP.Handlers
 import JSON
 
 # TODO need unit tests for create_response
-include("app.jl")
 include("web_socket.jl")
+include("app.jl")
 
 function create_response(data::AbstractString)::Response
     response = HTTP.Response(data)
@@ -67,8 +67,14 @@ function start(app::App; port = 8081, four_o_four = four_o_four)
 
     task = @async HTTP.serve(Sockets.localhost, port; server = server, stream=true) do stream::HTTP.Stream
         if HTTP.WebSockets.is_upgrade(stream.message)
+            trie = router.routes[WS]
             ws = ws_upgrade(stream)
-            return ws_handler(ws)
+            uri =  URI(stream.message.target)
+            handler, route = get_handler(trie, String(uri.path), four_o_four)
+            if handle == four_o_four
+                error("# TODO: What is the correct way to reject a WebSocket Upgrade Request")
+            end
+            return handler(ws)
         else
             fn = RequestHandlerFunction() do request
                 trie = router.routes[request.method]

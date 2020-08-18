@@ -1,5 +1,4 @@
 {
   "julia.useRevise": true,
-  "julia.environmentPath": "/home/dom/.julia/environments/v1.4",
   "editor.formatOnSave": false
 }

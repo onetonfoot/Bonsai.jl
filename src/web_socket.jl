@@ -16,11 +16,10 @@ function ws_upgrade(http::HTTP.Stream)
     return HTTP.WebSockets.WebSocket(io; server=true)
 end
 
-function ws_handler(ws)
-    while isopen(ws)
-        sleep(1)
-        data = readavailable(ws)
-        print("Data was: $data")
-        write(ws, "HELLO")
-    end
+struct WebSocketPath
+    s::String
+end
+
+macro ws_str(s)
+    WebSocketPath(s)
 end

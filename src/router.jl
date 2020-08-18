@@ -6,6 +6,7 @@ const PUT     = "PUT"
 const PATCH   = "PATCH"
 const DELETE  = "DELETE"
 const OPTIONS = "OPTIONS"
+const WS = "WS"
 
 mutable struct Router
     routes::Dict{String,Trie{Handler}}
@@ -19,9 +20,9 @@ function Router()
         PATCH   => Trie{Handler}(),
         DELETE  => Trie{Handler}(),
         OPTIONS => Trie{Handler}(),
+        WS => Trie{Handler}()
     ) |> Router
 end
-
 
 function (router::Router)(handler::Function, path::AbstractString; method = GET)
     !isvalidpath(path) && error("Invalid path: $path")
@@ -30,7 +31,6 @@ function (router::Router)(handler::Function, path::AbstractString; method = GET)
     @assert has_handler(routes, path)
     path
 end
-
 
 function isvalidpath(path::AbstractString)
     # TODO this isn't the most robust will let things like "//" pass

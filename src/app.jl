@@ -3,6 +3,8 @@ import Sockets: TCPServer
 include("router.jl")
 include("files.jl")
 
+
+
 # TODO define show methods
 mutable struct App{S}
     router::Router
@@ -17,12 +19,14 @@ App(;session = Dict()) = App(Router(), session, nothing, nothing)
 function (app::App)(handler, path, method::AbstractString = GET)     
     app.router(handler, path ; method = method)
 end
-
 # TODO needs test case
 function (app::App)(handler::Function, path::AbstractString, method::Array)     
     [app.router(handler, path; method = m) for m in method]
 end
 
+function (app::App)(handler::Function, path::WebSocketPath)     
+    app.router(handler, path.s; method = WS)
+end
 
 """
 Args:

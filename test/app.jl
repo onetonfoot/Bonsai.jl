@@ -105,3 +105,27 @@ end
 
     stop(app)
 end
+
+@testset "web sockets" begin
+
+    app = App()
+
+    ws"/hello"
+
+    app(ws"/hello") do ws
+        while !eof(ws)
+            data = readavailable(ws)
+            write(ws, data)
+        end
+    end
+
+    start(app)
+
+    HTTP.WebSockets.open("ws://127.0.0.1:8081/hello") do ws
+        write(ws, "hello")
+        x = readavailable(ws)
+        @test String(x) == "hello"
+    end
+
+    stop(app)
+end
