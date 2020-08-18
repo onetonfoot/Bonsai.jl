@@ -122,7 +122,7 @@ Still thinking about the nicest way to implement this suggesting are welcome!
 # Docker
 
 Yet todo but will probably add a CLI using [Comonicon](https://github.com/Roger-luo/Comonicon.jl), that
-can take a Julia project and generate a Dockerfile.
+can take a Julia project and generate a Dockerfile with [SimpleContainerGenerator](https://github.com/bcbi/SimpleContainerGenerator.jl).
 
 # Examples
 
