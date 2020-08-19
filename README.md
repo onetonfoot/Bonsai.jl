@@ -49,7 +49,7 @@ app("/route/:id", method = [GET, POST]) do request
 end
 ```
 
-Specific routes will be matched first take priority over variable routes, in other words `"/route/1"` will be matched before `"/route/:id"`. 
+Specific routes take priority over variable routes, in other words `"/route/1"` will be matched before `"/route/:id"`. 
 
 Query parameters can be accessed in a similar way.
 
