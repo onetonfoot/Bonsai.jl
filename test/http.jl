@@ -1,9 +1,13 @@
-@testset "Body" begin
-    struct Payload 
-        x
-    end
+using StructTypes	
+using StructTypes: StructType
 
-    StructType(::Type{Payload}) = StructTypes.Struct()
+struct Payload 
+    x
+end
+
+StructType(::Type{Payload}) = StructTypes.Struct()
+
+@testset "Body" begin
 
     io = IOBuffer( JSON3.write(Payload(10)))
     read_body = Body(Payload)

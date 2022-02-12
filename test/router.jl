@@ -10,12 +10,14 @@ using HTTP
 	router = Router()
 	register!(router, "/", GET, index)
 	register!(router, "*", GET, file_handler)
-	t = @async start(router)
+	t =  start(router)
 	res = HTTP.get("http://localhost:8081/")
 	@assert res.status == 200
 
 	res = HTTP.get("http://localhost:8081/a.json")
 	@assert res.status == 200
 
-	Base.throwto(t, InterruptException)
+
+	close(t)
+
 end

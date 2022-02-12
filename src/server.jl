@@ -4,8 +4,12 @@ using HTTP: RequestHandlerFunction
 
 export start
 
-# Stolen from here
+# Live reload functionality is adapted from here
 # https://github.com/JuliaWeb/HTTP.jl/issues/587
+
+# Due to some issues with InteruptExceptions we need to implement this 
+# in a different way
+# https://github.com/JuliaLang/julia/issues/25790#issuecomment-618986924
 
 macro async_logged(exs...)
     if length(exs) == 2
@@ -25,69 +29,26 @@ macro async_logged(exs...)
 end
 
 struct CancelToken
-    cancelled::Ref{Bool}
+    cancelled::Threads.Atomic{Bool}
+    restarts::Threads.Atomic{Int}
     cond::Threads.Condition
 end
 
-CancelToken() = CancelToken(Ref(false), Threads.Condition())
+CancelToken() = CancelToken(
+    Threads.Atomic{Bool}(false),  
+    Threads.Atomic{Int}(0),  
+    Threads.Condition()
+)
 
 function Base.close(token::CancelToken)
     lock(token.cond) do
         token.cancelled[] = true
         notify(token.cond)
+        notify(Revise.revision_event);
     end
 end
 Base.isopen(token::CancelToken) = lock(() -> !token.cancelled[], token.cond)
 Base.wait(token::CancelToken)   = lock(() -> wait(token.cond), token.cond)
-
-
-# -------------------------------------------------------------------------------
-# The server function
-function run_server(serve, token::CancelToken, host=ip"127.0.0.1", port=8081)
-    # @info "Starting HTTP server on address: $inet"
-    addr = Sockets.InetAddr(host, port)
-
-    server_sockets = Channel(1)
-    @sync begin
-        @async_logged "Server" begin
-            while isopen(token)
-                @info "Starting server on $port"
-                socket = Sockets.listen(addr)
-                try
-                    put!(server_sockets, socket)
-                    Base.invokelatest(serve, socket)
-                catch exc
-                    if exc isa Base.IOError && !isopen(socket)
-                        # Ok - server restarted
-                        continue
-                    end
-                    close(socket)
-                    rethrow()
-                end
-            end
-            @info "Exited server loop"
-        end
-
-        @async_logged "Revision loop" begin
-            # This is like Revise.entr but we control the event loop. This is
-            # necessary because we need to exit this loop cleanly when the user
-            # cancels the server, regardless of any revision event.
-            while isopen(token)
-                @info "Revision event"
-                wait(Revise.revision_event)
-                Revise.revise(throw=true)
-                # Restart the server's listen loop.
-                close(take!(server_sockets))
-            end
-            @info "Exited revise loop"
-        end
-
-        wait(token)
-        @assert !isopen(token)
-        notify(Revise.revision_event) # Trigger revise loop one last time.
-        @info "Server done"
-    end
-end
 
 function ws_upgrade(http::HTTP.Stream)
     # adapted from HTTP.WebSockets.upgrade; 
@@ -111,6 +72,7 @@ function start(
       host=ip"0.0.0.0", 
       port=8081,
       kw...)
+
     function serve(server)
         HTTP.serve(server = server, stream=true, kw...) do stream::HTTP.Stream
             try 
@@ -130,26 +92,42 @@ function start(
         end
     end
 
-    @sync begin
-        token = CancelToken()
-        @async run_server(serve, token, host, port)
-        try 
-            while true
-                yield()
-                # s = readline()
-                # if strip(s) == "q"
-                #     break
-                # else 
-                #     continue
-                # end
+    token = CancelToken()
+    addr = Sockets.InetAddr(host, port)
+    running  = Threads.Atomic{Bool}(true)
+    restarts  = Threads.Atomic{Int}(0)
+    server_sockets = Channel(1)
+
+    @info "Starting server"
+    @async_logged "Server" begin
+        while isopen(token)
+            socket = Sockets.listen(addr)
+            try
+                put!(server_sockets, socket)
+                Base.invokelatest(serve, socket)
+            catch e
+                if e isa Base.IOError && running[] 
+                    continue
+                else
+                    rethrow()
+                end
             end
-        catch e
-            if e isa InterruptException
-            else
-                rethrow(e)
-            end
-        finally
-            close(token)
         end
+        @info "Shutdown server"
     end
+
+    # This is like Revise.entr but we control the event loop. This is
+    # necessary because we need to exit this loop cleanly when the user
+    # cancels the server, regardless of any revision event.
+    @async_logged "Revision Loop" while isopen(token)
+            wait(Revise.revision_event)
+            Revise.revise(throw=true)
+            close(take!(server_sockets))
+            restarts[] += 1
+            if isopen(token)
+                @info "Revision event $(restarts[])"
+            end
+    end
+
+    token
 end

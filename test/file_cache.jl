@@ -1,4 +1,3 @@
-using JSON2Julia
 using FilePaths
 
 @testset "Static" begin

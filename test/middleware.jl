@@ -1,21 +1,29 @@
-using JSON2Julia: combine_middleware
+using Bonsai: combine_middleware
 using Dates
 
-function timer(stream, next)
-	x = now()
-	next(stream)
-	elapsed = x - now()
-	@info elapsed
+t = false
+c = false
+
+@testset "combine_middleware" begin
+
+	function timer(stream, next)
+		x = now()
+		next(stream)
+		elapsed = x - now()
+		@info elapsed
+		global t
+		t = true
+	end
+
+	function cors(stream, next)
+		next(stream)
+		global c
+		c = true
+	end
+
+	fn = combine_middleware([cors, timer ])
+	fn(nothing)
+	@test c && t
 end
 
-stream = nothing
 
-function cors(stream, next)
-	@info "CORS"
-	next(stream)
-end
-
-
-# fn = apply_middleware(stream, [timer])
-
-fn = combine_middleware(stream, [cors, timer ])
