@@ -1,42 +1,99 @@
-include("trie.jl")
+export Router, register!
 
-const GET     = "GET"
-const POST    = "POST"
-const PUT     = "PUT"
-const PATCH   = "PATCH"
-const DELETE  = "DELETE"
-const OPTIONS = "OPTIONS"
-const WS = "WS"
+struct Router 
+	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
+	middleware::Array{Tuple{HttpMethod, HttpPath, Any}}
+	error_handler::Function
+end
 
-mutable struct Router
-    routes::Dict{String,Trie{Handler}}
+function default_error_handler(stream::HTTP.Stream, error::Exception)
+	@error error
+	# https://github.com/wookay/Bukdu.jl/issues/105
+    HTTP.setstatus(stream, 500)
 end
 
 function Router()
-    Dict{String,Trie{Handler}}(
-        GET     => Trie{Handler}(),
-        POST    => Trie{Handler}(),
-        PUT     => Trie{Handler}(),
-        PATCH   => Trie{Handler}(),
-        DELETE  => Trie{Handler}(),
-        OPTIONS => Trie{Handler}(),
-        WS => Trie{Handler}()
-    ) |> Router
+	d = Dict(
+		GET => [],
+		POST => [],
+		PUT => [],
+		DELETE => [],
+		CONNECT => [],
+		OPTIONS => [],
+		TRACE => [],
+		PATCH => [],
+	)
+	Router(d, [], default_error_handler)
 end
 
-function (router::Router)(handler::Function, path::AbstractString; method = GET)
-    !isvalidpath(path) && error("Invalid path: $path")
-    routes = router.routes[method]
-    routes[path] = Handler(handler)
-    @assert has_handler(routes, path)
-    path
+function match_handler(router::Router, stream::Stream)
+	k = convert(HttpMethod, stream.message.method)
+	paths = router.paths[k]
+	for (path, handler) in paths
+		matches = match_path(path , stream.message.target)
+		if !isnothing(matches)
+			return handler
+		end
+	end
+	return nothing
+end
+function register!(
+	router::Router, 
+	path::AbstractString, 
+	method::HttpMethod, 
+	handler
+)
+	path = HttpPath(path)
+	register!(
+		router, 
+		path, 
+		method, 
+		handler
+	)
 end
 
-function isvalidpath(path::AbstractString)
-    # TODO this isn't the most robust will let things like "//" pass
-    # https://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
-    re = r"^[/a-zA-Z0-9-_.-~!$&'()*+,;@]+$"
-    m = match(re, path)
-    uri = URI(path)
-    m !== nothing && m.match == path && uri.path == path
+
+function register!(
+	router::Router, 
+	path::HttpPath, 
+	method::HttpMethod, 
+	handler
+)
+
+	paths = router.paths[method] 
+	stream_handlers = methods(handler, (Stream,))
+	request_handlers = methods(handler, (Request,))
+	handlers = [stream_handlers ; request_handlers]
+
+	if length(handlers) < 1
+		error("No method matching $handler(::Request) or $handler(::Stream)")
+	end
+
+	precompile(handler, (Stream,))
+	push!(paths, path => handler)
+	# make greddy handlers match last
+	sort!( paths, by = x -> isgreedy(x[1]))
+	return nothing
+end
+
+function match_middleware(router::Router, stream::Stream)
+	middleware = []
+	for (method, path, fn) in router.middleware
+		x = match_path(path , stream.message.target)
+		if !isnothing(x) && stream.message.method == method
+			push!(middleware, fn)
+		end
+	end
+	return middleware
+end
+
+function register!(
+	router::Router, 
+	path::HttpPath, 
+	methods::Tuple{HttpMethod}, 
+	handler
+)
+	for method in methods
+		register!(router, path, method, handler)
+	end
 end

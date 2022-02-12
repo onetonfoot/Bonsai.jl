@@ -1,4 +1,5 @@
 {
   "julia.useRevise": true,
+  "julia.lint.run": true,
   "editor.formatOnSave": false
 }
