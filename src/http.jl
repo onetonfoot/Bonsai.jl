@@ -81,21 +81,24 @@ end
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 
-function (query::Query{T})(req::Request)::T where T
+function (query::Query{T})(stream::HTTP.Stream)::T where T
 	try
-		q = queryparams(URI(req.target))
+		q = queryparams(URI(stream.message.target))
 		JSON3.read(q, T)
 	catch e
-		@error "Failed to convert query into $T"
+		@debug "Failed to convert query into $T"
 		rethrow(e)
 	end
 end
 
-function (body::Body{T})(req::Request)::T where T
+# Not puting a specipic type anotation on stream allows
+# for easier tetsing
+function (body::Body{T})(stream)::T where T
 	try
-		JSON3.read(req.body, T)
+		@info "yaaa"
+		JSON3.read(stream, T)
 	catch e
-		@error "Failed to convert body into $T"
+		@debug "Failed to convert body into $T"
 		rethrow(e)
 	end
 end

@@ -1,4 +1,4 @@
-export hp_str, HttpPath
+export HttpPath
 
 # https://github.com/gofiber/fiber/blob/master/path.go
 mutable struct PathSegment 
@@ -103,4 +103,13 @@ function match_path(p::HttpPath, s::AbstractString)
 	end
 
 	p.parameters(path_parameters)
+end
+
+
+function isvalidpath(path::AbstractString)
+    # https://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
+    re = r"^[/a-zA-Z0-9-_.-~!$&'()*+,;@]+$"
+    m = match(re, path)
+    uri = URI(path)
+    m !== nothing && m.match == path && uri.path == path && !("//" in path)
 end

@@ -37,6 +37,24 @@ function match_handler(router::Router, stream::Stream)
 	end
 	return nothing
 end
+
+function register!(
+	router::Router, 
+	path::String, 
+	method::HttpMethod, 
+	static::Static,
+)
+	path = HttpPath(path)
+	handler = stream -> static(stream, stream.message.target)
+
+	register!(
+		router, 
+		path, 
+		method, 
+		handler
+	)
+end
+
 function register!(
 	router::Router, 
 	path::AbstractString, 

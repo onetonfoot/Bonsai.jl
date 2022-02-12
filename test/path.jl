@@ -1,12 +1,14 @@
-using JSON2Julia: Path, PathSegment, @p_str, match_path
+using Bonsai: HttpPath, PathSegment, match_path
 
 @testset "Path" begin
-    p1 = p"/hello/:world"
-    p2 = p"/hello/world"
+    p1 = HttpPath("/hello/:world")
+    p2 = HttpPath("/hello/world")
+    p3 = HttpPath("/hello/*")
 
-    @test !isnothing(match_path(p"/", "/"))
+    @test !isnothing(match_path(HttpPath("/"), "/"))
     @test !isnothing(match_path(p1, "/hello/world"))
+    @test match_path(p1, "/hello/world").world == "world"
     @test !isnothing(match_path(p2, "/hello/world"))
     @test isnothing(match_path(p2, "/hello/mate"))
-    @test isnothing(match_path(p2, "/hello/world/mate"))
+    @test !isnothing(match_path(p3, "/hello/world/mate"))
 end

@@ -1,19 +1,21 @@
-using JSON2Julia: Router, register!, @p_str
+using FilePaths
 using HTTP: Stream, Request
 using HTTP
 
-function index(req::Stream)
+@testset "register!" begin
+	file_handler = Static(Path(@__DIR__))
+	function index(stream) 
+		file_handler(stream, "index.html")
+	end
+	router = Router()
+	register!(router, "/", GET, index)
+	register!(router, "*", GET, file_handler)
+	t = @async start(router)
+	res = HTTP.get("http://localhost:8081/")
+	@assert res.status == 200
 
+	res = HTTP.get("http://localhost:8081/a.json")
+	@assert res.status == 200
+
+	Base.throwto(t, InterruptException)
 end
-
-function index(req::HTTP.Stream)
-
-end
-
-methods(index, (Stream, ))
-
-methods(index)
-
-router = Router()
-
-register!(router, p"/", "GET", index)

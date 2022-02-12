@@ -135,12 +135,13 @@ function start(
         @async run_server(serve, token, host, port)
         try 
             while true
-                s = readline()
-                if strip(s) == "q"
-                    break
-                else 
-                    continue
-                end
+                yield()
+                # s = readline()
+                # if strip(s) == "q"
+                #     break
+                # else 
+                #     continue
+                # end
             end
         catch e
             if e isa InterruptException
