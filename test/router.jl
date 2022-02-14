@@ -16,8 +16,5 @@ using HTTP
 
 	res = HTTP.get("http://localhost:8081/a.json")
 	@assert res.status == 200
-
-
 	close(t)
-
 end

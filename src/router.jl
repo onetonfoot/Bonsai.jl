@@ -2,7 +2,7 @@ export Router, register!
 
 struct Router 
 	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
-	middleware::Array{Tuple{HttpMethod, HttpPath, Any}}
+	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	error_handler::Function
 end
 
@@ -23,19 +23,43 @@ function Router()
 		TRACE => [],
 		PATCH => [],
 	)
-	Router(d, [], default_error_handler)
+	Router(d, deepcopy(d), default_error_handler)
 end
 
-function match_handler(router::Router, stream::Stream)
-	k = convert(HttpMethod, stream.message.method)
-	paths = router.paths[k]
+function match_handler(router::Router, method::HttpMethod, target::String)
+	paths = router.paths[method]
 	for (path, handler) in paths
-		matches = match_path(path , stream.message.target)
+		matches = match_path(path , target)
 		if !isnothing(matches)
 			return handler
 		end
 	end
 	return nothing
+end
+
+function match_handler(router::Router, stream::Stream)
+	method = convert(HttpMethod, stream.message.method)
+	target = stream.message.target
+	match_handler(router, method, target)
+end
+
+
+function match_middleware(router::Router, method::HttpMethod, target::String)
+	paths = router.middleware[method]
+	handlers = []
+	for (path, handler) in paths
+		matches = match_path(path , target)
+		if !isnothing(matches)
+			push!(handlers, handler)
+		end
+	end
+	return handlers
+end
+
+function match_middleware(router::Router, stream::Stream)
+	method = convert(HttpMethod, stream.message.method)
+	target = stream.message.target
+	match_middleware(router, method, target)
 end
 
 function register!(
@@ -77,34 +101,11 @@ function register!(
 	method::HttpMethod, 
 	handler
 )
-
 	paths = router.paths[method] 
-	stream_handlers = methods(handler, (Stream,))
-	request_handlers = methods(handler, (Request,))
-	handlers = [stream_handlers ; request_handlers]
-
-	if length(handlers) < 1
-		error("No method matching $handler(::Request) or $handler(::Stream)")
-	end
-
-	precompile(handler, (Stream,))
-	push!(paths, path => handler)
-	# make greddy handlers match last
-	sort!( paths, by = x -> isgreedy(x[1]))
-	return nothing
+	_register!(paths, path, handler)
 end
 
-function match_middleware(router::Router, stream::Stream)
-	middleware = []
-	for (method, path, fn) in router.middleware
-		x = match_path(path , stream.message.target)
-		if !isnothing(x) && stream.message.method == method
-			push!(middleware, fn)
-		end
-	end
-	return middleware
-end
-
+#  POST | GET is and example of when this would be called with a tuple
 function register!(
 	router::Router, 
 	path::HttpPath, 
@@ -114,4 +115,20 @@ function register!(
 	for method in methods
 		register!(router, path, method, handler)
 	end
+end
+
+function _register!(
+	paths::Array, 
+	path::HttpPath, 
+	handler
+)
+	if !isempty(methods(handler, (Stream,)))
+		precompile(handler, (Stream,))
+	end
+
+	push!(paths, path => handler)
+	# make greddy handlers match last
+	sort!( paths, by = x -> isgreedy(x[1]))
+	return nothing
+
 end

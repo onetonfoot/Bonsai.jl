@@ -1,4 +1,5 @@
-using Bonsai: combine_middleware
+using Bonsai
+using Bonsai: combine_middleware, match_middleware
 using Dates
 
 t = false
@@ -26,4 +27,16 @@ c = false
 	@test c && t
 end
 
+@testset "middleware!" begin
+	r = Router()
+	function f(stream, next) end
+	middleware!(r, f)
+	@test all(length.(values(r.middleware)) .== 1)
+end
 
+@testset "match_middleware" begin
+	r = Router()
+	function f(stream, next) end
+	middleware!(r, f)
+	@test length(match_middleware(r, GET, "/")) == 1
+end

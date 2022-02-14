@@ -45,7 +45,7 @@ function Base.convert(::Type{HttpMethod}, x::AbstractString)
 	elseif x == "TRACE"
 		TRACE
 	elseif x == "PATCH"
-		TRACE
+		PATCH
 	else 
 		error("$x isn't a http method")
 	end
@@ -59,7 +59,7 @@ end
 (==)(::Options, b) = b == "OPTIONS" || b == :OPTIONS
 (==)(::Connect, b) = b == "CONNECT" || b == :CONNECT
 (==)(::Trace, b) = b == "TRACE" || b == :TRACE
-(==)(::Patch, b) = b == "PATCH" || b == :TRACE
+(==)(::Patch, b) = b == "PATCH" || b == :PATCH
 
 (==)(a, b::Tuple{Vararg{HttpMethod}}) = b == a
 function (==)(a::Tuple{Vararg{HttpMethod}}, b) 
@@ -95,7 +95,6 @@ end
 # for easier tetsing
 function (body::Body{T})(stream)::T where T
 	try
-		@info "yaaa"
 		JSON3.read(stream, T)
 	catch e
 		@debug "Failed to convert body into $T"
