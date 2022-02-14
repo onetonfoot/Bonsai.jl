@@ -67,6 +67,8 @@ function four_o_four(stream::HTTP.Stream)
 end
 
 
+struct NoHandler <: Exception end
+
 function start(
       app::Router;
       host=ip"0.0.0.0", 
@@ -77,14 +79,19 @@ function start(
         HTTP.serve(server = server, stream=true, kw...) do stream::HTTP.Stream
             try 
                 handler = match_handler(app, stream)
-                middleware = match_middleware(app, stream)
+                all_handlers = match_middleware(app, stream)
 
                 if !isnothing(handler)
-                    push!(middleware, (stream, next) -> handler(stream))
+                    push!(all_handlers, (stream, next) -> handler(stream))
                 end
 
-                all_handlers = combine_middleware(middleware)
-                HTTP.handle(HTTP.StreamHandlerFunction(all_handlers), stream)
+                if isempty(all_handlers)
+                    throw(NoHandler())
+                end
+
+                fn = combine_middleware(all_handlers)
+
+                HTTP.handle(HTTP.StreamHandlerFunction(fn), stream)
             catch e
                 error_handler = stream -> app.error_handler(stream, e)
                 HTTP.handle(HTTP.StreamHandlerFunction(error_handler), stream)

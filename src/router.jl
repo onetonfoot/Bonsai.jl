@@ -1,15 +1,15 @@
 export Router, register!
 
-struct Router 
+mutable struct Router 
 	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	error_handler::Function
 end
 
 function default_error_handler(stream::HTTP.Stream, error::Exception)
-	@error error
 	# https://github.com/wookay/Bukdu.jl/issues/105
     HTTP.setstatus(stream, 500)
+	throw(error)
 end
 
 function Router()

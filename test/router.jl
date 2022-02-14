@@ -12,9 +12,10 @@ using HTTP
 	register!(router, "*", GET, file_handler)
 	t =  start(router)
 	res = HTTP.get("http://localhost:8081/")
-	@assert res.status == 200
+	@test res.status == 200
 
 	res = HTTP.get("http://localhost:8081/a.json")
-	@assert res.status == 200
+	@test res.status == 200
+
 	close(t)
 end
