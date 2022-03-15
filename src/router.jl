@@ -1,4 +1,6 @@
-export Router, register!
+import Base: get!, put!, delete!, all!
+
+export Router, get!, post!, put!, patch!, options!, trace!, connect!, all!
 
 mutable struct Router 
 	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
@@ -63,72 +65,64 @@ function match_middleware(router::Router, stream::Stream)
 end
 
 function register!(
-	router::Router, 
-	path::String, 
-	method::HttpMethod, 
-	static::Static,
-)
-	path = HttpPath(path)
-	handler = stream -> static(stream, stream.message.target)
-
-	register!(
-		router, 
-		path, 
-		method, 
-		handler
-	)
-end
-
-function register!(
-	router::Router, 
-	path::AbstractString, 
-	method::HttpMethod, 
-	handler
-)
-	path = HttpPath(path)
-	register!(
-		router, 
-		path, 
-		method, 
-		handler
-	)
-end
-
-
-function register!(
-	router::Router, 
-	path::HttpPath, 
-	method::HttpMethod, 
-	handler
-)
-	paths = router.paths[method] 
-	_register!(paths, path, handler)
-end
-
-#  POST | GET is and example of when this would be called with a tuple
-function register!(
-	router::Router, 
-	path::HttpPath, 
-	methods::Tuple{HttpMethod}, 
-	handler
-)
-	for method in methods
-		register!(router, path, method, handler)
-	end
-end
-
-function _register!(
 	paths::Array, 
 	path::HttpPath, 
-	handler
+	handler::AbstractHandler
 )
-	if !isempty(methods(handler, (Stream,)))
-		precompile(handler, (Stream,))
+	push!(paths, path => handler)
+	# ensure that the greedy handlers match last
+	sort!(paths, by = x -> isgreedy(x[1]))
+	return nothing
+end
+
+function register!(router::Router, path, method::HttpMethod, handler::AbstractHandler)
+	paths = if handler isa HttpHandler
+		router.paths[method] 
+	elseif handler isa Middleware
+		router.middleware[method] 
+	elseif handler isa Static
+		router.paths[method] 
+	else
+		error("Unsupported handler type $(typeof(handler))")
 	end
 
-	push!(paths, path => handler)
-	# make greddy handlers match last
-	sort!( paths, by = x -> isgreedy(x[1]))
-	return nothing
+	register!(paths, HttpPath(path), handler)
+end
 
+function register!( router::Router, path, method::HttpMethod, handler)
+
+	ms = methods(handler)
+	c = 0
+
+	for m in ms
+		if m.nargs in [2, 3] && m.sig.types[2] in [Any, Stream]
+			T = m.nargs == 2 ? HttpHandler : Middleware
+			register!(
+				router, 
+				path, 
+				method, 
+				T(handler)
+			)
+			c+= 1
+		end
+	end
+
+	if c == 0 
+		error("""Unable to infer correct handler type. Please wrap handler with correct AbstractHandler subtype""")
+	end
+end
+
+get!(    router::Router, path, handler) = register!(router, path, GET, handler)
+put!(    router::Router, path, handler) = register!(router, path, PUT, handler)
+post!(    router::Router, path, handler) = register!(router, path, POST, handler)
+patch!(  router::Router, path, handler) = register!(router, path, PATCH, handler)
+delete!( router::Router, path, handler) = register!(router, path, DELETE, handler)
+options!(router::Router, path, handler) = register!(router, path, OPTIONS, handler)
+connect!(router::Router, path, handler) = register!(router, path, CONNECT, handler)
+trace!(  router::Router, path, handler) = register!(router, path, TRACE, handler)
+
+function all!(router::Router, path, handler) 
+	for method in ALL
+		register!(router, path, method, handler)
+	end
 end

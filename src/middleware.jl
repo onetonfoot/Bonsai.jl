@@ -11,7 +11,7 @@ function cors(stream::Stream, next)
 		for i in headers
 			HTTP.setheader(stream, i)
 		end
-
+		write(stream, "ok")
 		HTTP.setstatus(stream, 200)
 	else
 		HTTP.setheader(stream, "Access-Control-Allow-Origin" => "*")
@@ -21,7 +21,7 @@ function cors(stream::Stream, next)
 	next(stream)
 end
 
-function combine_middleware(middleware)
+function combine_middleware(middleware::Vector)
 	i = length(middleware)
 
 	if i == 0
@@ -36,16 +36,3 @@ function combine_middleware(middleware)
 	return fns[1]
 end
 
-
-function middleware!(router::Router, path::HttpPath, method::HttpMethod, handler)
-	paths = router.middleware[method]
-	_register!(paths, path, handler)
-end
-
-function middleware!(router::Router, path::HttpPath, methods::Tuple{Vararg{HttpMethod}}, handler)
-	for method in methods
-		middleware!(router, path, method, handler)
-	end
-end
-
-middleware!(router::Router, handler) = middleware!(router, HttpPath("*"), ALL, handler)

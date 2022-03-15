@@ -1,9 +1,22 @@
-export Static
-
 import FilePathsBase: /
 using Base.Libc
 
-struct Static{T <: AbstractPath} 
+export Static
+
+abstract type AbstractHandler end
+
+(handler::AbstractHandler)(args...) = handler.fn(args...)
+
+struct Middleware  <: AbstractHandler 
+    fn 
+end
+
+struct HttpHandler  <: AbstractHandler
+	fn
+end
+
+
+struct Static{T <: AbstractPath}  <: AbstractHandler
     path::T
     lru::LRU{String,Array{UInt8}}
 end
@@ -15,13 +28,18 @@ function Static(path::T; maxsize = 1000, exclude=r".*") where T <: AbstractPath
     )
 end
 
+
+function (folder::Static{T})(stream::HTTP.Stream) where T
+    folder(stream, stream.message.target)
+end
+
 function (folder::Static{T})(io, file; strict=true) where T
 
     if file isa AbstractString
         file = T(file)
     end
 
-    # collecting and then splating handles join paths starting the /
+    # collecting and then splating handles joining paths starting with /
     file = normalize(joinpath(folder.path, collect(file)...))
     hasprefix = startswith(string(folder.path))
     file_str = string(file)

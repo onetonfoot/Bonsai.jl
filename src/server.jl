@@ -4,12 +4,13 @@ using HTTP: RequestHandlerFunction
 
 export start
 
-# Live reload functionality is adapted from here
+# Due to some issues with InteruptExceptions we need to implement live
+# reload using a cancel token
+# https://github.com/JuliaLang/julia/issues/25790#issuecomment-618986924
+
+# Much of the code is adapted from here
 # https://github.com/JuliaWeb/HTTP.jl/issues/587
 
-# Due to some issues with InteruptExceptions we need to implement this 
-# in a different way
-# https://github.com/JuliaLang/julia/issues/25790#issuecomment-618986924
 
 macro async_logged(exs...)
     if length(exs) == 2
@@ -27,7 +28,6 @@ macro async_logged(exs...)
         end
     end
 end
-
 struct CancelToken
     cancelled::Threads.Atomic{Bool}
     restarts::Threads.Atomic{Int}
@@ -47,8 +47,20 @@ function Base.close(token::CancelToken)
         notify(Revise.revision_event);
     end
 end
+
 Base.isopen(token::CancelToken) = lock(() -> !token.cancelled[], token.cond)
-Base.wait(token::CancelToken)   = lock(() -> wait(token.cond), token.cond)
+
+function Base.wait(token::CancelToken)  
+    try
+        lock(() -> wait(token.cond), token.cond)
+    catch e 
+        if e isa InterruptException
+            close(token)
+        else 
+            rethrow()
+        end
+    end
+end
 
 function ws_upgrade(http::HTTP.Stream)
     # adapted from HTTP.WebSockets.upgrade; 
@@ -135,6 +147,5 @@ function start(
                 @info "Revision event $(restarts[])"
             end
     end
-
     token
 end

@@ -5,7 +5,7 @@ function timer(stream, next)
     # the next middleware or handler in the stack
     next(stream)
     elapsed = now() - x
-    # @info stream.message.target elapsed
+    @info "$(stream.message.target) took $elapsed" 
 end
 
 function file_handler(stream)
@@ -15,9 +15,10 @@ end
 
 function main()
     router = Router()
-    register!(router, "*", GET, file_handler)
+    # register!(router, "*", GET, file_handler)
+    get!(router, "*", file_handler)
     middleware!(router, timer)
-    start(router)
+    wait(start(router))
 end
 
 main()

@@ -58,6 +58,8 @@ function HttpPath(s::AbstractString)
 	)
 end
 
+HttpPath(s::HttpPath) = s
+
 
 function ismatch(p::PathSegment, s::AbstractString)
 	if p.is_greedy
