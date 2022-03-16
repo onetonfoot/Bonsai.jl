@@ -119,4 +119,4 @@ function start(
 end
 
 stop(app::Router) = close(app.cancel_token)
-wait(app::Router) = wait(app.cancel_token)
+Base.wait(app::Router) = wait(app.cancel_token)

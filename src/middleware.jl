@@ -1,7 +1,4 @@
-export middleware!
-
 function cors(stream::Stream, next)
-
 	if stream.message.method == OPTIONS
 		headers = [
 			"Access-Control-Allow-Origin" => "*",
@@ -17,7 +14,6 @@ function cors(stream::Stream, next)
 		HTTP.setheader(stream, "Access-Control-Allow-Origin" => "*")
 		HTTP.setstatus(stream, 200)
 	end
-
 	next(stream)
 end
 
@@ -35,4 +31,3 @@ function combine_middleware(middleware::Vector)
 	end
 	return fns[1]
 end
-

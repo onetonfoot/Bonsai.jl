@@ -1,5 +1,6 @@
 using Bonsai
 using Bonsai: combine_middleware, match_middleware, Middleware
+using URIs
 using Dates
 
 t = false
@@ -38,7 +39,7 @@ end
 	r = Router()
 	function f(stream, next) end
 	all!(r, "*" , Middleware(f))
-	@test length(match_middleware(r, GET, "/")) == 1
+	@test length(match_middleware(r, GET, URI("/")))== 1
 end
 
 @testset "match_middleware" begin

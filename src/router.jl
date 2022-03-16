@@ -29,10 +29,10 @@ function Router()
 	Router(d, deepcopy(d), default_error_handler, CancelToken())
 end
 
-function match_handler(router::Router, method::HttpMethod, target::String)
+function match_handler(router::Router, method::HttpMethod, uri::URI)
 	paths = router.paths[method]
 	for (path, handler) in paths
-		matches = match_path(path , target)
+		matches = match_path(path , uri.path)
 		if !isnothing(matches)
 			return handler
 		end
@@ -42,16 +42,16 @@ end
 
 function match_handler(router::Router, stream::Stream)
 	method = convert(HttpMethod, stream.message.method)
-	target = stream.message.target
+	target = URI(stream.message.target)
 	match_handler(router, method, target)
 end
 
 
-function match_middleware(router::Router, method::HttpMethod, target::String)
+function match_middleware(router::Router, method::HttpMethod, uri::URI)
 	paths = router.middleware[method]
 	handlers = []
 	for (path, handler) in paths
-		matches = match_path(path , target)
+		matches = match_path(path , uri.path)
 		if !isnothing(matches)
 			push!(handlers, handler)
 		end
@@ -61,7 +61,7 @@ end
 
 function match_middleware(router::Router, stream::Stream)
 	method = convert(HttpMethod, stream.message.method)
-	target = stream.message.target
+	target = URI(stream.message.target)
 	match_middleware(router, method, target)
 end
 

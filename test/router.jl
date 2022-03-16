@@ -16,6 +16,10 @@ using Bonsai: HttpHandler
 	t =  start(router, port=port)
 	res = HTTP.get("http://localhost:$port/")
 	@test res.status == 200
+
+	res = HTTP.get("http://localhost:$port/?x=100")
+	@test res.status == 200
+
 	res = HTTP.get("http://localhost:$port/a.json")
 	@test res.status == 200
 
