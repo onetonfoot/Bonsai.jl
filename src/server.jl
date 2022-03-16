@@ -52,30 +52,42 @@ function start(
       app::Router;
       host=ip"0.0.0.0", 
       port=8081,
-      kw...)
+      kwargs...)
 
-    function serve(server)
-        HTTP.serve(server = server, stream=true, kw...) do stream::HTTP.Stream
-            try 
-                handler = match_handler(app, stream)
-                all_handlers = match_middleware(app, stream)
+    function handler_function(stream::HTTP.Stream)
+        try 
+            handler = match_handler(app, stream)
+            all_handlers = match_middleware(app, stream)
 
-                if !isnothing(handler)
-                    push!(all_handlers, (stream, next) -> handler(stream))
-                end
-
-                if isempty(all_handlers)
-                    throw(NoHandler())
-                end
-
-                fn = combine_middleware(all_handlers)
-
-                HTTP.handle(HTTP.StreamHandlerFunction(fn), stream)
-            catch e
-                error_handler = stream -> app.error_handler(stream, e)
-                HTTP.handle(HTTP.StreamHandlerFunction(error_handler), stream)
+            if !isnothing(handler)
+                push!(all_handlers, (stream, next) -> handler(stream))
             end
+
+            if isempty(all_handlers)
+                throw(NoHandler())
+            end
+
+            combined_handler = combine_middleware(all_handlers)
+
+            fn = stream -> begin
+                try
+                    combined_handler(stream)
+                catch e
+                    app.error_handler(stream, e)
+                end
+            end  
+
+            fn(stream)
+        catch e
+            rethrow(e)
         end
+    end
+
+    function serve_fn(server)
+        HTTP.serve(
+            HTTP.StreamHandlerFunction(handler_function), 
+            host, port; server=server, kwargs...
+        ) 
     end
 
     token = app.cancel_token
@@ -90,7 +102,7 @@ function start(
             socket = Sockets.listen(addr)
             try
                 put!(server_sockets, socket)
-                Base.invokelatest(serve, socket)
+                Base.invokelatest(serve_fn, socket)
             catch e
                 if e isa Base.IOError && running[] 
                     continue
