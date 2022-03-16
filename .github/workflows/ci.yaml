@@ -4,6 +4,9 @@ on:
     branches:
       - master
     tags: '*'
+    paths:
+     - 'src/**'
+     - 'test/**'
   pull_request:
 concurrency:
   # Skip intermediate builds: always.
