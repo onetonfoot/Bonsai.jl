@@ -36,6 +36,8 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           files: lcov.info
-      - uses: julia-actions/julia-uploadcoveralls@v1
-        env:
-          COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+          # flags: unittests
+          # name: codecov-umbrella
+          fail_ci_if_error: true
+          token: ${{ secrets.COVERALLS_TOKEN }}
+          verbose: true
