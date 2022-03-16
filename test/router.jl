@@ -4,7 +4,7 @@ using HTTP: Stream, Request
 using HTTP
 using Bonsai: HttpHandler
 
-@testset "register!" begin
+@testset "start" begin
 	file_handler = Static(Path(@__DIR__))
 	function index(stream) 
 		file_handler(stream, "index.html")
@@ -19,5 +19,5 @@ using Bonsai: HttpHandler
 	res = HTTP.get("http://localhost:$port/a.json")
 	@test res.status == 200
 
-	close(t)
+	stop(t)
 end

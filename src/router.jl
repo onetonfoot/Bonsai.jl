@@ -6,6 +6,7 @@ mutable struct Router
 	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	error_handler::Function
+	cancel_token::CancelToken
 end
 
 function default_error_handler(stream::HTTP.Stream, error::Exception)
@@ -25,7 +26,7 @@ function Router()
 		TRACE => [],
 		PATCH => [],
 	)
-	Router(d, deepcopy(d), default_error_handler)
+	Router(d, deepcopy(d), default_error_handler, CancelToken())
 end
 
 function match_handler(router::Router, method::HttpMethod, target::String)

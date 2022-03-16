@@ -15,9 +15,8 @@ end
 
 function main()
     router = Router()
-    # register!(router, "*", GET, file_handler)
     get!(router, "*", file_handler)
-    middleware!(router, timer)
+    all!(router, timer)
     wait(start(router))
 end
 

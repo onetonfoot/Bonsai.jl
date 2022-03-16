@@ -2,7 +2,7 @@ using Revise
 using Sockets
 using HTTP: RequestHandlerFunction
 
-export start
+export start, stop
 
 # Due to some issues with InteruptExceptions we need to implement live
 # reload using a cancel token
@@ -24,39 +24,6 @@ macro async_logged(exs...)
             $(esc(body))
         catch exc
             @error string($(esc(taskname)), " failed") exception = (exc, catch_backtrace())
-            rethrow()
-        end
-    end
-end
-struct CancelToken
-    cancelled::Threads.Atomic{Bool}
-    restarts::Threads.Atomic{Int}
-    cond::Threads.Condition
-end
-
-CancelToken() = CancelToken(
-    Threads.Atomic{Bool}(false),  
-    Threads.Atomic{Int}(0),  
-    Threads.Condition()
-)
-
-function Base.close(token::CancelToken)
-    lock(token.cond) do
-        token.cancelled[] = true
-        notify(token.cond)
-        notify(Revise.revision_event);
-    end
-end
-
-Base.isopen(token::CancelToken) = lock(() -> !token.cancelled[], token.cond)
-
-function Base.wait(token::CancelToken)  
-    try
-        lock(() -> wait(token.cond), token.cond)
-    catch e 
-        if e isa InterruptException
-            close(token)
-        else 
             rethrow()
         end
     end
@@ -111,7 +78,7 @@ function start(
         end
     end
 
-    token = CancelToken()
+    token = app.cancel_token
     addr = Sockets.InetAddr(host, port)
     running  = Threads.Atomic{Bool}(true)
     restarts  = Threads.Atomic{Int}(0)
@@ -147,5 +114,13 @@ function start(
                 @info "Revision event $(restarts[])"
             end
     end
-    token
+
+    app
 end
+
+
+function stop(app::Router)
+    close(app.cancel_token)
+end
+
+
