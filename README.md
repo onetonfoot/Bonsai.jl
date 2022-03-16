@@ -1,7 +1,7 @@
 # Bonsai
 
-[![Coverage Status](https://coveralls.io/repos/github/onetonfoot/Bonsai.jl/badge.svg?branch=master)](https://coveralls.io/github/onetonfoot/Bonsai.jl?branch=master)
+[![codecov](https://codecov.io/gh/onetonfoot/Bonsai.jl/branch/master/graph/badge.svg?token=96CcO21IsK)](https://codecov.io/gh/onetonfoot/Bonsai.jl)
 
-# Examples
+# Example
 
 Please see the `examples` folder.
