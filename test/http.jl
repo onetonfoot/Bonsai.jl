@@ -5,6 +5,12 @@ end
 
 StructTypes.StructType(::Type{Payload}) = StructTypes.Struct()
 
+struct PayloadTyped
+    x::Int
+end
+
+StructTypes.StructType(::Type{PayloadTyped}) = StructTypes.Struct()
+
 @testset "Body" begin
     io = IOBuffer( JSON3.write(Payload(10)))
     read_body = Body(Payload)
@@ -39,11 +45,23 @@ end
         JSON3.write(stream, q)
     end
 
-    get!(router, "*", fn)
+    function fn_typed(stream)
+        read_query = Query(PayloadTyped)
+        q = read_query(stream)
+        JSON3.write(stream, q)
+    end
+
+    get!(router, "/any", fn)
+    get!(router, "/typed", fn_typed)
 
     port = 10000
     start(router, port=port)
-    res = HTTP.get("http://localhost:$port?x=10")
+
+    res = HTTP.get("http://localhost:$port/any?x=10")
     @test res.status == 200
+
+
+    res = HTTP.get("http://localhost:$port/typed?x=10")
+
     stop(router)
 end

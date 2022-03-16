@@ -83,7 +83,14 @@ end
 
 function (query::Query{T})(stream::HTTP.Stream)::T where T
 	try
-		q = queryparams(URI(stream.message.target))
+		q::Dict{Any, Any} = queryparams(URI(stream.message.target))
+
+		for (k,v) in q
+			if !isnothing(match(r"\d+", v))
+				q[k] = parse(Int, v)
+			end
+		end
+
 		JSON3.read(JSON3.write(q), T)
 	catch e
 		@debug "Failed to convert query into $T"
