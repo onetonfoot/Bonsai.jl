@@ -118,9 +118,5 @@ function start(
     app
 end
 
-
-function stop(app::Router)
-    close(app.cancel_token)
-end
-
-
+stop(app::Router) = close(app.cancel_token)
+wait(app::Router) = wait(app.cancel_token)
