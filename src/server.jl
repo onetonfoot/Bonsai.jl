@@ -29,16 +29,43 @@ macro async_logged(exs...)
     end
 end
 
-function ws_upgrade(http::HTTP.Stream)
-    # adapted from HTTP.WebSockets.upgrade; 
-    HTTP.setstatus(http, 101)
-    HTTP.setheader(http, "Upgrade" => "websocket")
-    HTTP.setheader(http, "Connection" => "Upgrade")
-    key = HTTP.header(http, "Sec-WebSocket-Key")
-    HTTP.setheader(http, "Sec-WebSocket-Accept" => HTTP.WebSockets.accept_hash(key))
-    HTTP.startwrite(http)
+# function ws_upgrade(http::HTTP.Stream)
+#     # adapted from HTTP.WebSockets.upgrade; 
+#     HTTP.setstatus(http, 101)
+#     HTTP.setheader(http, "Upgrade" => "websocket")
+#     HTTP.setheader(http, "Connection" => "Upgrade")
+#     key = HTTP.header(http, "Sec-WebSocket-Key")
+#     HTTP.setheader(http, "Sec-WebSocket-Accept" => HTTP.WebSockets.accept_hash(key))
+#     HTTP.startwrite(http)
+#     io = http.stream
+#     return HTTP.WebSockets.WebSocket(io; server=true)
+# end
+
+using HTTP: setstatus, setheader, header, hasheader
+using HTTP.WebSockets: WebSocket, accept_hash, check_upgrade, WebSocketError
+
+function ws_upgrade(http::HTTP.Stream; binary=false)
+
+    @info "upgrading"
+
+    check_upgrade(http)
+    if !hasheader(http, "Sec-WebSocket-Version", "13")
+        throw(WebSocketError(0, "Expected \"Sec-WebSocket-Version: 13\"!\n" *
+                                "$(http.message)"))
+    end
+
+    setstatus(http, 101)
+    setheader(http, "Upgrade" => "websocket")
+    setheader(http, "Connection" => "Upgrade")
+    key = header(http, "Sec-WebSocket-Key")
+    setheader(http, "Sec-WebSocket-Accept" => accept_hash(key))
+
+    startwrite(http)
+
     io = http.stream
-    return HTTP.WebSockets.WebSocket(io; server=true)
+    req = http.message
+    ws = WebSocket(io; binary=binary, server=true, request=req)
+    return ws
 end
 
 function four_o_four(stream::HTTP.Stream)
