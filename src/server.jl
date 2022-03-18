@@ -1,6 +1,7 @@
 using Revise
 using Sockets
-using HTTP: RequestHandlerFunction
+using HTTP: setstatus, setheader, header, hasheader
+using HTTP.WebSockets: WebSocket, accept_hash, check_upgrade, WebSocketError
 
 export start, stop
 
@@ -29,20 +30,6 @@ macro async_logged(exs...)
     end
 end
 
-# function ws_upgrade(http::HTTP.Stream)
-#     # adapted from HTTP.WebSockets.upgrade; 
-#     HTTP.setstatus(http, 101)
-#     HTTP.setheader(http, "Upgrade" => "websocket")
-#     HTTP.setheader(http, "Connection" => "Upgrade")
-#     key = HTTP.header(http, "Sec-WebSocket-Key")
-#     HTTP.setheader(http, "Sec-WebSocket-Accept" => HTTP.WebSockets.accept_hash(key))
-#     HTTP.startwrite(http)
-#     io = http.stream
-#     return HTTP.WebSockets.WebSocket(io; server=true)
-# end
-
-using HTTP: setstatus, setheader, header, hasheader
-using HTTP.WebSockets: WebSocket, accept_hash, check_upgrade, WebSocketError
 
 function ws_upgrade(http::HTTP.Stream; binary=false)
 
@@ -67,11 +54,6 @@ function ws_upgrade(http::HTTP.Stream; binary=false)
     ws = WebSocket(io; binary=binary, server=true, request=req)
     return ws
 end
-
-function four_o_four(stream::HTTP.Stream)
-    HTTP.setstatus(stream, 404)
-end
-
 
 struct NoHandler <: Exception end
 
