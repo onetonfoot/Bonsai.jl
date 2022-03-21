@@ -1,4 +1,9 @@
-import Base: get!, put!, delete!, all!
+using Term
+import Base: get!, put!, delete!, all!, show
+import Term: Panel
+import Sockets: InetAddr
+import PkgVersion
+
 
 export Router, get!, post!, put!, patch!, options!, trace!, connect!, all!
 
@@ -7,12 +12,7 @@ mutable struct Router
 	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	error_handler::Function
 	cancel_token::CancelToken
-end
-
-function default_error_handler(stream::HTTP.Stream, error::Exception)
-	# https://github.com/wookay/Bukdu.jl/issues/105
-    HTTP.setstatus(stream, 500)
-	throw(error)
+	inet_addr::Union{InetAddr, Nothing}
 end
 
 function Router()
@@ -26,8 +26,47 @@ function Router()
 		TRACE => [],
 		PATCH => [],
 	)
-	Router(d, deepcopy(d), default_error_handler, CancelToken())
+	Router(d, deepcopy(d), default_error_handler, CancelToken(), nothing)
 end
+
+function show(io::IO, r::Router)
+	running = r.cancel_token.cancelled[]
+	version = PkgVersion.Version(parentmodule(Router))
+	n_handlers = sum([length(i) for i in values(r.paths) ])
+	n_middleware = sum([length(i) for i in values(r.middleware) ])
+
+
+
+	width = 25
+	addr = isnothing(r.inet_addr) ? nothing : "$(r.inet_addr.host):$(r.inet_addr.port)"
+	box = :SQUARE
+	pid = getpid()
+
+	panel = Panel( 
+			(
+				Panel("Addr - [bold]$addr[bold]", width=width, box=box) *
+				Panel("Pid - [bold]$pid[bold]", width=width, box=box) 
+			) /
+			(
+			Panel("Handlers - [bold]$n_handlers", width=width, box=box) * 
+			Panel("Middleware - [bold]$n_middleware", width=width, box=box) 
+
+			)
+
+		;title=string(RenderableText("[bold]Bonsai $version")),
+		width=width*2,
+		height=4,
+		box=:HEAVY
+	)
+	print(io, string(panel))
+end
+
+function default_error_handler(stream::HTTP.Stream, error::Exception)
+	# https://github.com/wookay/Bukdu.jl/issues/105
+    HTTP.setstatus(stream, 500)
+	throw(error)
+end
+
 
 function match_handler(router::Router, method::HttpMethod, uri::URI)
 	paths = router.paths[method]

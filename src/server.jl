@@ -101,6 +101,7 @@ function start(
 
     token = app.cancel_token
     addr = Sockets.InetAddr(host, port)
+    app.inet_addr = addr
     running  = Threads.Atomic{Bool}(true)
     restarts  = Threads.Atomic{Int}(0)
     server_sockets = Channel(1)
@@ -113,6 +114,7 @@ function start(
                 put!(server_sockets, socket)
                 Base.invokelatest(serve_fn, socket)
             catch e
+                app.inet_addr = nothing
                 if e isa Base.IOError && running[] 
                     continue
                 else
@@ -139,5 +141,8 @@ function start(
     app
 end
 
-stop(app::Router) = close(app.cancel_token)
+function stop(app::Router) 
+    close(app.cancel_token)
+    app.inet_addr = nothing
+end
 Base.wait(app::Router) = wait(app.cancel_token)
