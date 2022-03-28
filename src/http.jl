@@ -1,8 +1,9 @@
-using StructTypes, URIs
+using StructTypes, URIs, HTTP.Messages
+
 import StructTypes: StructType, NoStructType
 import Base: |, ==
 
-export Query, Body, HttpPath, 
+export Header, Query, Body, HttpPath, 
 	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
 
 abstract type HttpMethod end
@@ -78,6 +79,48 @@ end
 struct Body{T} 
 	t::Type{T}
 end
+
+Base.@kwdef struct Header
+	fn::Function
+	k::String
+	required::Bool = true
+end
+
+
+function Header(fn::Function, k::AbstractString; required=true)
+	Header(fn, k, required)
+end
+
+
+function Header(k::AbstractString; required=true)
+	function fn(value)
+		true
+	end
+	Header(fn, k, required)
+end
+
+function (h::Header)(stream)
+	present = hasheader(stream, h.k)
+
+	if present
+		value = header(stream, h.k)
+		valid = h.fn(value)
+
+		if !valid 
+			error("Invalid header value")
+		end
+
+		return value
+	else
+
+		if h.required 
+			error("Missing header $(h.k)")
+		end
+
+		return nothing
+	end
+end
+
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 

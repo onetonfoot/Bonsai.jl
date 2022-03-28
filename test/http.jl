@@ -1,4 +1,5 @@
-using Bonsai, Test, StructTypes, HTTP, JSON3
+using Bonsai, Test, StructTypes, HTTP, JSON3, HTTP.Messages
+
 struct Payload 
     x
 end
@@ -64,4 +65,31 @@ end
     res = HTTP.get("http://localhost:$port/typed?x=10")
 
     stop(router)
+end
+
+@testset "Header" begin
+
+    req = HTTP.Messages.Request()
+    req.headers = [
+            "X-Test" => "wagwan"
+    ]
+
+    read_header = Header("X-Test")
+    read_header_precidate = Header("X-Test") do v
+        v == "wagwan"
+    end
+    read_header_not_required = Header("X-Nothing", required=false)
+
+    @test read_header_precidate(req) == "wagwan"
+    @test read_header(req) == "wagwan"
+    @test isnothing(read_header_not_required(req))
+
+    bad_req = HTTP.Messages.Request()
+    bad_req.headers = [
+            "X-Something-Else" => "wagwan"
+    ]
+    
+
+    @test_throws Exception read_header(bad_req)
+    @test_throws Exception read_header_precidate(bad_req)
 end
