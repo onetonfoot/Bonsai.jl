@@ -1,4 +1,4 @@
-using StructTypes, URIs, HTTP.Messages
+using StructTypes, URIs, HTTP.Messages, HTTP.Cookies
 
 import StructTypes: StructType, NoStructType
 import Base: |, ==
@@ -72,19 +72,57 @@ function (==)(a::Tuple{Vararg{HttpMethod}}, b)
 	return false
 end
 
-struct Query{T}
-    t::Type{T}
+struct InvalidCookie <: Exception
+	k::String
 end
 
-struct Body{T} 
-	t::Type{T}
+struct MissingCookie <: Exception
+	k::String
 end
 
-Base.@kwdef struct Header
+Base.@kwdef struct Cookie
+	# ::Cookie -> ::Bool
 	fn::Function
 	k::String
 	required::Bool = true
 end
+
+function Cookie(fn::Function, k::AbstractString; required=true)
+	Cookie(fn, k, required)
+end
+
+function Cookie(k::AbstractString; required=true)
+	function fn(value)
+		true
+	end
+	Cookie(fn, k, required)
+end
+
+function (c::Cookie)(stream)
+
+	hs = headers(stream)
+	cs = Cookies.readcookies(hs, c.k)
+	present = !isempty(cs)
+
+	if present
+		value = cs[1]
+		valid = c.fn(value)
+
+		if !valid 
+			throw(InvalidCookie(c.k))
+		end
+
+		return value
+	else
+
+		if c.required 
+			throw(MissingCookie(c.k))
+		end
+
+		return nothing
+	end
+end
+
 
 struct InvalidHeader <: Exception
 	k::String
@@ -100,6 +138,13 @@ end
 
 function show(io::IO, e::MissingHeader)
 	print(io, "Invalid header for $(e.k)")
+end
+
+Base.@kwdef struct Header
+	# ::String -> ::Bool
+	fn::Function
+	k::String
+	required::Bool = true
 end
 
 function Header(fn::Function, k::AbstractString; required=true)
@@ -135,6 +180,9 @@ function (h::Header)(stream)
 	end
 end
 
+struct Query{T}
+    t::Type{T}
+end
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 
@@ -155,8 +203,12 @@ function (query::Query{T})(stream::HTTP.Stream)::T where T
 	end
 end
 
+struct Body{T} 
+	t::Type{T}
+end
+
 # Not puting a specipic type anotation on stream allows
-# for easier tetsing
+# for easier testing
 function (body::Body{T})(stream)::T where T
 	try
 		JSON3.read(stream, T)
