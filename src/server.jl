@@ -55,7 +55,9 @@ function ws_upgrade(http::HTTP.Stream; binary=false)
     return ws
 end
 
-struct NoHandler <: Exception end
+struct NoHandler <: Exception 
+    target::String
+end
 
 function start(
       app::Router;
@@ -73,7 +75,7 @@ function start(
             end
 
             if isempty(all_handlers)
-                throw(NoHandler())
+                throw(NoHandler(stream.message.target))
             end
 
             combined_handler = combine_middleware(all_handlers)

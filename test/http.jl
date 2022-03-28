@@ -89,7 +89,12 @@ end
             "X-Something-Else" => "wagwan"
     ]
     
+    @test_throws MissingHeader read_header(bad_req)
 
-    @test_throws Exception read_header(bad_req)
-    @test_throws Exception read_header_precidate(bad_req)
+    bad_req2 = HTTP.Messages.Request()
+    bad_req2.headers = [
+            "X-Test" => "hello"
+    ]
+
+    @test_throws InvalidHeader read_header_precidate(bad_req2)
 end

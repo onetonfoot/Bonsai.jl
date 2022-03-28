@@ -3,7 +3,7 @@ using StructTypes, URIs, HTTP.Messages
 import StructTypes: StructType, NoStructType
 import Base: |, ==
 
-export Header, Query, Body, HttpPath, 
+export Header, Query, Body, HttpPath, InvalidHeader, MissingHeader,
 	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
 
 abstract type HttpMethod end
@@ -86,11 +86,25 @@ Base.@kwdef struct Header
 	required::Bool = true
 end
 
+struct InvalidHeader <: Exception
+	k::String
+end
+
+struct MissingHeader <: Exception
+	k::String
+end
+
+function show(io::IO, e::MissingHeader)
+	print(io, "Missing header for $(e.k)")
+end
+
+function show(io::IO, e::MissingHeader)
+	print(io, "Invalid header for $(e.k)")
+end
 
 function Header(fn::Function, k::AbstractString; required=true)
 	Header(fn, k, required)
 end
-
 
 function Header(k::AbstractString; required=true)
 	function fn(value)
@@ -107,14 +121,14 @@ function (h::Header)(stream)
 		valid = h.fn(value)
 
 		if !valid 
-			error("Invalid header value")
+			throw(InvalidHeader(h.k))
 		end
 
 		return value
 	else
 
 		if h.required 
-			error("Missing header $(h.k)")
+			throw(MissingHeader(h.k))
 		end
 
 		return nothing
