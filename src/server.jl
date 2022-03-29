@@ -84,7 +84,9 @@ function start(
                 try
                     combined_handler(stream)
                 catch e
-                    app.error_handler(stream, e)
+                    @error e
+                    HTTP.setstatus(stream, 500)
+                    write(stream,  HTTP.statustext(500))
                 end
             end  
 

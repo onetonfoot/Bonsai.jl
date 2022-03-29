@@ -1,4 +1,4 @@
-using Bonsai: HttpPath, PathSegment, match_path
+using Bonsai: HttpPath, PathSegment, match_path, InvalidHttpPath
 
 @testset "Path" begin
     p1 = HttpPath("/hello/:world")
@@ -11,4 +11,7 @@ using Bonsai: HttpPath, PathSegment, match_path
     @test !isnothing(match_path(p2, "/hello/world"))
     @test isnothing(match_path(p2, "/hello/mate"))
     @test !isnothing(match_path(p3, "/hello/world/mate"))
+
+    # doesn't start with a /
+    @test_throws InvalidHttpPath HttpPath("hello")
 end

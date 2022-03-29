@@ -1,11 +1,12 @@
 using Test
 using FilePaths
+using FilePathsBase: /
 using HTTP: Stream, Request
 using HTTP
 using Bonsai: HttpHandler
 
 @testset "start" begin
-	file_handler = Static(Path(@__DIR__))
+	file_handler = Static(Path(@__DIR__) / "data")
 	function index(stream) 
 		file_handler(stream, "index.html")
 	end

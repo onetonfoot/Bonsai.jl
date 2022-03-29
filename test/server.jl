@@ -2,8 +2,6 @@ using Bonsai, Test
 using Bonsai: ws_upgrade
 using HTTP
 
-
-
 @testset "start and stop" begin
 	router = Router()
 	start(router, port=9999, verbose=true)
@@ -11,11 +9,7 @@ using HTTP
 	@test true
 end
 
-
 @testset "web socket" begin
-
-	
-
 	function f(stream)
 		ws = ws_upgrade(stream)
 		try
