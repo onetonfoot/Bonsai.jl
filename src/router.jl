@@ -28,13 +28,10 @@ function Router()
 end
 
 function Base.show(io::IO, r::Router)
-	running = r.cancel_token.cancelled[]
+
 	version = PkgVersion.Version(parentmodule(Router))
 	n_handlers = sum([length(i) for i in values(r.paths) ])
 	n_middleware = sum([length(i) for i in values(r.middleware) ])
-
-
-
 	width = 25
 	addr = isnothing(r.inet_addr) ? nothing : "$(r.inet_addr.host):$(r.inet_addr.port)"
 	box = :SQUARE

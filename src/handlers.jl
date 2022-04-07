@@ -15,7 +15,6 @@ struct HttpHandler  <: AbstractHandler
 	fn
 end
 
-
 struct Static{T <: AbstractPath}  <: AbstractHandler
     path::T
     lru::LRU{String,Array{UInt8}}
@@ -73,3 +72,4 @@ function (folder::Static{T})(io, file; strict=true) where T
         end
     end
 end
+
