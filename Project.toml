@@ -4,7 +4,10 @@ authors = ["Dominic Morgan <dominic.mark.morgan@gmail.com>"]
 version = "0.2.2"
 
 [deps]
+CodeTracking = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+ExprManipulation = "49bccec5-5f8e-4a37-813c-bb803a7e462a"
+ExprTools = "e2ba6199-217a-4e67-a87a-7c52f15ade04"
 FilePaths = "8fc22ac5-c921-52a6-82fd-178b2807b824"
 FilePathsBase = "48062228-2e41-5def-b9a4-89aafe57970f"
 FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"

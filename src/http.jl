@@ -3,7 +3,7 @@ using StructTypes, URIs, HTTP.Messages, HTTP.Cookies
 import StructTypes: StructType, NoStructType
 import Base: |, ==
 
-export Header, Query, Body, HttpPath, InvalidHeader, MissingHeader,
+export Header, Query, Body, HttpPath, MissingHeader, MissingCookie,
 	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
 
 abstract type HttpMethod end
@@ -62,122 +62,52 @@ end
 (==)(::Trace, b) = b == "TRACE" || b == :TRACE
 (==)(::Patch, b) = b == "PATCH" || b == :PATCH
 
-(==)(a, b::Tuple{Vararg{HttpMethod}}) = b == a
-function (==)(a::Tuple{Vararg{HttpMethod}}, b) 
-	for i in a 
-		if i == b
-			return true
-		end
-	end
-	return false
-end
-
-struct InvalidCookie <: Exception
-	k::String
-end
+(==)(a::Tuple{Vararg{HttpMethod}} , b::Tuple{Vararg{HttpMethod}}) = b == a
 
 struct MissingCookie <: Exception
 	k::String
 end
 
-Base.@kwdef struct Cookie
-	# ::Cookie -> ::Bool
-	fn::Function
+struct Cookie
 	k::String
-	required::Bool = true
+	required::Bool
 end
 
-function Cookie(fn::Function, k::AbstractString; required=true)
-	Cookie(fn, k, required)
-end
-
-function Cookie(k::AbstractString; required=true)
-	function fn(value)
-		true
-	end
-	Cookie(fn, k, required)
-end
+Cookie(k::AbstractString) = Cookie(k, true)
 
 function (c::Cookie)(stream)
-
 	hs = headers(stream)
 	cs = Cookies.readcookies(hs, c.k)
-	present = !isempty(cs)
-
-	if present
-		value = cs[1]
-		valid = c.fn(value)
-
-		if !valid 
-			throw(InvalidCookie(c.k))
-		end
-
-		return value
-	else
-
-		if c.required 
-			throw(MissingCookie(c.k))
-		end
-
-		return nothing
+	cookie = get!(cs, c.k, nothing)
+	present = !nothing(cookie)
+	if c.required && !present
+		throw(MissingCookie(c.k))
 	end
-end
-
-
-struct InvalidHeader <: Exception
-	k::String
+	return cs
 end
 
 struct MissingHeader <: Exception
 	k::String
 end
 
-function show(io::IO, e::MissingHeader)
-	print(io, "Missing header for $(e.k)")
-end
-
-function show(io::IO, e::MissingHeader)
-	print(io, "Invalid header for $(e.k)")
-end
-
-Base.@kwdef struct Header
-	# ::String -> ::Bool
-	fn::Function
+struct Header
 	k::String
-	required::Bool = true
+	required::Bool
 end
 
-function Header(fn::Function, k::AbstractString; required=true)
-	Header(fn, k, required)
-end
-
-function Header(k::AbstractString; required=true)
-	function fn(value)
-		true
-	end
-	Header(fn, k, required)
-end
+Header(k::AbstractString) = Header(k, true)
 
 function (h::Header)(stream)
 	present = hasheader(stream, h.k)
+	if h.required && !present
+		throw(MissingHeader(h.k))
+	end
 
-	if present
-		value = header(stream, h.k)
-		valid = h.fn(value)
-
-		if !valid 
-			throw(InvalidHeader(h.k))
-		end
-
-		return value
-	else
-
-		if h.required 
-			throw(MissingHeader(h.k))
-		end
-
+	value = header(stream, h.k)
+	if isempty(value)
 		return nothing
 	end
+	value
 end
 
 struct Query{T}
