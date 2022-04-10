@@ -73,7 +73,7 @@ struct Cookie
 	required::Bool
 end
 
-Cookie(k::AbstractString) = Cookie(k, true)
+Cookie(k::AbstractString; required=true) = Cookie(k, required)
 
 function (c::Cookie)(stream)
 	hs = headers(stream)
@@ -95,7 +95,7 @@ struct Header
 	required::Bool
 end
 
-Header(k::AbstractString) = Header(k, true)
+Header(k::AbstractString; required=true) = Header(k, required)
 
 function (h::Header)(stream)
 	present = hasheader(stream, h.k)

@@ -58,12 +58,8 @@ end
     ]
 
     read_header = Header("X-Test")
-    read_header_precidate = Header("X-Test") do v
-        v == "wagwan"
-    end
     read_header_not_required = Header("X-Nothing", required=false)
 
-    @test read_header_precidate(req) == "wagwan"
     @test read_header(req) == "wagwan"
     @test isnothing(read_header_not_required(req))
 
@@ -78,6 +74,4 @@ end
     bad_req2.headers = [
             "X-Test" => "hello"
     ]
-
-    @test_throws InvalidHeader read_header_precidate(bad_req2)
 end
