@@ -4,6 +4,8 @@ using HTTP, JSON3, StructTypes, Dates, LRUCache, FilePaths
 import HTTP: Request, Response, Stream
 
 include("fns.jl")
+include("json_schema.jl")
+include("write.jl")
 include("mime_types.jl")
 include("path.jl")
 include("http.jl")

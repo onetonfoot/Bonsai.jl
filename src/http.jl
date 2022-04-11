@@ -110,9 +110,12 @@ function (h::Header)(stream)
 	value
 end
 
-struct Query{T}
+struct Query{T} 
     t::Type{T}
+	required::Bool
 end
+
+Query(k; required=true) = Query(k, required)
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 

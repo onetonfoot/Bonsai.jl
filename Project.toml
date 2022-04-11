@@ -4,6 +4,7 @@ authors = ["Dominic Morgan <dominic.mark.morgan@gmail.com>"]
 version = "0.2.2"
 
 [deps]
+CodeInfoTools = "bc773b8a-8374-437a-b9f2-0e9785855863"
 CodeTracking = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 ExprManipulation = "49bccec5-5f8e-4a37-813c-bb803a7e462a"
@@ -12,6 +13,7 @@ FilePaths = "8fc22ac5-c921-52a6-82fd-178b2807b824"
 FilePathsBase = "48062228-2e41-5def-b9a4-89aafe57970f"
 FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 LRUCache = "8ac3fa9e-de4c-5943-b1dc-09c6b5f20637"
 PkgVersion = "eebad327-c553-4316-9ea0-9fa01ccd7688"

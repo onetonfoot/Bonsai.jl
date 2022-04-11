@@ -89,7 +89,6 @@ struct MediaTypeObject
 	encoding::Dict{String, EncodingObject}
 end
 
-
 @enum In query header path cookie
 
 struct ParameterObject
@@ -108,7 +107,6 @@ struct ParameterObject
 	content::Dict{String, MediaTypeObject}
 end
 
-
 struct OAuthFlowObject
 	authorizationUrl::String
 	tokenUrl::String
@@ -121,13 +119,10 @@ struct SecurityRequirementObject
 	requirements::Dict{String, Array{String}}
 end
 
-
-
 struct License 
 	name::String
 	url::String
 end
-
 
 struct RequestBodyObject
 	description::String
@@ -139,7 +134,7 @@ end
 struct ResponseObject
 	description::String
 	headers::Dict{String, HeaderObject}
-	content::String
+	content::{String, MediaTypeObject}
 	links::Dict{String, LinkObject}
 end
 
@@ -149,8 +144,6 @@ struct ResponsesObject
 	statusCodes::Dict{String, ResponseObject}
 end
 
-
-# note to self start from here
 struct OperationObject
 	tags::Array{String}
 	summary::Union{String, Nothing}
@@ -165,7 +158,6 @@ struct OperationObject
 	security::Array{SecurityRequirementObject}
 	servers::Array{ServerObject}
 end
-
 
 struct PathItemObject
 	summary::Union{String, Nothing}
@@ -186,7 +178,6 @@ struct CallbackObject
 	# needs custom serialization
 	callbacks::Dict{String, PathItemObject}
 end
-
 
 struct OAuthFlowsObject
 	implict::OAuthFlowObject

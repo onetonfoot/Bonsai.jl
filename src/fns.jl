@@ -9,14 +9,14 @@ function fn_expr(fn)
 	Meta.parse(code_string(fn, types))
 end
 
-function fn_kwargs(fn)
+function fn_kwargs(fn, mod::Module)
 	expr = fn_expr(fn)
 	def = splitdef(expr)
 	d = Dict()
 	m_expr = MExpr(:kw, Capture(:var), Capture(:expr))
 	for i in def[:kwargs]
 		m = match(m_expr, i)
-		d[m.var] = eval(m.expr)
+		d[m.var] = mod.eval(m.expr)
 	end
 	d
 end
