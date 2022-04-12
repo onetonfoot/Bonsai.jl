@@ -1,6 +1,5 @@
 # Bonsai
 
-
 [![][action-img]][action-url]
 [![codecov](https://codecov.io/gh/onetonfoot/Bonsai.jl/branch/master/graph/badge.svg?token=96CcO21IsK)](https://codecov.io/gh/onetonfoot/Bonsai.jl)
 
@@ -9,7 +8,6 @@
 
 
 # Intro
-
 
 ```julia
 
@@ -21,9 +19,7 @@ end
 server = Router()
 # Register handler 
 get!(router, "/",  f)
-
 start(server)
-
 # Block until server stop running
 wait(sever)
 ```
@@ -53,28 +49,9 @@ end
 server = Router()
 all!(server, "*", timer)
 start(server)
-```
-
-An example of a authentication middleware
-
-
-```julia
-
-function auth(stream ,next)
-
-end
-
-function index(stream)
-
-end
-
-server = Router()
-get!(server, "*", auth)
-get!(server, "/", index)
-start(server)
 wait(server)
-
 ```
+
 
 
 # Example
