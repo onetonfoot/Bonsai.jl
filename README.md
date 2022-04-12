@@ -28,12 +28,11 @@ wait(sever)
 
 Each handler is a function with the following signature `f(stream::HTTP.Stream)`. 
 
-To register a handler to the router use the function named after the respective HTTP method e.g  `get!, post!, patch!` . The responde to evert HTTP method you can use `all!`
+To register a handler to the router use the function named after the respective HTTP method e.g  `get!, post!, patch!` .  
 
 # Middleware 
 
 Middleware is a function of the form `f(stream::HTTP.Stream, next)`. Where `next` is the next handler/middleware in the stack. 
-
 
 Middleware is called sequentially in the order it is register.
 
