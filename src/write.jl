@@ -1,25 +1,23 @@
 using JET.JETInterface
 using Base.Core
 using ExprManipulation
-
-const CC = Core.Compiler
-
-
 import JET:
     JET,
     @invoke,
     isexpr
 
-function write(stream, data, status_code)
-end
+const CC = Core.Compiler
 
-# for now avoid this due to 
+
+# avoid kwargs in write due to asi it makes the analysis more complicated
 # https://github.com/JuliaLang/julia/issues/9551
-# which makes the anlysis more complicated
-# function write(stream, data, status_code=200)
-# end
+# https://discourse.julialang.org/t/untyped-keyword-arguments/24228
+# https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-
+function write(stream, data, status_code = OK)
+    Base.write(stream, data)
+    HTTP.setstatus(stream, Int(status_code))
+end
 
 struct DispatchAnalyzer{T} <: AbstractAnalyzer
     state::AnalyzerState
@@ -50,18 +48,15 @@ struct DispatchAnalysisPass <: ReportPass end
 ## ignore all reports defined by JET, since we'll just define our own reports
 (::DispatchAnalysisPass)(T::Type{<:InferenceErrorReport}, @nospecialize(_...)) = return
 
+
 function CC.finish!(analyzer::DispatchAnalyzer, frame::Core.Compiler.InferenceState)
 
     caller = frame.result
 
     ## get the source before running `finish!` to keep the reference to `OptimizationState`
     src = caller.src
-
     ## run `finish!(::AbstractAnalyzer, ::CC.InferenceState)` first to convert the optimized `IRCode` into optimized `CodeInfo`
     ret = @invoke CC.finish!(analyzer::AbstractAnalyzer, frame::CC.InferenceState)
-
-	# Base.IdDict
-	# objectid
 
     if analyzer.frame_filter(frame.linfo)
 		ReportPass(analyzer)(WriteReport, analyzer, caller, src)
@@ -70,16 +65,35 @@ function CC.finish!(analyzer::DispatchAnalyzer, frame::Core.Compiler.InferenceSt
     return ret
 end
 
-@reportdef struct WriteReport <: InferenceErrorReport end
+@reportdef struct WriteReport <: InferenceErrorReport 
+    slottypes
+end
+
 JETInterface.get_msg(::Type{WriteReport}, args...) =
     return "detected write" #: signature of this MethodInstance
 function (::DispatchAnalysisPass)(::Type{WriteReport}, analyzer::DispatchAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
 	(;src, linfo, slottypes, sptypes) = opt
 
-	fn = get(src.slottypes, 1, nothing)
+	fn = get(slottypes, 1, nothing)
+	if fn != Core.Const((@__MODULE__).write)
+        return
+    end
 
-	# TODO how to reference parent module here?
-	if fn == Core.Const(Bonsai.write)
-		add_new_report!(analyzer, caller, WriteReport(linfo))
+    status_code = get(slottypes, 4, nothing)
+    if !(status_code isa Core.Const)
+        return
+    end
+
+    add_new_report!(analyzer, caller, WriteReport(caller, slottypes))
+end
+
+
+function handler_writes(handler)
+	calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer ) 
+	reports = JET.get_reports(calls)
+	l = map(reports) do r
+		res_type = r.slottypes[3]
+		res_code = r.slottypes[4].val
+		(res_type, res_code)
 	end
 end

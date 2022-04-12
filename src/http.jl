@@ -4,7 +4,27 @@ import StructTypes: StructType, NoStructType
 import Base: |, ==
 
 export Header, Query, Body, HttpPath, MissingHeader, MissingCookie,
-	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
+	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL,
+	# Status Codes
+	CREATED, Ok
+
+	# https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
+abstract type ResponseCode end
+abstract type SuccessCode end
+abstract type InfoCode end
+
+struct Ok <: SuccessCode end
+struct Created <: SuccessCode end
+
+
+const OK = Ok()
+const CREATED = Created()
+
+Base.Int(::ResponseCode) = error("todo!")
+Base.Int(::Ok) = 200
+Base.Int(::Created) = 201
+
+HTTP.statustext(code::ResponseCode) = HTTP.statustext(Int(code))
 
 abstract type HttpMethod end
 struct Get <: HttpMethod end

@@ -2,32 +2,32 @@ using JET, InteractiveUtils # to use analysis entry points
 using CodeInfoTools
 using HTTP:Stream
 using Bonsai
+using StructTypes: @Struct
+using StructTypes
+using Bonsai: handler_responses
+using Test
 
-@testset "todo!" begin
-	stream = 10
+using Bonsai: OK, CREATED
+
+@Struct struct A
+	data
+end
+
+@testset "handler_responses" begin
 
 	function f(stream)
-		Bonsai.write(stream, 200)
-		Bonsai.write(stream, "ok", status_code=10)
+		Bonsai.write(stream, "ok", OK)
 	end
 
-
-	function handler(stream::Stream)
-		Bonsai.write(stream, "String")
-		f(stream)
+	function handler(stream)
+		if rand() > 0.5
+			Bonsai.write(stream, A(1), CREATED)
+		else
+			f(stream)
+		end
 	end
 
+	l = handler_responses(handler)
 
-	r = report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer) 
-
-	reports = JET.get_reports(r)
-
-	# https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
-
-	# Keyword arguemnts create
-	w = @which Bonsai.write(stream, "ok"; status_code=10)
-	# (::Bonsai.var"#write##kw")(::Any, ::typeof(Bonsai.write), stream, data) in Bonsai at /home/dom/Code/Bonsai.jl/src/fns.jl:25
-
-	# https://discourse.julialang.org/t/untyped-keyword-arguments/24228
-	
+	@test length(l) == 2
 end
