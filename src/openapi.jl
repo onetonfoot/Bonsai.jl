@@ -1,5 +1,5 @@
 # https://swagger.io/specification/
-module OpenAPIv3
+# module OpenAPIv3
 
 struct ExternalDocumentationObject
 	description::String
@@ -91,20 +91,21 @@ end
 
 @enum In query header path cookie
 
-struct ParameterObject
+Base.@kwdef struct ParameterObject
 	name::String
 	in::In
-	description::String
-	required::Bool
-	depecated::Bool
-	allowEmptyValue::Bool
-	style::String
-	explode::Bool
-	allowReserved::Bool
-	schema::SchemaObject
-	example::Any
-	examples::Dict{String, ExampleObject}
-	content::Dict{String, MediaTypeObject}
+	description::Union{String, Missing} = missing
+	required::Bool = true
+	depecated::Bool = false
+	allowEmptyValue::Bool = false
+	style::Union{String, Missing} = missing
+	explode::Union{Bool, Missing} = missing
+	# only applies to query
+	allowReserved::Union{Bool, Missing} = missing
+	schema::Union{JSONSchema, Missing} = missing
+	example::Union{Any, Missing} = missing
+	examples::Union{Dict{String, ExampleObject}, Missing} = missing
+	content::Union{Dict{String, MediaTypeObject}, Missing} = missing
 end
 
 struct OAuthFlowObject
@@ -134,7 +135,7 @@ end
 struct ResponseObject
 	description::String
 	headers::Dict{String, HeaderObject}
-	content::{String, MediaTypeObject}
+	content::Union{String, MediaTypeObject}
 	links::Dict{String, LinkObject}
 end
 
@@ -230,4 +231,20 @@ struct OpenAPI
 	externalDocs::Union{ExternalDocumentationObject, Nothing}
 end
 
+
+function open_api(q::Query{T}) where T
+	l = ParameterObject[]
+	StructTypes.foreachfield(T) do  i, field, field_type
+		schema = JSONSchema(;json_schema(field_type)...)
+		d = (
+			name =  string(field),
+			in = query,
+			required = q.required,
+			schema = schema,
+			allowReserved = false,
+
+		)
+		push!(l, ParameterObject(;d...))
+	end
+	l
 end
