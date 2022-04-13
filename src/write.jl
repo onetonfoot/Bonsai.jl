@@ -87,6 +87,7 @@ function (::DispatchAnalysisPass)(::Type{WriteReport}, analyzer::DispatchAnalyze
     add_new_report!(analyzer, caller, WriteReport(caller, slottypes))
 end
 
+extract_type(::Type{T}) where T = T
 
 function handler_writes(handler)
 	calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer ) 
@@ -94,6 +95,6 @@ function handler_writes(handler)
 	l = map(reports) do r
 		res_type = r.slottypes[3]
 		res_code = r.slottypes[4].val
-		(res_type, res_code)
+		(extract_type(res_type), res_code)
 	end
 end

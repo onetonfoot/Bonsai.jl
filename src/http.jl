@@ -158,7 +158,10 @@ end
 
 struct Body{T} 
 	t::Type{T}
+	required::Bool
 end
+
+Body(k; required=true) = Body(k, required)
 
 # Not puting a specipic type anotation on stream allows
 # for easier testing

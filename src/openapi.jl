@@ -74,19 +74,20 @@ struct ExampleObject
 end
 
 
-struct EncodingObject
-	contentType::String
+Base.@kwdef struct EncodingObject
+	contentType::String # */* for unknown formats
 	headers::Dict{String, HeaderObject}
-	styled::String
-	explode::Bool
-	allowReserved::Bool
+	styled::Union{String, Missing} = missing
+	explode::Union{Bool, Missing} = missing
+	allowReserved::Bool = false
 end
 
-struct MediaTypeObject
-	schema::SchemaObject
-	example::Any
-	examples::Dict{String, ExampleObject}
-	encoding::Dict{String, EncodingObject}
+Base.@kwdef struct MediaTypeObject
+	schema::JSONSchema
+	example::Union{Any, Missing} = missing
+	examples::Union{Dict{String, ExampleObject}, Missing} = missing
+	# only relevant for forms, I think?
+	encoding::Union{Dict{String, EncodingObject}, Missing} = missing
 end
 
 @enum In query header path cookie
@@ -125,18 +126,18 @@ struct License
 	url::String
 end
 
-struct RequestBodyObject
-	description::String
+Base.@kwdef struct RequestBodyObject
+	description::Union{String, Missing} = missing
 	content::Dict{String, MediaTypeObject}
-	required::Bool
+	required::Bool = false
 end
 
 
-struct ResponseObject
-	description::String
-	headers::Dict{String, HeaderObject}
-	content::Union{String, MediaTypeObject}
-	links::Dict{String, LinkObject}
+Base.@kwdef struct ResponseObject
+	description::Union{String, Missing} = missing
+	headers::Union{Dict{String, HeaderObject}, Missing} = missing
+	content::Dict{String, MediaTypeObject}
+	links::Union{Dict{String, LinkObject}, Missing} = missing
 end
 
 struct ResponsesObject
@@ -232,7 +233,7 @@ struct OpenAPI
 end
 
 
-function open_api(q::Query{T}) where T
+function parameters(q::Query{T}) where T
 	l = ParameterObject[]
 	StructTypes.foreachfield(T) do  i, field, field_type
 		schema = JSONSchema(;json_schema(field_type)...)
@@ -247,4 +248,40 @@ function open_api(q::Query{T}) where T
 		push!(l, ParameterObject(;d...))
 	end
 	l
+end
+
+function RequestBodyObject(b::Body{T}) where T
+
+	if StructType(T) ==  NoStructType()
+		error("unsuppored type $T")
+	end
+
+	media_type = MediaTypeObject(
+		schema = JSONSchema(;json_schema(T)...),
+	)
+
+	RequestBodyObject(
+		content = Dict(
+			"application/json" => media_type
+		),
+		required = b.required,
+	)
+end
+
+function ResponseObject(t::DataType)
+
+	st = StructTypes.StructType(t)
+	if st ==  NoStructType()
+		error("unsuppored type $t")
+	end
+
+	media_type = MediaTypeObject(
+		schema = JSONSchema(;json_schema(t)...),
+	)
+
+	ResponseObject(
+		content = Dict(
+			"application/json" => media_type
+		),
+	)
 end

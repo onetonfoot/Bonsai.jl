@@ -9,7 +9,10 @@ function fn_expr(fn)
 	Meta.parse(code_string(fn, types))
 end
 
-function fn_kwargs(fn, mod::Module)
+# How to get the correct module :/
+# https://discourse.julialang.org/t/get-the-name-of-the-invoking-module/22685/5
+
+function fn_kwargs(fn, mod)
 	expr = fn_expr(fn)
 	def = splitdef(expr)
 	d = Dict()

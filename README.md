@@ -9,32 +9,25 @@
 
 # Intro
 
+Each handler is a function with the signature `f(stream::HTTP.Stream)`, to 
+register a handler use the respective HTTP method e.g  `get!(router::Router, "/", handler)`
+
 ```julia
 
-# Handler function
 function f(s::Stream)
 	write(s, "Hello")
 end
 
 server = Router()
-# Register handler 
-get!(router, "/",  f)
+get!(router, "/",  f) # register handler 
 start(server)
-# Block until server stop running
-wait(sever)
+wait(sever) # block until server stop running
 ```
 
-# Handlers
-
-Each handler is a function with the following signature `f(stream::HTTP.Stream)`. 
-
-To register a handler to the router use the function named after the respective HTTP method e.g  `get!, post!, patch!` .  
 
 # Middleware 
 
-Middleware is a function of the form `f(stream::HTTP.Stream, next)`. Where `next` is the next handler/middleware in the stack. 
-
-Middleware is called sequentially in the order it is register.
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the stack. 
 
 ```julia
 function timer(stream, next)
@@ -50,8 +43,6 @@ all!(server, "*", timer)
 start(server)
 wait(server)
 ```
-
-
 
 # Example
 
