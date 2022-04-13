@@ -13,6 +13,7 @@ include("handlers.jl")
 include("cancel_token.jl")
 include("router.jl")
 include("middleware.jl")
+include("openapi.jl")
 include("server.jl")
 
 end
