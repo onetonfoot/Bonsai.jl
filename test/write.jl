@@ -4,7 +4,7 @@ using HTTP:Stream
 using Bonsai
 using StructTypes: @Struct
 using StructTypes
-using Bonsai: handler_responses
+using Bonsai: handler_writes
 using Test
 
 using Bonsai: OK, CREATED
@@ -13,7 +13,7 @@ using Bonsai: OK, CREATED
 	data
 end
 
-@testset "handler_responses" begin
+@testset "handler_writes" begin
 
 	function f(stream)
 		Bonsai.write(stream, "ok", OK)
@@ -27,7 +27,7 @@ end
 		end
 	end
 
-	l = handler_responses(handler)
+	l = handler_writes(handler)
 
 	@test length(l) == 2
 end

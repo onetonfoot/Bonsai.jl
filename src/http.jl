@@ -123,7 +123,7 @@ function (h::Header)(stream)
 		throw(MissingHeader(h.k))
 	end
 
-	value = header(stream, h.k)
+	value = HTTP.header(stream, h.k)
 	if isempty(value)
 		return nothing
 	end

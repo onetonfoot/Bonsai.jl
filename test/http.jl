@@ -60,7 +60,8 @@ end
     read_header = Header("X-Test")
     read_header_not_required = Header("X-Nothing", required=false)
 
-    @test read_header(req) == "wagwan"
+
+    @test read_header(req)   == "wagwan"
     @test isnothing(read_header_not_required(req))
 
     bad_req = HTTP.Messages.Request()
