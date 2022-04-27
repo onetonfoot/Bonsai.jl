@@ -400,6 +400,7 @@ function OperationObject(handler)
 	# and assume everything is a json response 
 	for (res_type, res_code) in writes
 		k =  string(Int(res_code))
+
 		responses[k] = ResponseObject(
 			content = Dict(
 				"application/json" => MediaTypeObject(res_type)

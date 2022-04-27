@@ -67,10 +67,7 @@ function (folder::Static{T})(io, file; strict=true) where T
         Base.write(io, body)
 
         if io isa HTTP.Stream
-            ext = extension(file)
-            if haskey(MIME_TYPES, ext)
-                HTTP.setheader(io, "Content-Type" => MIME_TYPES[ext])
-            end
+            HTTP.setheader(io, "Content-Type" => mime_type(file))
         end
     catch e 
         # I'm unsure if the error codes are the same on windows

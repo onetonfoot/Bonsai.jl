@@ -1,4 +1,4 @@
-using FilePaths, Bonsai
+using Test, FilePaths, Bonsai
 
 @testset "Static" begin
 	write_file = Static(Path(@__DIR__))

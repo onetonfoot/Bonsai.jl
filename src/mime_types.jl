@@ -1,3 +1,6 @@
+using StructTypes
+using FilePaths: AbstractPath
+
 const MIME_TYPES = Dict(
     "acc" => "audio/acc",
     "abw" => "application/x-abiword",
@@ -71,3 +74,16 @@ const MIME_TYPES = Dict(
     "zip" => "application/zip",
     "7z" => "application/x-7z-compressed"
 )
+
+function mime_type(p::AbstractPath)
+    ext = extension(p)
+    get(MIME_TYPES, ext, "text/plain")
+end
+
+function mime_type(t::DataType)
+   if StructTypes.StructType(t) != StructTypes.NoStructType()
+        return "application/json"
+   else
+        return "text/plain"
+   end
+end
