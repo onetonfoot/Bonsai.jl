@@ -42,7 +42,7 @@ end
 	@test length(match_middleware(r, GET, URI("/")))== 1
 end
 
-@testset "match_middleware" begin
+@testset "single route" begin
 	r = Router()
 	function fn1(stream, next) end
 	function fn2(stream) end
@@ -50,5 +50,4 @@ end
 	length(r.middleware[GET]) == 1
 	get!(r, "*" , fn2)
 	length(r.paths[GET]) == 1
-	# @test length(match_middleware(r, GET, "/")) == 1
 end

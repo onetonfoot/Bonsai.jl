@@ -1,4 +1,4 @@
-export HttpPath
+export HttpPath, InvalidHttpPath
 
 # https://github.com/gofiber/fiber/blob/master/path.go
 mutable struct PathSegment 
@@ -9,6 +9,7 @@ mutable struct PathSegment
 end
 
 function PathSegment(s::String)
+
 	param_name = nothing
 	if startswith(s, ":")
 		param_name = Symbol(s[2:end])
@@ -26,6 +27,11 @@ function PathSegment(s::String)
 
 end
 
+
+struct InvalidHttpPath <: Exception
+	path::String
+end
+
 struct HttpPath
 	path::String
 	parameters::Type{<:NamedTuple}
@@ -35,6 +41,10 @@ end
 isgreedy(path::HttpPath) = any(map(x -> x.is_greedy, path.segments))
 
 function HttpPath(s::AbstractString)
+
+	if s[1] != '*' && s[1] != '/'
+		throw(InvalidHttpPath(s))
+	end
 
 	segment_strs = splitpath(s)
 	segments = PathSegment[]

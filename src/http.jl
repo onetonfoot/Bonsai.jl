@@ -1,10 +1,35 @@
-using StructTypes, URIs, HTTP.Messages, HTTP.Cookies
+using StructTypes, URIs, HTTP.Messages
+using StringCases: dasherize
+using CodeInfoTools: code_inferred
 
 import StructTypes: StructType, NoStructType
 import Base: |, ==
 
-export Header, Query, Body, HttpPath, InvalidHeader, MissingHeader,
-	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
+export Headers, Query, Body, HttpPath, MissingHeaders, MissingCookies,
+	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL,
+	# Status Codes
+	CREATED, Ok
+
+	# https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
+abstract type ResponseCode end
+abstract type SuccessCode end
+abstract type InfoCode end
+
+struct Ok <: SuccessCode end
+struct Created <: SuccessCode end
+
+
+const OK = Ok()
+const CREATED = Created()
+
+Base.Int(::ResponseCode) = error("todo!")
+Base.Int(::Ok) = 200
+Base.Int(::Created) = 201
+
+HTTP.statustext(code::ResponseCode) = HTTP.statustext(Int(code))
+
+
+abstract type HttpParameter end
 
 abstract type HttpMethod end
 struct Get <: HttpMethod end
@@ -15,6 +40,15 @@ struct Connect <: HttpMethod end
 struct Options <: HttpMethod end
 struct Trace <: HttpMethod end
 struct Patch <: HttpMethod end
+
+String(::HttpMethod) = "get"
+String(::Post) = "post"
+String(::Put) = "put"
+String(::Delete) = "delete"
+String(::Connect) = "connect"
+String(::Options) = "option"
+String(::Trace) = "trace"
+String(::Patch) = "patch"
 
 |(a::HttpMethod, b::HttpMethod) = (a, b)
 |(a::Tuple{Vararg{HttpMethod}}, b::HttpMethod) = (a..., b)
@@ -62,125 +96,89 @@ end
 (==)(::Trace, b) = b == "TRACE" || b == :TRACE
 (==)(::Patch, b) = b == "PATCH" || b == :PATCH
 
-(==)(a, b::Tuple{Vararg{HttpMethod}}) = b == a
-function (==)(a::Tuple{Vararg{HttpMethod}}, b) 
-	for i in a 
-		if i == b
-			return true
-		end
-	end
-	return false
+(==)(a::Tuple{Vararg{HttpMethod}} , b::Tuple{Vararg{HttpMethod}}) = b == a
+
+struct MissingCookies{T} <: Exception
+	t::Type{T}
+	k::Vector{String}
 end
 
-struct InvalidCookie <: Exception
-	k::String
+struct Cookies{T} <: HttpParameter
+	t::Type{T}
 end
 
-struct MissingCookie <: Exception
-	k::String
-end
-
-Base.@kwdef struct Cookie
-	# ::Cookie -> ::Bool
-	fn::Function
-	k::String
-	required::Bool = true
-end
-
-function Cookie(fn::Function, k::AbstractString; required=true)
-	Cookie(fn, k, required)
-end
-
-function Cookie(k::AbstractString; required=true)
-	function fn(value)
-		true
-	end
-	Cookie(fn, k, required)
-end
-
-function (c::Cookie)(stream)
-
+function (c::Cookies{T})(stream) where T
 	hs = headers(stream)
-	cs = Cookies.readcookies(hs, c.k)
-	present = !isempty(cs)
+	cs = HTTP.Cookies.readcookies(hs, "")
 
-	if present
-		value = cs[1]
-		valid = c.fn(value)
+	# TODO:
+	# support fields other than strings!
+	# how to handle additional cookie information such as 
+	# maxage, expires e.g
+	cookies::Dict{String, Any} = Dict(c.name => c.value for c in cs)
+	fields = fieldnames(T)
+	d::Dict{Symbol, Any} = Dict( i => 
+		get(cookies, string(i), missing)
+		for i in fields
+	)
 
-		if !valid 
-			throw(InvalidCookie(c.k))
-		end
-
-		return value
-	else
-
-		if c.required 
-			throw(MissingCookie(c.k))
-		end
-
-		return nothing
+	try
+		convert_numbers!(d, T)
+		StructTypes.constructfrom(T, d)
+	catch e
+		rethrow(e)
 	end
 end
 
-
-struct InvalidHeader <: Exception
-	k::String
+struct MissingHeaders{T} <: Exception
+	t::Type{T}
+	k::Array{String}
 end
 
-struct MissingHeader <: Exception
-	k::String
-end
-
-function show(io::IO, e::MissingHeader)
-	print(io, "Missing header for $(e.k)")
-end
-
-function show(io::IO, e::MissingHeader)
-	print(io, "Invalid header for $(e.k)")
-end
-
-Base.@kwdef struct Header
-	# ::String -> ::Bool
-	fn::Function
-	k::String
-	required::Bool = true
-end
-
-function Header(fn::Function, k::AbstractString; required=true)
-	Header(fn, k, required)
-end
-
-function Header(k::AbstractString; required=true)
-	function fn(value)
-		true
+function fieldnames_to_header(T)
+	fields = string.(fieldnames(T))
+	l = []
+	for i in fields
+		push!(l, dasherize(i))
 	end
-	Header(fn, k, required)
+	l
 end
 
-function (h::Header)(stream)
-	present = hasheader(stream, h.k)
 
-	if present
-		value = header(stream, h.k)
-		valid = h.fn(value)
 
-		if !valid 
-			throw(InvalidHeader(h.k))
+struct Headers{T} <: HttpParameter
+	t::Type{T}
+end
+
+Header(t::T) where T = Header{T}(t)
+
+headerize(s) = dasherize(string(s))
+
+function (hs::Headers{T})(stream) where T
+	fields = fieldnames(T)
+	d = Dict()
+
+	# TODO:
+	# support fields other than strings!
+
+	for i in fields
+		h = headerize(i)
+		if HTTP.hasheader(stream, h)
+			d[i] = HTTP.header(stream, h)
+		else
+			d[i] = missing
 		end
+	end
 
-		return value
-	else
-
-		if h.required 
-			throw(MissingHeader(h.k))
-		end
-
-		return nothing
+	try
+		convert_numbers!(d, T)
+		StructTypes.constructfrom(T, d)
+	catch e
+		rethrow(e)
 	end
 end
 
-struct Query{T}
+struct Query{T} <: HttpParameter
     t::Type{T}
 end
 
@@ -188,22 +186,16 @@ end
 
 function (query::Query{T})(stream::HTTP.Stream)::T where T
 	try
-		q::Dict{Any, Any} = queryparams(URI(stream.message.target))
-
-		for (k,v) in q
-			if !isnothing(match(r"\d+", v))
-				q[k] = parse(Int, v)
-			end
-		end
-
-		JSON3.read(JSON3.write(q), T)
+		q::Dict{Symbol, Any} = Dict(Symbol(k) => v for (k,v) in queryparams(URI(stream.message.target)))
+		convert_numbers!(q, T)
+		StructTypes.constructfrom(T, q)
 	catch e
 		@debug "Failed to convert query into $T"
 		rethrow(e)
 	end
 end
 
-struct Body{T} 
+struct Body{T} <: HttpParameter
 	t::Type{T}
 end
 
@@ -219,3 +211,24 @@ function (body::Body{T})(stream)::T where T
 end
 
 response(req::Request)::Response = req.response
+
+function convert_numbers!(data::AbstractDict, T)
+	for (k, t) in zip(fieldnames(T), fieldtypes(T))
+		if	t <: Number
+			data[k] = parse(t, data[k])
+		end
+	end
+	data
+end
+
+function http_parameters(f)
+	ci = code_inferred(f, Tuple{Stream})
+	l = []
+
+	for i in ci.ssavaluetypes
+		if i isa Core.Const && i.val isa HttpParameter
+			push!(l, i.val)
+		end
+	end
+	l
+end

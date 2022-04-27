@@ -1,16 +1,14 @@
 using Term
-import Base: get!, put!, delete!, all!, show
+import Base: get!, put!, delete!, all!
 import Term: Panel
 import Sockets: InetAddr
 import PkgVersion
-
 
 export Router, get!, post!, put!, patch!, options!, trace!, connect!, all!
 
 mutable struct Router 
 	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
-	error_handler::Function
 	cancel_token::CancelToken
 	inet_addr::Union{InetAddr, Nothing}
 end
@@ -26,17 +24,14 @@ function Router()
 		TRACE => [],
 		PATCH => [],
 	)
-	Router(d, deepcopy(d), default_error_handler, CancelToken(), nothing)
+	Router(d, deepcopy(d), CancelToken(), nothing)
 end
 
-function show(io::IO, r::Router)
-	running = r.cancel_token.cancelled[]
+function Base.show(io::IO, r::Router)
+
 	version = PkgVersion.Version(parentmodule(Router))
 	n_handlers = sum([length(i) for i in values(r.paths) ])
 	n_middleware = sum([length(i) for i in values(r.middleware) ])
-
-
-
 	width = 25
 	addr = isnothing(r.inet_addr) ? nothing : "$(r.inet_addr.host):$(r.inet_addr.port)"
 	box = :SQUARE
@@ -60,13 +55,6 @@ function show(io::IO, r::Router)
 	)
 	print(io, string(panel))
 end
-
-function default_error_handler(stream::HTTP.Stream, error::Exception)
-	# https://github.com/wookay/Bukdu.jl/issues/105
-    HTTP.setstatus(stream, 500)
-	throw(error)
-end
-
 
 function match_handler(router::Router, method::HttpMethod, uri::URI)
 	paths = router.paths[method]

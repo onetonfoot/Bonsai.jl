@@ -15,7 +15,6 @@ struct HttpHandler  <: AbstractHandler
 	fn
 end
 
-
 struct Static{T <: AbstractPath}  <: AbstractHandler
     path::T
     lru::LRU{String,Array{UInt8}}
@@ -53,10 +52,9 @@ function (folder::Static{T})(io, file; strict=true) where T
             read(file)
         end
 
-        write(io, body)
+        Base.write(io, body)
 
         if io isa HTTP.Stream
-            HTTP.setstatus(io, 200)
             ext = extension(file)
             if haskey(MIME_TYPES, ext)
                 HTTP.setheader(io, "Content-Type" => MIME_TYPES[ext])
@@ -67,9 +65,9 @@ function (folder::Static{T})(io, file; strict=true) where T
         # https://www.thegeekstuff.com/2010/10/linux-error-codes/
         if e isa SystemError && e.errnum == Libc.ENOENT && io isa HTTP.Stream
             @warn e
-            HTTP.setstatus(io, 404)
         else
             rethrow(e)
         end
     end
 end
+
