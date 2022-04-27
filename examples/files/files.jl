@@ -15,6 +15,4 @@ get!(router, "/", index_handler)
 get!(router, "*", static_handler)
 start(router, port=10000)
 
-print(router)
-
-main()
+wait(router)

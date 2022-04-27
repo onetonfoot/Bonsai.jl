@@ -51,8 +51,8 @@ function (folder::Static{T})(io, file; strict=true) where T
 
         if !isfile(file)
             @warn "File not found $file"
-            # the http server errors if we write a empty string
-            Bonsai.write(io, "File not found", NOT_FOUND)
+                # the http server errors if we write a empty string
+            Bonsai.write(io, "File not found", ResponseCodes.NotFound())
             return 
         end
 

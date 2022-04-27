@@ -13,8 +13,8 @@ function error_middleware(stream, next)
         next(stream)
     catch e
         @error e
-        HTTP.setstatus(stream, 500)
-        write(stream, HTTP.statustext(500))
+        code = InternalServerError()
+        Bonsai.write(stream, HTTP.statustext(code), code)
     end
 end
 
@@ -22,9 +22,8 @@ function error_handler(stream)
     error("Oh no")
 end
 
-function file_handler(stream)
-    file = read(joinpath(@__DIR__, "html/index.html"))
-    write(stream, file)
+function index_handler(stream)
+    Bonsai.write(stream, "ok")
 end
 
 

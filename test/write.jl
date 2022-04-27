@@ -7,8 +7,6 @@ using StructTypes
 using Bonsai: handler_writes
 using Test
 
-using Bonsai: OK, CREATED
-
 @Struct struct A1
 	data
 end
@@ -16,12 +14,12 @@ end
 @testset "handler_writes" begin
 
 	function f(stream)
-		Bonsai.write(stream, "ok", OK)
+		Bonsai.write(stream, "ok", ResponseCodes.Ok())
 	end
 
 	function handler(stream)
 		if rand() > 0.5
-			Bonsai.write(stream, A1(1), CREATED)
+			Bonsai.write(stream, A1(1), ResponseCodes.Created())
 		else
 			f(stream)
 		end

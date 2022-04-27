@@ -8,15 +8,18 @@ import JET:
 
 const CC = Core.Compiler
 
-
-# avoid kwargs in write due to asi it makes the analysis more complicated
+# avoid kwargs in write due as it makes the analysis more complicated
 # https://github.com/JuliaLang/julia/issues/9551
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-function write(stream, data, status_code = OK)
+function write(stream, data, status_code = ResponseCodes.Ok())
     Base.write(stream, data)
     HTTP.setstatus(stream, Int(status_code))
+end
+
+function write(stream::IOBuffer, data, status_code = ResponseCodes.Ok())
+    Base.write(stream, data)
 end
 
 struct DispatchAnalyzer{T} <: AbstractAnalyzer
