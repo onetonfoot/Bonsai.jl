@@ -9,7 +9,7 @@ using Test
 
 using Bonsai: OK, CREATED
 
-@Struct struct A
+@Struct struct A1
 	data
 end
 
@@ -21,7 +21,7 @@ end
 
 	function handler(stream)
 		if rand() > 0.5
-			Bonsai.write(stream, A(1), CREATED)
+			Bonsai.write(stream, A1(1), CREATED)
 		else
 			f(stream)
 		end

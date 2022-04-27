@@ -170,8 +170,6 @@ function (hs::Headers{T})(stream) where T
 		end
 	end
 
-	@info d
-
 	try
 		convert_numbers!(d, T)
 		StructTypes.constructfrom(T, d)
@@ -217,7 +215,6 @@ response(req::Request)::Response = req.response
 function convert_numbers!(data::AbstractDict, T)
 	for (k, t) in zip(fieldnames(T), fieldtypes(T))
 		if	t <: Number
-			@info t
 			data[k] = parse(t, data[k])
 		end
 	end
