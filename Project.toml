@@ -1,7 +1,7 @@
 name = "Bonsai"
 uuid = "30a8ad1e-2947-4f5c-9f0c-168e614e8e53"
 authors = ["Dominic Morgan <dominic.mark.morgan@gmail.com>"]
-version = "0.2.2"
+version = "0.2.3"
 
 [deps]
 CodeInfoTools = "bc773b8a-8374-437a-b9f2-0e9785855863"
