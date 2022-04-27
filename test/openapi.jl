@@ -1,11 +1,12 @@
 using Bonsai, JSON3, StructTypes
 using Test
 using StructTypes: @Struct
-using Bonsai: fn_kwargs, parameters, ParameterObject,
+using Bonsai: open_api_parameters, ParameterObject,
 	ResponseObject,  RequestBodyObject, 
 	handler_writes, HttpParameter, http_parameters
 using HTTP: Stream
 using CodeInfoTools: code_inferred
+using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject, OpenAPI
 # https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
 # https://blog.stoplight.io/openapi-json-schema#:~:text=You%20can%20use%20JSON%20Schema,generate%20an%20entire%20mock%20server.
 
@@ -24,8 +25,9 @@ end
 	n::Int
 end
 
-@Struct struct Auth
+@Struct struct AuthHeaders
 	x_pass::String
+	x_user::String
 end
 
 function get_pets(stream; read_query=Query(Limit))
@@ -37,7 +39,7 @@ function delete_pets(
 	stream; 
 	read_limit=Query(Limit), 
 	read_offset=Query(Offset), 
-	read_headers=Headers(Auth),
+	read_headers=Headers(AuthHeaders),
 	x = 10,
 )
 	pet = Pet(1,"bob", "cat")
@@ -52,10 +54,10 @@ end
 	q1 = Query(Limit)
 	q2 = Query(Offset)
 
-	l1 = parameters(q1)
+	l1 = open_api_parameters(q1)
 	@test length(l1) == 1
 
-	l2 = parameters(q2)
+	l2 = open_api_parameters(q2)
 	@test length(l2) == 2
 end
 
@@ -64,13 +66,23 @@ end
 	@test RequestBodyObject(b1) isa RequestBodyObject
 end
 
-@testset "handler" begin
-	kwargs = collect(values(fn_kwargs(get_pets, @__MODULE__)))
-	(res_type, res_code) = handler_writes(get_pets)[1]
-	@test Bonsai.parameters.(kwargs)[1][1] isa ParameterObject
-	@test ResponseObject(Pet) isa ResponseObject
-end
-
 @testset "http_parameters" begin
 	@test length(http_parameters(delete_pets)) == 3
+	p = HttpPath("/pets/:id")
+	@test length(open_api_parameters(HttpPath("/pets/:id"))) == 1
+end
+
+@testset "handler" begin
+	Bonsai.OperationObject(get_pets) 
+end
+
+@testset "OpenAPI" begin
+	r = Router()
+	get!(r, "/pets", get_pets)
+	delete!(r, "/pets", delete_pets)
+	get!(r, "/pets/:id", get_pets)
+	o = OpenAPI(r) 
+	# JSON3.write("p.json", o)
+	# npx @redocly/openapi-cli preview-docs p.json
+	@test o isa OpenAPI
 end

@@ -107,44 +107,45 @@ Base.@kwdef struct JSONSchema
 	type::Union{JSONType, Array{JSONType}} 
 
 	# string related fields #
-	maxLength::Union{Int, Missing} = missing
-	minLength::Union{Int, Missing} = missing
-	pattern::Union{Regex, Missing} = missing
-	format::Union{String, Missing} = missing
+	maxLength::Union{Int, Nothing} = nothing
+	minLength::Union{Int, Nothing} = nothing
+	pattern::Union{Regex, Nothing} = nothing
+	format::Union{String, Nothing} = nothing
 
 	# number releated fields #
-	multipleOf::Union{Int, Missing} = missing
-	minimum::Union{Int, Missing} = missing
-	exclusiveMinimum::Union{Int, Missing} = missing
-	maximum::Union{Int, Missing} = missing
-	exclusiveMaximum::Union{Int, Missing} = missing
+	multipleOf::Union{Int, Nothing} = nothing
+	minimum::Union{Int, Nothing} = nothing
+	exclusiveMinimum::Union{Int, Nothing} = nothing
+	maximum::Union{Int, Nothing} = nothing
+	exclusiveMaximum::Union{Int, Nothing} = nothing
 
 	# object related fields #
-	properties::Union{Dict{String, Any}, Missing} = missing
-	parternProperties::Union{Dict{Regex, Any}, Missing} = missing
-	additionalProperties::Union{Union{Bool, Any}, Missing} = missing
-	required::Union{Array{String}, Missing} = missing
-	propertiesNames::Union{Pair{String, String}, Missing} = missing
-	minProperties::Union{Int, Missing} = missing
-	maxProperties::Union{Int, Missing} = missing
-	const_::Union{Any, Missing} = missing
+	properties::Union{Dict{String, Any}, Nothing} = nothing
+	parternProperties::Union{Dict{Regex, Any}, Nothing} = nothing
+	additionalProperties::Union{Union{Bool, Any}, Nothing} = nothing
+	required::Union{Array{String}, Nothing} = nothing
+	propertiesNames::Union{Pair{String, String}, Nothing} = nothing
+	minProperties::Union{Int, Nothing} = nothing
+	maxProperties::Union{Int, Nothing} = nothing
+	const_::Union{Any, Nothing} = nothing
 
 	# array releated fields #
-	items::Union{JSONType, Missing} = missing
-	prefixItems::Union{Array{Pair{String, String}}, Missing} = missing
-	additionalItem::Union{Bool, Missing} = missing
-	contains::Union{JSONType, Missing} = missing
-	unqiueItems::Union{Bool, Missing} = missing
-	minItems::Union{Int, Missing} = missing
-	maxItems::Union{Int, Missing} = missing
+	items::Union{JSONType, Nothing} = nothing
+	prefixItems::Union{Array{Pair{String, String}}, Nothing} = nothing
+	additionalItem::Union{Bool, Nothing} = nothing
+	contains::Union{JSONType, Nothing} = nothing
+	unqiueItems::Union{Bool, Nothing} = nothing
+	minItems::Union{Int, Nothing} = nothing
+	maxItems::Union{Int, Nothing} = nothing
 
 	# generic fields #
-	title::Union{String, Missing} = missing
-	description::Union{String, Missing} = missing
-	examples::Union{Array{Any}, Missing} = missing
-	deprecated::Union{Bool, Missing} = missing
-	readOnly::Union{Bool, Missing} = missing
-	writeOnly::Union{Bool, Missing} = missing
+	title::Union{String, Nothing} = nothing
+	description::Union{String, Nothing} = nothing
+	examples::Union{Array{Any}, Nothing} = nothing
+	deprecated::Union{Bool, Nothing} = nothing
+	readOnly::Union{Bool, Nothing} = nothing
+	writeOnly::Union{Bool, Nothing} = nothing
 end
 
-
+StructTypes.StructType(::Type{JSONSchema}) = StructTypes.Struct()
+StructTypes.omitempties(::Type{JSONSchema}) = true

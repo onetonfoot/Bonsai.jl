@@ -41,6 +41,15 @@ struct Options <: HttpMethod end
 struct Trace <: HttpMethod end
 struct Patch <: HttpMethod end
 
+String(::HttpMethod) = "get"
+String(::Post) = "post"
+String(::Put) = "put"
+String(::Delete) = "delete"
+String(::Connect) = "connect"
+String(::Options) = "option"
+String(::Trace) = "trace"
+String(::Patch) = "patch"
+
 |(a::HttpMethod, b::HttpMethod) = (a, b)
 |(a::Tuple{Vararg{HttpMethod}}, b::HttpMethod) = (a..., b)
 |(a::HttpMethod, b::Tuple{Vararg{HttpMethod}}) = (a, b...)
@@ -143,8 +152,7 @@ end
 
 Header(t::T) where T = Header{T}(t)
 
-
-headerize(s::Symbol) = dasherize(string(s))
+headerize(s) = dasherize(string(s))
 
 function (hs::Headers{T})(stream) where T
 	fields = fieldnames(T)
