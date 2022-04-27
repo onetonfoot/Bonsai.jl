@@ -48,9 +48,21 @@ function (folder::Static{T})(io, file; strict=true) where T
     end
 
     try 
-        body = get!(folder.lru, file_str) do
-            read(file)
+
+        if !isfile(file)
+            @warn "File not found $file"
+            # the http server errors if we write a empty string
+            Bonsai.write(io, "File not found", NOT_FOUND)
+            return 
         end
+
+        body = read(file)
+
+        # disable caching util we can implement it more robustly
+
+        # body = get!(folder.lru, file_str) do
+        #     read(file)
+        # end
 
         Base.write(io, body)
 
