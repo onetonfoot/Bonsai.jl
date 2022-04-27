@@ -6,6 +6,7 @@
 [action-img]: https://github.com/onetonfoot/Bonsai.jl/actions/workflows/ci.yaml/badge.svg
 [action-url]: https://github.com/onetonfoot/Bonsai.jl/actions
 
+This project is in currently still in early development so use with caution
 
 # Intro
 
@@ -46,4 +47,4 @@ wait(server)
 
 # Example
 
-Please see the `examples` folder.
+Please see the `examples` folder for more details
