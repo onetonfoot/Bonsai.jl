@@ -87,9 +87,15 @@ function (::DispatchAnalysisPass)(::Type{WriteReport}, analyzer::DispatchAnalyze
         return
     end
 
+    status_code = get(slottypes, 3, nothing)
+    if !(status_code isa Type)
+        return
+    end
+
     add_new_report!(analyzer, caller, WriteReport(caller, slottypes))
 end
 
+# TODO: needs another instance to handle Core.Const
 extract_type(::Type{T}) where T = T
 
 function handler_writes(handler)
@@ -98,6 +104,7 @@ function handler_writes(handler)
 	l = map(reports) do r
 		res_type = r.slottypes[3]
 		res_code = r.slottypes[4].val
+        # @debug "writes" type=res_type code=res_code
 		(extract_type(res_type), res_code)
 	end
 end

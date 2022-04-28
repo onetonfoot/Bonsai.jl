@@ -4,6 +4,8 @@
 # module OpenAPIv3
 using StructTypes
 
+export OpenAPI
+
 struct ExternalDocumentationObject
 	description::String
 	url::String
@@ -409,13 +411,20 @@ function OperationObject(handler)
 	end
 
 	params = ParameterObject[]
+	requestBody = nothing
 
 	for p in http_parameters(handler)
-		push!(params, open_api_parameters(p)...)
+		# @debug "parameters" p=p
+		if p isa Body
+			requestBody = RequestBodyObject(p)
+		else
+			push!(params, open_api_parameters(p)...)
+		end
 	end
 
 	OperationObject(
 		responses = responses,
+		requestBody = requestBody,
 		parameters = params,
 	)
 end
@@ -424,9 +433,12 @@ function OpenAPI(r::Router)
 
 	paths = Dict()
 
+
 	for (method, values) in r.paths
 		m = Symbol(String(method))
 		for v in values
+			# handles path parameters as these are not in the handler kwargs
+			# this may need to change later if we change the handler structure
 			path, handler = v
 			d = get(paths, path.path, Dict{Symbol, Any}())
 			o = OperationObject( handler)

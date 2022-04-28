@@ -18,5 +18,6 @@ include("router.jl")
 include("middleware.jl")
 include("openapi.jl")
 include("server.jl")
+include("docs.jl")
 
 end
