@@ -196,8 +196,6 @@ function handler_reads(@nospecialize(handler))
     filter!(x -> x.slottypes[1] ==  fn, reports)
 	l = map(reports) do r
 		res_type = r.slottypes[3]
-        @info r.slottypes
-        @info res_type
         # @debug "writes" type=res_type code=res_code
 		(extract_type(res_type))
 	end

@@ -378,7 +378,6 @@ end
 function ResponseObject(t::DataType)
 
 	st = StructTypes.StructType(t)
-	@info "struct type" type=st
 	if st ==  NoStructType()
 		error("unsuppored type $t")
 	end
@@ -404,7 +403,6 @@ function OperationObject(handler)
 	# and assume everything is a json response 
 	for (res_type, res_code) in writes
 		k =  string(Int(res_code))
-		@info "writes" type=res_type code=res_code
 
 		responses[k] = ResponseObject(
 			content = Dict(
@@ -446,7 +444,6 @@ function OpenAPI(app)
 			# handles path parameters as these are not in the handler kwargs
 			# this may need to change later if we change the handler structure
 			path, handler = v
-			@info "values" path=path 
 
 			if path.path == app.redocs
 				@warn "skiping $(path.path)"

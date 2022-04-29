@@ -4,7 +4,6 @@ using StructTypes: @Struct
 using Bonsai: open_api_parameters, ParameterObject,
 	ResponseObject,  RequestBodyObject, 
 	handler_writes, HttpParameter, http_parameters
-using HTTP: Stream
 using CodeInfoTools: code_inferred
 using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject, OpenAPI
 # https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
@@ -63,7 +62,6 @@ end
 	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
-
 @testset "OpenAPI" begin
 	app = App()
 
@@ -80,7 +78,6 @@ end
 		pets = [ Pet(body.id, "bob", "cat") for i in 1:10]
 		Bonsai.write(pets)
 	end
-
 
 	create_pets = app.router.paths[POST][1][2]
 	get_pets = app.router.paths[GET][1][2]

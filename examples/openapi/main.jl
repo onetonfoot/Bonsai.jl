@@ -2,7 +2,6 @@ using Bonsai, URIs, StructTypes
 using JSON3
 using StructTypes: @Struct
 
-
 const app = App()
 
 @Struct struct Limit 
@@ -49,8 +48,24 @@ app.get("/pets/:id") do stream
 	end
 end
 
+app.get("*") do stream, next
+	try
+		@info "NEXT" next
+		next(stream)
+	catch e
+		println("Error caught")
+		Bonsai.write(stream, string(e), ResponseCodes.InternalServerError())
+		println(e)
+	end
+end
+
+
 JSON3.write(joinpath(@__DIR__, "openapi.json"), OpenAPI(app))
 
 start(app, port=10001)
 
+
+
 wait(router)
+
+stop(app)
