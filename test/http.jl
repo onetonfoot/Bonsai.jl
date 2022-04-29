@@ -16,8 +16,8 @@ StructTypes.StructType(::Type{PayloadTyped}) = StructTypes.Struct()
 
 @testset "Body" begin
     io = IOBuffer( JSON3.write(Payload(10)))
-    read_body = Body(Payload)
-    @test read_body(io).x == 10
+    read_body = 
+    @test Bonsai.read(io, Body(Payload)) == Payload(10)
 end
 
 
@@ -27,37 +27,30 @@ end
 
 @testset "Query" begin
 
-    router = Router()
+    app = App()
 
     try
         port = 10000
-        start(router, port=port)
+        start(app, port=port)
 
-        function fn(stream)
-            read_query = Query(Payload)
-            q = read_query(stream)
+        app.get("/any") do stream
+            q = Bonsai.read(stream, Query(Payload))
             JSON3.write(stream, q)
         end
 
-        function fn_typed(stream)
-            read_query = Query(PayloadTyped)
-            q = read_query(stream)
+        app.get("/typed") do stream
+            q = Bonsai.read(stream, Query(PayloadTyped))
             JSON3.write(stream, q)
         end
-
-        get!(router, "/any", fn)
-        get!(router, "/typed", fn_typed)
-
 
         res = HTTP.get("http://localhost:$port/any?x=10")
         @test res.status == 200
-
 
         res = HTTP.get("http://localhost:$port/typed?x=10")
         @test res.status == 200
     catch
     finally
-        stop(router)
+        stop(app)
     end
 end
 
@@ -77,44 +70,28 @@ end
         x_missing::Union{String, Missing}
     end
 
-
-    read_header = Headers(A)
-    read_header_not_required = Headers(B)
-
-    StructTypes.constructfrom(A, Dict(:x_test => "ok"))
-
-
-    @test read_header(req).x_test == "wagwan"
-    @test read_header_not_required(req).x_missing |> ismissing
+    @test Bonsai.read(req,  Headers(A)).x_test == "wagwan"
+    @test Bonsai.read(req, Headers(B)).x_missing |> ismissing
 
     bad_req = HTTP.Messages.Request()
     bad_req.headers = [
             "X-Something-Else" => "wagwan"
     ]
 
-    @test_throws Exception read_header(bad_req)
-
-    bad_req2 = HTTP.Messages.Request()
-    bad_req2.headers = [
-            "X-Test" => "hello"
-    ]
+    @test_throws Exception Bonsai.read(bad_req, Headers(A))
 end
 
-@testset "Cookies" begin
+# @testset "Cookies" begin
+#     req = HTTP.Messages.Request()
+#     req.headers = [
+#         "Cookie" => "a=choco; b=1"
+#     ]
 
-    req = HTTP.Messages.Request()
+#     @Struct struct C1
+#         a::String
+#         b::String
+#     end
 
-    req.headers = [
-        "Cookie" => "a=choco; b=1"
-    ]
-
-    @Struct struct C1
-        a::String
-        b::String
-    end
-
-    read_cookies = Bonsai.Cookies(C1)
-
-    @test read_cookies(req).b == "1"
-
-end
+#     read_cookies = Bonsai.Cookies(C1)
+#     @test read_cookies(req).b == "1"
+# end

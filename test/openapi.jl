@@ -34,6 +34,18 @@ end
 	x_user::String
 end
 
+function get_pets(stream)
+	limit = Bonsai.read(stream, Query(Limit))
+	pets = [ Pet(1,"bob", "cat") for i in 1:limit.limit]
+	Bonsai.write(stream , pets)
+end
+
+function delete_pets( stream; 
+)
+	pet = Pet(1,"bob", "cat")
+	Bonsai.write(stream , pet)
+end
+
 @testset "Query" begin
 
 	q1 = Query(Limit)
@@ -48,20 +60,11 @@ end
 
 @testset "Body" begin
 	b1 = Body(Pet)
-	@test RequestBodyObject(b1) isa RequestBodyObject
+	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
-@testset "http_parameters" begin
-	@test length(http_parameters(delete_pets)) == 3
-	p = HttpPath("/pets/:id")
-	@test length(open_api_parameters(HttpPath("/pets/:id"))) == 1
-end
 
-@testset "handler" begin
-	Bonsai.OperationObject(get_pets) 
-end
-
-# @testset "OpenAPI" begin
+@testset "OpenAPI" begin
 	app = App()
 
 	app.post("/pets/") do stream
@@ -78,22 +81,13 @@ end
 		Bonsai.write(pets)
 	end
 
-	# delete!(r, "/pets", delete_pets)
-	# get!(r, "/pets/:id", get_pets)
 
-	h = app.router.paths[POST][1][2]
+	create_pets = app.router.paths[POST][1][2]
+	get_pets = app.router.paths[GET][1][2]
 
-	a = Bonsai.handler_reads(h.fn)[1]
+	@test Bonsai.RequestBodyObject(
+		Bonsai.handler_reads(create_pets)[1]
+	) isa Bonsa.RequestBodyObject
 
-	Bonsai.RequestBodyObject(a)
-
-	OpenAPI(app) 
-	# create_docs(o)
-	# JSON3.write("p.json", o)
-	# npx @redocly/openapi-cli preview-docs p.json
-	@test o isa OpenAPI
-
-# end
-
-
-# app.docs("", Redoc)
+	@test OpenAPI(app) isa OpenAPI
+end

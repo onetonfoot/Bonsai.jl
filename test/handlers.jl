@@ -1,7 +1,7 @@
 using Test, FilePaths, Bonsai
 
-@testset "Static" begin
-	write_file = Static(Path(@__DIR__))
+@testset "Folder" begin
+	write_file = Folder(Path(@__DIR__))
 	io = IOBuffer()
 	b = read(joinpath(@__DIR__, "data/a.json"))
 	write_file(io, "data/a.json")

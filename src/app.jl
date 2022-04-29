@@ -4,7 +4,7 @@ export App
 # There must be a better way to handle multple app's
 
 const app_id = Threads.Atomic{Int}(rand(Int))
-const d = Dict()
+const d = Dict{Tuple{Int, String}, Any}()
 
 
 function path_params(stream)
@@ -71,7 +71,6 @@ function Base.getproperty(mid::AppMiddleware, s::Symbol)
 	else
 		return Base.getfield(mid, s)
 	end
-	# getproperty(app.app, s)
 end
 
 function Base.getproperty(app::App, s::Symbol)

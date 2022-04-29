@@ -6,6 +6,7 @@ import JET:
     @invoke,
     isexpr
 
+
 const CC = Core.Compiler
 
 # avoid kwargs in write due as it makes the analysis more complicated
@@ -46,7 +47,7 @@ function write(stream::IOBuffer, data, status_code = ResponseCodes.Default())
     Base.write(stream, data)
 end
 
-function read(stream::Stream, body::Body{T}) where T
+function read(stream, body::Body{T}) where T
 	try
 		JSON3.read(stream, T)
 	catch e
@@ -64,7 +65,7 @@ function convert_numbers!(data::AbstractDict, T)
 	data
 end
 
-function read(stream::Stream, query::Query{T}) where T
+function read(stream, query::Query{T}) where T
 	try
 		q::Dict{Symbol, Any} = Dict(Symbol(k) => v for (k,v) in queryparams(URI(stream.message.target)))
 		convert_numbers!(q, T)
@@ -75,7 +76,7 @@ function read(stream::Stream, query::Query{T}) where T
 	end
 end
 
-function read(stream::Stream, hs::Headers{T}) where T
+function read(stream, hs::Headers{T}) where T
 	fields = fieldnames(T)
 	d = Dict()
 

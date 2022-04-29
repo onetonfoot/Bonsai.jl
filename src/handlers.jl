@@ -56,7 +56,7 @@ function (folder::Folder{T})(io, file; strict=true) where T
             return 
         end
 
-        body = read(file)
+        body = Base.read(file)
 
         # disable caching util we can implement it more robustly
 
