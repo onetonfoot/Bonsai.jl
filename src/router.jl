@@ -9,8 +9,6 @@ export Router, get!, post!, put!, patch!, options!, trace!, connect!, all!
 mutable struct Router 
 	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
 	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
-	cancel_token::CancelToken
-	inet_addr::Union{InetAddr, Nothing}
 end
 
 function Router()
@@ -24,7 +22,7 @@ function Router()
 		TRACE => [],
 		PATCH => [],
 	)
-	Router(d, deepcopy(d), CancelToken(), nothing)
+	Router(d, deepcopy(d))
 end
 
 function Base.show(io::IO, r::Router)
@@ -33,13 +31,11 @@ function Base.show(io::IO, r::Router)
 	n_handlers = sum([length(i) for i in values(r.paths) ])
 	n_middleware = sum([length(i) for i in values(r.middleware) ])
 	width = 25
-	addr = isnothing(r.inet_addr) ? nothing : "$(r.inet_addr.host):$(r.inet_addr.port)"
 	box = :SQUARE
 	pid = getpid()
 
 	panel = Panel( 
 			(
-				Panel("Addr - [bold]$addr[bold]", width=width, box=box) *
 				Panel("Pid - [bold]$pid[bold]", width=width, box=box) 
 			) /
 			(
@@ -108,7 +104,7 @@ function register!(router::Router, path, method::HttpMethod, handler::AbstractHa
 		router.paths[method] 
 	elseif handler isa Middleware
 		router.middleware[method] 
-	elseif handler isa Static
+	elseif handler isa Folder
 		router.paths[method] 
 	else
 		error("Unsupported handler type $(typeof(handler))")
