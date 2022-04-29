@@ -86,8 +86,8 @@ end
 	get_pets = app.router.paths[GET][1][2]
 
 	@test Bonsai.RequestBodyObject(
-		Bonsai.handler_reads(create_pets)[1]
-	) isa Bonsa.RequestBodyObject
+		Bonsai.handler_reads(create_pets.fn)[1]
+	) isa Bonsai.RequestBodyObject
 
 	@test OpenAPI(app) isa OpenAPI
 end

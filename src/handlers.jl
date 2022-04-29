@@ -3,6 +3,11 @@ using Base.Libc
 
 export Folder
 
+"""
+Has a field fn which takes stream as it's first argument
+
+ fn(stream, ...)
+"""
 abstract type AbstractHandler end
 
 (handler::AbstractHandler)(args...) = handler.fn(args...)
@@ -17,66 +22,64 @@ end
 
 struct Folder{T <: AbstractPath}  <: AbstractHandler
     path::T
-    lru::LRU{String,Array{UInt8}}
-end
+    fn
 
-function Folder(path::T; maxsize = 1000, exclude=r".*") where T <: AbstractPath
-    Folder{T}(
-        normalize(path), 
-        LRU{String,Array{UInt8}}(maxsize = maxsize)
-    )
-end
+    function Folder(path::T) where T <: AbstractPath
 
+         function fn(io, file; strict=true) 
 
-function (folder::Folder{T})(stream::HTTP.Stream) where T
-    folder(stream, stream.message.target)
-end
+            if file isa AbstractString
+                file = T(file)
+            end
 
-function (folder::Folder{T})(io, file; strict=true) where T
+            # collecting and then splating handles joining paths starting with /
+            file = normalize(joinpath(path, collect(file)...))
+            hasprefix = startswith(string(path))
+            file_str = string(file)
 
-    if file isa AbstractString
-        file = T(file)
-    end
+            if strict && !hasprefix(file_str)
+                error("File above folder")
+            end
 
-    # collecting and then splating handles joining paths starting with /
-    file = normalize(joinpath(folder.path, collect(file)...))
-    hasprefix = startswith(string(folder.path))
-    file_str = string(file)
+            try 
 
-    if strict && !hasprefix(file_str)
-        error("File above folder")
-    end
+                if !isfile(file)
+                    @warn "File not found $file"
+                        # the http server errors if we write a empty string
+                    Bonsai.write(io, "File not found", ResponseCodes.NotFound())
+                    return 
+                end
 
-    try 
+                body = Base.read(file)
 
-        if !isfile(file)
-            @warn "File not found $file"
-                # the http server errors if we write a empty string
-            Bonsai.write(io, "File not found", ResponseCodes.NotFound())
-            return 
+                # disable caching util we can implement it more robustly
+
+                # body = get!(folder.lru, file_str) do
+                #     read(file)
+                # end
+
+                Base.write(io, body)
+
+                if io isa HTTP.Stream
+                    HTTP.setheader(io, "Content-Type" => mime_type(file))
+                end
+            catch e 
+                # I'm unsure if the error codes are the same on windows
+                # https://www.thegeekstuff.com/2010/10/linux-error-codes/
+                if e isa SystemError && e.errnum == Libc.ENOENT && io isa HTTP.Stream
+                    @warn e
+                else
+                    rethrow(e)
+                end
+            end
         end
 
-        body = Base.read(file)
 
-        # disable caching util we can implement it more robustly
+        new{T}(
+            normalize(path), 
+            fn
+        )
 
-        # body = get!(folder.lru, file_str) do
-        #     read(file)
-        # end
-
-        Base.write(io, body)
-
-        if io isa HTTP.Stream
-            HTTP.setheader(io, "Content-Type" => mime_type(file))
-        end
-    catch e 
-        # I'm unsure if the error codes are the same on windows
-        # https://www.thegeekstuff.com/2010/10/linux-error-codes/
-        if e isa SystemError && e.errnum == Libc.ENOENT && io isa HTTP.Stream
-            @warn e
-        else
-            rethrow(e)
-        end
     end
 end
 

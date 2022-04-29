@@ -188,6 +188,7 @@ function handler_writes(@nospecialize(handler))
 	end
 end
 
+
 function handler_reads(@nospecialize(handler))
 	calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer ) 
 	reports = JET.get_reports(calls)
@@ -201,3 +202,6 @@ function handler_reads(@nospecialize(handler))
 		(extract_type(res_type))
 	end
 end
+
+handler_reads(handler::AbstractHandler) = handler_reads(handler.fn)
+
