@@ -129,84 +129,16 @@ struct Headers{T} <: HttpParameter
 end
 
 Header(t::T) where T = Header{T}(t)
-
 headerize(s) = dasherize(string(s))
-
-function (hs::Headers{T})(stream) where T
-	fields = fieldnames(T)
-	d = Dict()
-
-	# TODO:
-	# support fields other than strings!
-
-	for i in fields
-		h = headerize(i)
-		if HTTP.hasheader(stream, h)
-			d[i] = HTTP.header(stream, h)
-		else
-			d[i] = missing
-		end
-	end
-
-	try
-		convert_numbers!(d, T)
-		StructTypes.constructfrom(T, d)
-	catch e
-		rethrow(e)
-	end
-end
 
 struct Query{T} <: HttpParameter
     t::Type{T}
 end
 
-# https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
-
-function (query::Query{T})(stream::HTTP.Stream)::T where T
-	try
-		q::Dict{Symbol, Any} = Dict(Symbol(k) => v for (k,v) in queryparams(URI(stream.message.target)))
-		convert_numbers!(q, T)
-		StructTypes.constructfrom(T, q)
-	catch e
-		@debug "Failed to convert query into $T"
-		rethrow(e)
-	end
-end
 
 struct Body{T} <: HttpParameter
 	t::Type{T}
 end
 
-# Not puting a specipic type anotation on stream allows
-# for easier testing
-function (body::Body{T})(stream)::T where T
-	try
-		JSON3.read(stream, T)
-	catch e
-		@debug "Failed to convert body into $T"
-		rethrow(e)
-	end
-end
 
-response(req::Request)::Response = req.response
-
-function convert_numbers!(data::AbstractDict, T)
-	for (k, t) in zip(fieldnames(T), fieldtypes(T))
-		if	t <: Number
-			data[k] = parse(t, data[k])
-		end
-	end
-	data
-end
-
-function http_parameters(f)
-	ci = code_inferred(f, Tuple{Stream})
-	l = []
-
-	for i in ci.ssavaluetypes
-		if i isa Core.Const && i.val isa HttpParameter
-			push!(l, i.val)
-		end
-	end
-	l
-end
+# https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/

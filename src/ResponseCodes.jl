@@ -5,6 +5,11 @@ using HTTP
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
 abstract type ResponseCode end
 
+
+# Internal code to make generating the open-api easier
+struct Default <: ResponseCode end
+Base.Int(::Default) = 200
+
 # Information codes
 struct Continue <: ResponseCode end
 Base.Int(::Continue) = 100

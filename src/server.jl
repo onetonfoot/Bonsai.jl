@@ -75,15 +75,25 @@ struct NoHandler <: Exception
 end
 
 function start(
-      app::Router;
+      app::App;
       host=ip"0.0.0.0", 
       port=8081,
       kwargs...)
 
+
+    if !isnothing(app.redocs)
+        docs = create_docs(OpenAPI(app))
+        app.get(app.redocs) do stream
+            HTTP.setheader(stream, "Content-Type" => "text/html; charset=UTF-8")
+            HTTP.setstatus(stream, 200)
+            Base.write(stream, docs)
+        end
+    end
+
     function handler_function(stream::HTTP.Stream)
         try 
-            handler = match_handler(app, stream)
-            all_handlers = match_middleware(app, stream)
+            handler = match_handler(app.router, stream)
+            all_handlers = match_middleware(app.router, stream)
 
             if !isnothing(handler)
                 push!(all_handlers, (stream, next) -> handler(stream))
@@ -101,7 +111,7 @@ function start(
                 catch e
                     @error e
                     HTTP.setstatus(stream, 500)
-                    write(stream,  HTTP.statustext(500))
+                    Base.write(stream,  HTTP.statustext(500))
                 end
             end  
 
@@ -160,8 +170,9 @@ function start(
     app
 end
 
-function stop(app::Router) 
+function stop(app::App) 
     close(app.cancel_token)
     app.inet_addr = nothing
 end
-Base.wait(app::Router) = wait(app.cancel_token)
+
+Base.wait(app::App) = wait(app.cancel_token)

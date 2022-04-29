@@ -1,5 +1,9 @@
 using Bonsai, URIs, StructTypes
+using JSON3
 using StructTypes: @Struct
+
+
+const app = App()
 
 @Struct struct Limit 
 	limit::Int
@@ -24,20 +28,17 @@ const pets = Dict(
 	)
 )
 
-function create_pet(stream; read_pet = Body(Pet))
-	pet = read_pet(stream)
+app.post("/pets/:id") do stream
+	pet = Bonsai.read(stream, Body(Pet))
 	pets[pet.id] = pet
 	@info "created pet" pet=pet
-	Bonsai.write(stream, "", ResponseCodes.Created())
+	Bonsai.write(stream, "ok")
 end
 
-# TODO: a declartive way to extract path parameters
-function get_pet(stream)
-
+app.get("/pets/:id") do stream
 	id = parse(Int, URIs.splitpath(stream.message.target)[2])
-
 	if haskey(pets, id)
-		pet = pets[id]
+		pet::Pet = pets[id]
 		Bonsai.write(stream, pet, ResponseCodes.Ok())
 	else
 		err = Error(
@@ -48,23 +49,8 @@ function get_pet(stream)
 	end
 end
 
-# TODO: track header writes
-function get_pets(stream)
-end
+JSON3.write(joinpath(@__DIR__, "openapi.json"), OpenAPI(app))
 
+start(app, port=10001)
 
-router = Router()
-
-get!(router, "/pet", get_pet)
-post!(router, "/pet", create_pet)
-
-const docs = create_docs(OpenAPI(router))
-
-function docs_handler(stream)
-	write(stream, docs)
-end
-
-get!(router, "/docs", docs_handler)
-
-start(router, port=10000)
 wait(router)

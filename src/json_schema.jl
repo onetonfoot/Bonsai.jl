@@ -26,7 +26,7 @@ json_type(::Type{Nothing}) =  null
 json_type(::Type{String}) =  str
 json_type(::Type{<:Enum}) =  str
 
-array_type(::Type{Array{T}}) where T = T
+array_type(::Type{Array{<:T}}) where T = T
 
 function json_schema(::Type{T}, d = Dict{Symbol, Any}()) where T
 

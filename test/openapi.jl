@@ -10,6 +10,10 @@ using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject,
 # https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
 # https://blog.stoplight.io/openapi-json-schema#:~:text=You%20can%20use%20JSON%20Schema,generate%20an%20entire%20mock%20server.
 
+@Struct struct Id
+	id::String
+end
+
 @Struct struct Pet 
 	id::Int64
 	name::String
@@ -28,25 +32,6 @@ end
 @Struct struct AuthHeaders
 	x_pass::String
 	x_user::String
-end
-
-function get_pets(stream; read_query=Query(Limit))
-	pet = Pet(1,"bob", "cat")
-	Bonsai.write(stream , pet)
-end
-
-function delete_pets(
-	stream; 
-	read_limit=Query(Limit), 
-	read_offset=Query(Offset), 
-	read_headers=Headers(AuthHeaders),
-	x = 10,
-)
-	pet = Pet(1,"bob", "cat")
-	Bonsai.write(stream , pet)
-end
-
-function update_pets(stream; read_body=Body(Pet))
 end
 
 @testset "Query" begin
@@ -76,13 +61,39 @@ end
 	Bonsai.OperationObject(get_pets) 
 end
 
-@testset "OpenAPI" begin
-	r = Router()
-	get!(r, "/pets", get_pets)
-	delete!(r, "/pets", delete_pets)
-	get!(r, "/pets/:id", get_pets)
-	o = OpenAPI(r) 
+# @testset "OpenAPI" begin
+	app = App()
+
+	app.post("/pets/") do stream
+		body = Bonsai.read(stream, Body(Id))
+	end
+
+	app.get("/pets/") do stream
+		pet = Pet(body.id,"bob", "cat")
+		Bonsai.write(stream , pet)
+	end
+
+	app.get("/pets/:id") do stream
+		pets = [ Pet(body.id, "bob", "cat") for i in 1:10]
+		Bonsai.write(pets)
+	end
+
+	# delete!(r, "/pets", delete_pets)
+	# get!(r, "/pets/:id", get_pets)
+
+	h = app.router.paths[POST][1][2]
+
+	a = Bonsai.handler_reads(h.fn)[1]
+
+	Bonsai.RequestBodyObject(a)
+
+	OpenAPI(app) 
+	# create_docs(o)
 	# JSON3.write("p.json", o)
 	# npx @redocly/openapi-cli preview-docs p.json
 	@test o isa OpenAPI
-end
+
+# end
+
+
+# app.docs("", Redoc)

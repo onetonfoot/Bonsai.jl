@@ -124,11 +124,10 @@ MediaTypeObject(t::DataType) = MediaTypeObject(
 	schema = JSONSchema(;json_schema(t)...)
 )
 
-@enum In query header path cookie
 
 Base.@kwdef struct ParameterObject
 	name::String
-	in::In
+	in::String # any of - query header path cookie
 	description::Union{String, Nothing} = nothing
 	required::Bool = true
 	depecated::Bool = false
@@ -306,6 +305,8 @@ end
 StructTypes.StructType(::Type{OpenAPI}) = StructTypes.Struct() 
 StructTypes.omitempties(::Type{OpenAPI}) = true
 
+http_parameters(f) = handler_reads(f)
+
 function open_api_parameters(http_path::HttpPath) 
 	l = ParameterObject[]
 
@@ -314,7 +315,7 @@ function open_api_parameters(http_path::HttpPath)
 		schema = JSONSchema(;json_schema(t)...)
 		d = (
 			name =  string(k),
-			in = path,
+			in = "path",
 			required = true,
 			schema = schema,
 		)
@@ -329,7 +330,7 @@ function open_api_parameters(::Headers{T}) where T
 		schema = JSONSchema(;json_schema(field_type)...)
 		d = (
 			name =  headerize(string(field)),
-			in = header,
+			in = "header",
 			required = Missing <: field_type,
 			schema = schema,
 		)
@@ -345,7 +346,7 @@ function open_api_parameters(::Query{T}) where T
 		schema = JSONSchema(;json_schema(field_type)...)
 		d = (
 			name =  string(field),
-			in = query,
+			in = "query",
 			required = !(Missing <: field_type),
 			schema = schema,
 			allowReserved = false,
@@ -356,7 +357,7 @@ function open_api_parameters(::Query{T}) where T
 	l
 end
 
-function RequestBodyObject(::Body{T}) where T
+	function RequestBodyObject(::Type{Body{T}}) where T
 
 	if StructType(T) ==  NoStructType()
 		error("no struct type defined for $T")
@@ -377,6 +378,7 @@ end
 function ResponseObject(t::DataType)
 
 	st = StructTypes.StructType(t)
+	@info "struct type" type=st
 	if st ==  NoStructType()
 		error("unsuppored type $t")
 	end
@@ -402,6 +404,7 @@ function OperationObject(handler)
 	# and assume everything is a json response 
 	for (res_type, res_code) in writes
 		k =  string(Int(res_code))
+		@info "writes" type=res_type code=res_code
 
 		responses[k] = ResponseObject(
 			content = Dict(
@@ -415,7 +418,7 @@ function OperationObject(handler)
 
 	for p in http_parameters(handler)
 		# @debug "parameters" p=p
-		if p isa Body
+		if p <: Body
 			requestBody = RequestBodyObject(p)
 		else
 			push!(params, open_api_parameters(p)...)
@@ -429,7 +432,10 @@ function OperationObject(handler)
 	)
 end
 
-function OpenAPI(r::Router)
+
+function OpenAPI(app)
+
+	r = app.router
 
 	paths = Dict()
 
@@ -440,6 +446,13 @@ function OpenAPI(r::Router)
 			# handles path parameters as these are not in the handler kwargs
 			# this may need to change later if we change the handler structure
 			path, handler = v
+			@info "values" path=path 
+
+			if path.path == app.redocs
+				@warn "skiping $(path.path)"
+				continue
+			end
+
 			d = get(paths, path.path, Dict{Symbol, Any}())
 			o = OperationObject( handler)
 			o.operationId = path.path

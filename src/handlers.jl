@@ -1,7 +1,7 @@
 import FilePathsBase: /
 using Base.Libc
 
-export Static
+export Folder
 
 abstract type AbstractHandler end
 
@@ -15,24 +15,24 @@ struct HttpHandler  <: AbstractHandler
 	fn
 end
 
-struct Static{T <: AbstractPath}  <: AbstractHandler
+struct Folder{T <: AbstractPath}  <: AbstractHandler
     path::T
     lru::LRU{String,Array{UInt8}}
 end
 
-function Static(path::T; maxsize = 1000, exclude=r".*") where T <: AbstractPath
-    Static{T}(
+function Folder(path::T; maxsize = 1000, exclude=r".*") where T <: AbstractPath
+    Folder{T}(
         normalize(path), 
         LRU{String,Array{UInt8}}(maxsize = maxsize)
     )
 end
 
 
-function (folder::Static{T})(stream::HTTP.Stream) where T
+function (folder::Folder{T})(stream::HTTP.Stream) where T
     folder(stream, stream.message.target)
 end
 
-function (folder::Static{T})(io, file; strict=true) where T
+function (folder::Folder{T})(io, file; strict=true) where T
 
     if file isa AbstractString
         file = T(file)
