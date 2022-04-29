@@ -43,38 +43,7 @@ function create_handler(app, method)
 	)
 end
 
-struct AppMiddleware
-	app::App
-end
-
-# there should be a nicer way todo this, it's written in this
-# odd fashinion to help the compiler with type inference which 
-# is needed  for openapi generation
-
-function Base.getproperty(mid::AppMiddleware, s::Symbol)
-	if s == :get
-		return create_handler(mid.app, GET)
-	elseif s == :post
-		return create_handler(mid.app, POST)
-	elseif s == :put
-		return create_handler(mid.app, POST)
-	elseif s == :trace
-		return create_handler(mid.app, TRACE)
-	elseif s == :delete
-		return create_handler(mid.app, DELETE)
-	elseif s == :options
-		return create_handler(mid.app, OPTIONS)
-	elseif s == :connect
-		return create_handler(mid.app, CONNECT)
-	elseif s == :patch
-		return create_handler(mid.app, PATCH)
-	else
-		return Base.getfield(mid, s)
-	end
-end
-
 function Base.getproperty(app::App, s::Symbol)
-
 	if s == :get
 		return create_handler(app, GET)
 	elseif s == :post
@@ -91,8 +60,6 @@ function Base.getproperty(app::App, s::Symbol)
 		return create_handler(app, CONNECT)
 	elseif s == :patch
 		return create_handler(app, PATCH)
-	elseif s == :middleware
-		return AppMiddleware(app)
 	else
 		return Base.getfield(app, s)
 	end
