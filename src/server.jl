@@ -99,6 +99,8 @@ function start(
                 push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
             end
             combine_middleware(middleware)(stream)
+
+            @info "context" context=stream.message.context
         catch e
             @error e
             HTTP.setstatus(stream, 500)
@@ -109,8 +111,8 @@ function start(
 
     function serve_fn(server)
         HTTP.serve(
-            HTTP.StreamHandlerFunction(handler_function), 
-            host, port; server=server, kwargs...
+            handler_function, 
+            host, port; server=server, stream=true, kwargs...
         ) 
     end
 

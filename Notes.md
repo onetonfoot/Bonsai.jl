@@ -32,6 +32,9 @@ end
 
 # OpenAPI
 
+
+* Extract doc strings from structs
+
 * Need a way to correctly guess the content type of writes to generate open-api, perhaps provide a function that can be overrided. For example to support other stuff like DataFrames
 
 * Need to track writes of headers

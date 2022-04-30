@@ -23,7 +23,6 @@ mutable struct App
 
 	function App()
 		id = rand(Int)
-		# d[id] = Dict() 
 		return new(
 			id,
 			"/docs",
