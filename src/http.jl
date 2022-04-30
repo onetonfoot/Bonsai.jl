@@ -78,14 +78,38 @@ end
 
 (==)(a::Tuple{Vararg{HttpMethod}} , b::Tuple{Vararg{HttpMethod}}) = b == a
 
+
+struct Cookies{T} <: HttpParameter
+	t::Type{T}
+end
+
+struct Headers{T} <: HttpParameter
+	t::Type{T}
+end
+
+struct Query{T} <: HttpParameter
+    t::Type{T}
+end
+
+struct Body{T} <: HttpParameter
+	t::Type{T}
+end
+
+struct PathParams{T} <: HttpParameter
+	t::Type{T}
+end
+
 struct MissingCookies{T} <: Exception
 	t::Type{T}
 	k::Vector{String}
 end
 
-struct Cookies{T} <: HttpParameter
+struct MissingHeaders{T} <: Exception
 	t::Type{T}
+	k::Array{String}
 end
+
+# https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 
 function (c::Cookies{T})(stream) where T
 	hs = headers(stream)
@@ -110,11 +134,6 @@ function (c::Cookies{T})(stream) where T
 	end
 end
 
-struct MissingHeaders{T} <: Exception
-	t::Type{T}
-	k::Array{String}
-end
-
 function fieldnames_to_header(T)
 	fields = string.(fieldnames(T))
 	l = []
@@ -124,21 +143,4 @@ function fieldnames_to_header(T)
 	l
 end
 
-struct Headers{T} <: HttpParameter
-	t::Type{T}
-end
-
-Header(t::T) where T = Header{T}(t)
 headerize(s) = dasherize(string(s))
-
-struct Query{T} <: HttpParameter
-    t::Type{T}
-end
-
-
-struct Body{T} <: HttpParameter
-	t::Type{T}
-end
-
-
-# https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/

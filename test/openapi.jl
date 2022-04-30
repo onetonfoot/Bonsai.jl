@@ -50,7 +50,7 @@ end
 	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
-@testset "OpenAPI" begin
+# @testset "OpenAPI" begin
 	app = App()
 
 	app.post("/pets/") do stream
@@ -62,7 +62,7 @@ end
 		Bonsai.write(stream , pet)
 	end
 
-	app.get("/pets/:id") do stream
+	app.get("/pets/{id}") do stream
 		pets = [ Pet(body.id, "bob", "cat") for i in 1:10]
 		Bonsai.write(pets)
 	end
@@ -80,4 +80,30 @@ end
 	OpenAPI(app)
 
 	@test OpenAPI(app) isa OpenAPI
-end
+# end
+# using  Bonsai: Node
+
+# using AbstractTrees
+
+# AbstractTrees.children(app.paths)
+
+
+# function handlers(node::Node)
+# 	leaves = [] 
+# end
+
+# l = []
+# for n in PostOrderDFS(app.paths)
+# 	push!(l, n)
+# end
+# # n = app.paths
+# l = Bonsai.handlers(app)
+
+# print_tree(app.paths)
+
+# using AbstractTrees: PostOrderDFS
+
+
+# l = []
+
+# OpenAPI(app)

@@ -1,3 +1,6 @@
+
+
+
 # Handlers
 
 * How to extract path parameters? In a declarative way
@@ -94,4 +97,18 @@ Express
 app.post('/', (req, res) => {
   res.send('POST request to the homepage')
 })
+```
+
+
+# Error handling
+
+If unable to create any of the struct their should be a
+helpful error message printed
+
+
+```julia
+struct InvalidParameter{T} <: Exception
+    t::Type{T}
+    e::Exception
+end
 ```

@@ -307,16 +307,25 @@ StructTypes.omitempties(::Type{OpenAPI}) = true
 
 http_parameters(f) = handler_reads(f)
 
-function open_api_parameters(http_path::HttpPath) 
-	l = ParameterObject[]
+using HTTP.Handlers: Leaf
 
-	nt = http_path.parameters
-	for (k,t) in zip(fieldnames(nt), nt.types)
-		schema = JSONSchema(;json_schema(t)...)
+function open_api_parameters(leaf::Leaf) 
+	l = ParameterObject[]
+	(;handler) = leaf
+	for t in handler_reads(handler)
+		push!(l, open_api_parameters(t)...)
+	end
+	l
+end
+
+function open_api_parameters(::PathParams{T}) where T
+	l = ParameterObject[]
+	StructTypes.foreachfield(T) do  i, field, field_type
+		schema = JSONSchema(;json_schema(field_type)...)
 		d = (
-			name =  string(k),
+			name =  string(field),
 			in = "path",
-			required = true,
+			required = Missing <: field_type,
 			schema = schema,
 		)
 		push!(l, ParameterObject(;d...))
@@ -433,31 +442,33 @@ end
 
 function OpenAPI(app)
 
-	r = app.router
-
 	paths = Dict()
 
+	leaves = [] 
+	for n in PostOrderDFS(app.paths)
+		if !isempty(n.methods)
+			push!(leaves, n.methods...)
+		end
+	end
 
-	for (method, values) in r.paths
-		m = Symbol(String(method))
-		for v in values
-			# handles path parameters as these are not in the handler kwargs
-			# this may need to change later if we change the handler structure
-			path, handler = v
+	for leaf in leaves
+			(;path, handler, method) = leaf
 
-			if path.path == app.redocs
-				@warn "skiping $(path.path)"
+			if path == app.redocs
+				@warn "skiping $(path)"
 				continue
 			end
 
-			d = get(paths, path.path, Dict{Symbol, Any}())
+			d = get(paths, path, Dict())
 			o = OperationObject( handler)
-			o.operationId = path.path
-			push!(o.parameters, open_api_parameters(path)...)
-			d[m] = o
-			paths[path.path] = d
-		end
+			o.operationId = path
+			# push!(o.parameters, open_api_parameters(leaf)...)
+			d[Symbol(lowercase(method))] = o
+			paths[path] = d
+		# end
 	end
+
+	@info paths
 
 	paths = Dict(
 		k => PathItemObject(;v...) for (k, v) in paths

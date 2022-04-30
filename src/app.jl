@@ -1,5 +1,7 @@
 using Bonsai: CancelToken, register!
+using AbstractTrees
 using Sockets: InetAddr
+using HTTP.Handlers: Leaf
 
 export App
 # There must be a better way to handle multple app's
@@ -27,6 +29,43 @@ mutable struct App
 			Node("*"),
 		)
 	end
+end
+
+function AbstractTrees.children(node::Node)
+	l = []
+	if !isempty(node.exact)
+		push!(l, node.exact...)
+	end
+	if !isempty(node.conditional)
+		push!(l, node.conditional...)
+	end
+	if !isnothing(node.wildcard)
+		push!(l, node.wildcard)
+	end
+	if !isnothing(node.doublestar)
+		push!(l, node.wildcard)
+	end
+	return l
+end
+
+function middleware(app::App)
+	leaves = Leaf[] 
+	for n in PostOrderDFS(app.middleware)
+		if !isempty(n.methods)
+			push!(leaves, n.methods...)
+		end
+	end
+	return leaves
+end
+
+function handlers(app::App)
+	leaves = Leaf[] 
+	for n in PostOrderDFS(app.paths)
+		if !isempty(n.methods)
+			push!(leaves, n.methods...)
+		end
+	end
+	return leaves
 end
 
 function create_handler(app, method)
