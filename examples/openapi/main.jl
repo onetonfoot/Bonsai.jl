@@ -50,22 +50,18 @@ end
 
 app.get("*") do stream, next
 	try
-		@info "NEXT" next
 		next(stream)
+		if isopen(stream) && !iswritable(stream)
+            error("Server never wrote a response")
+        end
 	catch e
-		println("Error caught")
+		@error e
 		Bonsai.write(stream, string(e), ResponseCodes.InternalServerError())
-		println(e)
 	end
 end
-
 
 JSON3.write(joinpath(@__DIR__, "openapi.json"), OpenAPI(app))
 
 start(app, port=10001)
-
-
-
-wait(router)
-
+wait(app)
 stop(app)

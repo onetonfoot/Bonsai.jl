@@ -65,7 +65,6 @@ end
 #     key = HTTP.header(http, "Sec-WebSocket-Key")
 #     HTTP.setheader(http, "Sec-WebSocket-Accept" => HTTP.WebSockets.accept_hash(key))
 #     HTTP.startwrite(http)
-
 #     io = http.stream
 #     return HTTP.WebSockets.WebSocket(io; server=true)
 # end
@@ -93,30 +92,17 @@ function start(
     function handler_function(stream::HTTP.Stream)
         try 
             handler = match_handler(app.router, stream)
-            all_handlers = match_middleware(app.router, stream)
-
+            middleware = match_middleware(app.router, stream)
             if !isnothing(handler)
-                push!(all_handlers, (stream, next) -> handler(stream))
+                push!(middleware, (stream, next) -> handler(stream))
+            else 
+                push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
             end
-
-            if isempty(all_handlers)
-                throw(NoHandler(stream.message.target))
-            end
-
-            combined_handler = combine_middleware(all_handlers)
-
-            fn = stream -> begin
-                try
-                    combined_handler(stream)
-                catch e
-                    @error e
-                    HTTP.setstatus(stream, 500)
-                    Base.write(stream,  HTTP.statustext(500))
-                end
-            end  
-
-            fn(stream)
+            combine_middleware(middleware)(stream)
         catch e
+            @error e
+            HTTP.setstatus(stream, 500)
+            Base.write(stream,  HTTP.statustext(500))
             rethrow(e)
         end
     end

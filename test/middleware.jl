@@ -12,7 +12,6 @@ c = false
 		x = now()
 		next(stream)
 		elapsed = x - now()
-		@info elapsed
 		global t
 		t = true
 	end
@@ -23,7 +22,7 @@ c = false
 		c = true
 	end
 
-	fn = combine_middleware([cors, timer ])
+	fn = combine_middleware([timer, cors ])
 	fn(nothing)
 	@test c && t
 end
