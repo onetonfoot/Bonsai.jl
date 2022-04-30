@@ -33,18 +33,6 @@ end
 	x_user::String
 end
 
-function get_pets(stream)
-	limit = Bonsai.read(stream, Query(Limit))
-	pets = [ Pet(1,"bob", "cat") for i in 1:limit.limit]
-	Bonsai.write(stream , pets)
-end
-
-function delete_pets( stream; 
-)
-	pet = Pet(1,"bob", "cat")
-	Bonsai.write(stream , pet)
-end
-
 @testset "Query" begin
 
 	q1 = Query(Limit)
@@ -79,12 +67,17 @@ end
 		Bonsai.write(pets)
 	end
 
-	create_pets = app.router.paths[POST][1][2]
-	get_pets = app.router.paths[GET][1][2]
+
+	get_pets = match(app.paths,  Params(), "GET", ["pets"], 1)
+	create_pets = match(app.paths,  Params(), "POST", ["pets"], 1)
+	# create_pets = app.router.paths[POST][1][2]
+	# get_pets = app.router.paths[GET][1][2]
 
 	@test Bonsai.RequestBodyObject(
 		Bonsai.handler_reads(create_pets.fn)[1]
 	) isa Bonsai.RequestBodyObject
+
+	OpenAPI(app)
 
 	@test OpenAPI(app) isa OpenAPI
 end

@@ -1,4 +1,5 @@
 using Bonsai
+using Bonsai: Params
 using CodeInfoTools
 using HTTP: Stream
 using Bonsai: handler_writes
@@ -21,22 +22,21 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
 		Bonsai.write(stream, (x = 10,))
 		Bonsai.write(stream, A2(10), ResponseCodes.Default())
 	end
-	h = app.router.paths[GET][1][2]
+	h = match(app.paths,  Params(), "GET", ["path"], 1)
+	Bonsai.handler_writes(h.fn)
+	# h = app.router.paths[GET][1][2]
 	# for debuging
 	# code_inferred(h.fn, Tuple{Stream})
 	@test length(Bonsai.handler_writes(h.fn)) == 6
 end
 
-@testset "handler_writes" begin 
+@testset "handler_reads" begin 
 	app = Bonsai.App()
 	app.get("/path") do stream
 		Bonsai.read(stream, Headers(A2))
 		Bonsai.read(stream, Query(A2))
 		Bonsai.read(stream, Body(A2))
 	end
-	h = app.router.paths[GET][1][2]
-
-	Bonsai.handler_reads(h.fn)
-
+	h = match(app.paths,  Params(), "GET", ["path"], 1)
 	@test length(Bonsai.handler_reads(h.fn)) == 3
 end

@@ -1,45 +1,45 @@
 using Bonsai: CancelToken, register!
+using Sockets: InetAddr
 
 export App
 # There must be a better way to handle multple app's
 
-const app_id = Threads.Atomic{Int}(rand(Int))
-const d = Dict{Tuple{Int, String}, Any}()
-
-
 function path_params(stream)
-    app_id
-	id = app_id[]
-	global d
-	d[id]
+	stream.context[:params]
 end
 
 mutable struct App 
 	id::Int
 	redocs::Union{String, Nothing}
-	router::Router
 	cancel_token::CancelToken
 	inet_addr::Union{InetAddr, Nothing}
+    paths::Node
+    middleware::Node
 
 	function App()
 		id = rand(Int)
 		return new(
 			id,
 			"/docs",
-			Router(),
 			CancelToken(),
 			nothing,
+			Node("*"),
+			Node("*"),
 		)
 	end
 end
 
 function create_handler(app, method)
-	return (fn, path) -> register!(
-		app.router,
-		path,
-		method,
-		fn
-	)
+	return (fn, path) -> begin 
+		handler = wrap_handler(fn)
+		node = handler isa Middleware ? app.middelware : app.paths
+		register!(
+			node,
+			method,
+			path,
+			handler
+		)
+	end
 end
 
 function Base.getproperty(app::App, s::Symbol)

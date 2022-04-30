@@ -21,14 +21,14 @@ struct Options <: HttpMethod end
 struct Trace <: HttpMethod end
 struct Patch <: HttpMethod end
 
-String(::HttpMethod) = "get"
-String(::Post) = "post"
-String(::Put) = "put"
-String(::Delete) = "delete"
-String(::Connect) = "connect"
-String(::Options) = "option"
-String(::Trace) = "trace"
-String(::Patch) = "patch"
+Base.String(::HttpMethod) = "get"
+Base.String(::Post) = "post"
+Base.String(::Put) = "put"
+Base.String(::Delete) = "delete"
+Base.String(::Connect) = "connect"
+Base.String(::Options) = "option"
+Base.String(::Trace) = "trace"
+Base.String(::Patch) = "patch"
 
 |(a::HttpMethod, b::HttpMethod) = (a, b)
 |(a::Tuple{Vararg{HttpMethod}}, b::HttpMethod) = (a..., b)

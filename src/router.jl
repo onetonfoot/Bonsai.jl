@@ -1,152 +1,180 @@
-using Term
-import Base: get!, put!, delete!, all!
-import Term: Panel
-import Sockets: InetAddr
-import PkgVersion
+# module R
 
-export Router, get!, post!, put!, patch!, options!, trace!, connect!, all!
+# Copied and modified from
+# https://github.com/JuliaWeb/HTTP.jl/blob/master/src/Handlers.jl
 
-mutable struct Router 
-	paths::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
-	middleware::Dict{HttpMethod, Vector{Pair{HttpPath, Any}}}
-end
+using HTTP: Stream
+using HTTP.Handlers: Node, Leaf, find, segment, insert!, match
+using URIs
 
-function Router()
-	d = Dict(
-		GET => [],
-		POST => [],
-		PUT => [],
-		DELETE => [],
-		CONNECT => [],
-		OPTIONS => [],
-		TRACE => [],
-		PATCH => [],
-	)
-	Router(d, deepcopy(d))
-end
+export register!
 
-function Base.show(io::IO, r::Router)
 
-	version = PkgVersion.Version(parentmodule(Router))
-	n_handlers = sum([length(i) for i in values(r.paths) ])
-	n_middleware = sum([length(i) for i in values(r.middleware) ])
-	width = 25
-	box = :SQUARE
-	pid = getpid()
 
-	panel = Panel( 
-			(
-				Panel("Pid - [bold]$pid[bold]", width=width, box=box) 
-			) /
-			(
-			Panel("Handlers - [bold]$n_handlers", width=width, box=box) * 
-			Panel("Middleware - [bold]$n_middleware", width=width, box=box) 
-
-			)
-
-		;title=string(RenderableText("[bold]Bonsai $version")),
-		width=width*2,
-		height=4,
-		box=:HEAVY
-	)
-	print(io, string(panel))
-end
-
-function match_handler(router::Router, method::HttpMethod, uri::URI)
-	paths = router.paths[method]
-	for (path, handler) in paths
-		matches = match_path(path , uri.path)
-		if !isnothing(matches)
-			return handler
+function matchall(node::Node, params, method, segments, i)
+	matches = []
+    # @info "Node"
+	# @show node.segment, i, segments
+	if i > length(segments)
+		if isempty(node.methods)
+			return nothing
+		end
+		j = find(method, node.methods; by=x->x.method, eq=(x, y) -> x == "*" || x == y)
+		if j === nothing
+			# we return missing here so we can return a 405 instead of 404
+			# i.e. we matched the route, but there wasn't a matching method
+			return missing
+		else
+			leaf = node.methods[j]
+			# @show leaf.variables, segments
+			if !isempty(leaf.variables)
+				# we have variables to fill in
+				for (i, v) in leaf.variables
+					params[v] = segments[i]
+				end
+			end
+            push!(matches, leaf.handler)
+			return matches
 		end
 	end
-	return nothing
-end
-
-function match_handler(router::Router, stream::Stream)
-	method = convert(HttpMethod, stream.message.method)
-	target = URI(stream.message.target)
-	match_handler(router, method, target)
-end
-
-
-function match_middleware(router::Router, method::HttpMethod, uri::URI)
-	paths = router.middleware[method]
-	handlers = []
-	for (path, handler) in paths
-		matches = match_path(path , uri.path)
-		if !isnothing(matches)
-			push!(handlers, handler)
+	segment = segments[i]
+	anymissing = false
+	# first check for exact matches
+	j = find(segment, node.exact; by=x->x.segment)
+    # @info "Exact"
+	if j !== nothing
+		# found an exact match, recurse
+		m = matchall(node.exact[j], params, method, segments, i + 1)
+		anymissing = m === missing
+		m = coalesce(m, nothing)
+		@show :exact, m
+		if m !== nothing
+			push!(matches, m...)
+			# return m
 		end
 	end
-	return handlers
-end
-
-function match_middleware(router::Router, stream::Stream)
-	method = convert(HttpMethod, stream.message.method)
-	target = URI(stream.message.target)
-	match_middleware(router, method, target)
-end
-
-function register!(
-	paths::Array, 
-	path::HttpPath, 
-	handler::AbstractHandler
-)
-	push!(paths, path => handler)
-	# ensure that the greedy handlers match last
-	sort!(paths, by = x -> isgreedy(x[1]))
-	return nothing
-end
-
-function register!(router::Router, path, method::HttpMethod, handler::AbstractHandler)
-	paths = if handler isa HttpHandler
-		router.paths[method] 
-	elseif handler isa Middleware
-		router.middleware[method] 
-	elseif handler isa Folder
-		router.paths[method] 
-	else
-		error("Unsupported handler type $(typeof(handler))")
-	end
-
-	register!(paths, HttpPath(path), handler)
-end
-
-function register!( router::Router, path, method::HttpMethod, handler)
-
-	ms = methods(handler)
-	c = 0
-
-	for m in ms
-		if m.nargs in [2, 3] && m.sig.types[2] in [Any, Stream]
-			T = m.nargs == 2 ? HttpHandler : Middleware
-			register!(
-				router, 
-				path, 
-				method, 
-				T(handler)
-			)
-			c+= 1
+    # @info "Conditional" node=node.conditional
+	# check for conditional matches
+	for node in node.conditional
+		@show node.segment.pattern, segment
+		if match(node.segment.pattern, segment) !== nothing
+			# matched a conditional node, recurse
+			m = matchall(node, params, method, segments, i + 1)
+			anymissing = m === missing
+			m = coalesce(m, nothing)
+			if m !== nothing
+                push!(matches, m...)
+				# return m
+			end
 		end
 	end
+    # @info "Wildcard" wildcard=node.wildcard
+	if node.wildcard !== nothing
+		m = matchall(node.wildcard, params, method, segments, i + 1)
+		anymissing = m === missing
+		m = coalesce(m, nothing)
+        @show :wildcard, m
+		if m !== nothing
+			push!(matches, m...)
+			# return m
+		end
+	end
+    # @info "Double Star"
+	if node.doublestar !== nothing
+		m = matchall(node.doublestar, params, method, segments, length(segments) + 1)
+		anymissing = m === missing
+		m = coalesce(m, nothing)
+		if m !== nothing
+			push!(matches, m...)
+			# return m
+		end
+	end
+    return matches
+end
 
-	if c == 0 
+
+
+"""
+    HTTP.register!(r::Router, [method,] path, handler)
+
+Register a handler function that should be called when an incoming request matches `path`
+and the optionally provided `method` (if not provided, any method is allowed). Can be used
+to dynamically register routes.
+The following path types are allowed for matching:
+  * `/api/widgets`: exact match of static strings
+  * `/api/*/owner`: single `*` to wildcard match any string for a single segment
+  * `/api/widget/{id}`: Define a path variable `id` that matches any valued provided for this segment; path variables are available in the request context like `req.context[:params]["id"]`
+  * `/api/widget/{id:[0-9]+}`: Define a path variable `id` that only matches integers for this segment
+  * `/api/**`: double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
+"""
+function register! end
+
+function register!(n::Node, method::String, path, handler)
+    segments = map(segment, split(path, '/'; keepempty=false))
+    insert!(n, Leaf(method, Tuple{Int, String}[], path, handler), segments, 1)
+    return
+end
+
+function register!(router::Node, method::HttpMethod, path, handler)
+    register!(
+        router, 
+        uppercase(String(method)), 
+        path, 
+		handler
+    )
+end
+
+function wrap_handler(handler)
+    m = nothing
+    try
+        m = which(handler, Tuple{Any})
+        return  HttpHandler(handler)
+    catch e
+    end
+
+    try
+        m = which(handler, Tuple{Any, Any})
+        return Middleware(handler)
+    catch e
+    end
+
+    if isnothing(m)
 		error("""Unable to infer correct handler type. Please wrap handler with correct AbstractHandler subtype""")
-	end
+    end
 end
 
-get!(    router::Router, path, handler) = register!(router, path, GET, handler)
-put!(    router::Router, path, handler) = register!(router, path, PUT, handler)
-post!(    router::Router, path, handler) = register!(router, path, POST, handler)
-patch!(  router::Router, path, handler) = register!(router, path, PATCH, handler)
-delete!( router::Router, path, handler) = register!(router, path, DELETE, handler)
-options!(router::Router, path, handler) = register!(router, path, OPTIONS, handler)
-connect!(router::Router, path, handler) = register!(router, path, CONNECT, handler)
-trace!(  router::Router, path, handler) = register!(router, path, TRACE, handler)
+const Params = Dict{String, String}
 
-function all!(router::Router, path, handler) 
-	for method in ALL
-		register!(router, path, method, handler)
-	end
+
+
+function Base.match(app, stream::Stream)
+    req = stream.message
+    url = URI(req.target)
+    segments = split(url.path, '/'; keepempty=false)
+    params = Params()
+    handler = match(app.paths, params , params, req.method, segments, 1)
+    middelware = matchall(app.middleware, params , params, req.method, segments, 1)
+    req.context[:params] = params
+    # handler and be nothing or missing
+    # nothing - didn't match a registered route
+    # missing - matched the path, but method not supported
+    return handler, middelware
 end
+
+# function (r::Router)(req)
+#     handler = match(r.routes, params, req.method, segments, 1)
+#     if handler === nothing
+#         # didn't match a registered route
+#         return r._404(req)
+#     elseif handler === missing
+#         # matched the path, but method not supported
+#         return r._405(req)
+#     else
+#         if !isempty(params)
+#             req.context[:params] = params
+#         end
+#         return handler(req)
+#     end
+# end
+
+# end # module

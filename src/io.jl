@@ -6,6 +6,7 @@ import JET:
     @invoke,
     isexpr
 
+using HTTP: Stream
 
 const CC = Core.Compiler
 
