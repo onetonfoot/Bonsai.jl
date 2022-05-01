@@ -41,10 +41,11 @@ json_type(::Type{<:Integer}) =  "integer"
 json_type(::Type{<:Real}) =  "number"
 json_type(::Type{Nothing}) =  "null"
 json_type(::Type{Missing}) =  "null"
-json_type(::Type{String}) =  "str"
-json_type(::Type{<:Enum}) =  "str"
+json_type(::Type{String}) =  "string"
+json_type(::Type{<:Enum}) =  "string"
 
 array_type(::Type{<:Vector{T}}) where T = T
+array_type(::Type{<:Array{T}}) where T = T
 
 json_schema(::Type{Headers{T}}, d = Dict{Symbol, Any}()) where T = json_schema(T, d)
 json_schema(::Type{Body{T}}, d = Dict{Symbol, Any}()) where T = json_schema(T, d)
@@ -87,16 +88,19 @@ function json_schema(::Type{T}, d = Dict{Symbol, Any}()) where T
 		end
 	elseif sT in primative_types
 		if T <: Enum
-			d[:enum] = Base.Enums.namemap(T) |> values |> collect
+			d[:enum] = Base.Enums.namemap(T) |> values |> collect .|> String
+		else
+			d[:type] = json_type(T)
 		end
-		d[:type] = json_type(T)
 	else
 		error("unable to determin json_schema for $T")
 	end
+
 	schema = JSONSchema(;d...)
 
 	if isnothing(schema.type) && 
 	   isnothing(schema.anyOf) &&
+	   isnothing(schema.enum) &&
 	   isnothing(schema.oneOf) &&
 	   isnothing(schema.not)
 		@warn "No data type in schema"
@@ -151,6 +155,8 @@ Base.@kwdef struct JSONSchema
 	# can it really be and array of types?
 	type::Union{Nothing, JSONSchemaType} = nothing
 
+	enum::Union{Nothing, Vector{String}} = nothing
+
 	# schema composition
 	allOf::Union{Nothing, Vector{JSONSchema}} = nothing
 	anyOf::Union{Vector{JSONSchema}, Nothing} = nothing
@@ -181,10 +187,10 @@ Base.@kwdef struct JSONSchema
 	const_::Union{Any, Nothing} = nothing
 
 	# array releated fields #
-	items::Union{JSONSchema, Nothing} = nothing
-	prefixItems::Union{Array{Pair{String, String}}, Nothing} = nothing
+	items::Union{JSONSchema, Nothing, Bool} = nothing
+	prefixItems::Union{Vector{JSONSchema}, Nothing} = nothing
 	additionalItem::Union{Bool, Nothing} = nothing
-	contains::Union{JSONSchemaType, Nothing} = nothing
+	contains::Union{Vector{JSONSchema}, Nothing} = nothing
 	unqiueItems::Union{Bool, Nothing} = nothing
 	minItems::Union{Int, Nothing} = nothing
 	maxItems::Union{Int, Nothing} = nothing

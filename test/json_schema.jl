@@ -8,8 +8,8 @@ using Dates
 
 @Struct struct FruitBasket
 	total::Int
-	prices::Array{Int}
-	fruit::Array{Fruit}
+	prices::Vector{Int}
+	fruit::Vector{Fruit}
 end
 
 @testset "json_schema_format" begin
@@ -17,40 +17,18 @@ end
 end
 
 @testset "json_schema" begin
-	@test :enum in fieldnames(json_schema(Fruit))
-	@test :items in fieldnames(json_schema(Array{Int}))
-	@test :prefixItems in fieldnames(json_schema(Tuple{Int, String}))
+
+	@test !isnothing(json_schema(Fruit).enum)
+	@test !isnothing(json_schema(Vector{Int}).items)
+
+
+	@test !isnothing(json_schema(Tuple{Int, String}).prefixItems)
+	@test Bonsai.json_schema(typeof(Body(x=10))) isa JSONSchema
+	@test Bonsai.json_schema(typeof(Headers(x_next=12))) isa JSONSchema
 end
 
 @testset "JSONSchema" begin
-	nt = json_schema(FruitBasket)
-	@test JSONSchema(;nt...) isa JSONSchema
+	@test json_schema(FruitBasket) isa JSONSchema
+	@test length(Bonsai.union_types(Union{Missing, Int, Nothing})) == 3
+    @test length(Bonsai.json_schema(Union{Missing, Int, Nothing}).oneOf) == 2
 end
-
-Bonsai.json_schema(typeof(Body(x=10)))
-Bonsai.json_schema(typeof(Headers(x_next=12)))
-
-function g()
-	a::Union{Int, Missing} = mi
-	a
-end
-
-t = Union{Missing, Int}
-
-t1 = Union{Missing, Nothing, Int}
-
-a = g()
-
-
-
-
-
-Union{Int, Missing} isa Union
-
-Bonsai.json_schema(Union{Missing, Int, Nothing})
-
-Bonsai.union_types(Union{Missing, Int, Nothing})
-
-Missing(10)
-
-StructTypes.StructType(Union{Missing,Int})

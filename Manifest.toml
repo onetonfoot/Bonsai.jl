@@ -245,6 +245,11 @@ git-tree-sha1 = "80d919dee55b9c50e8d9e2da5eeafff3fe58b539"
 uuid = "33c8b6b6-d38a-422a-b730-caa89a2f386c"
 version = "0.1.4"
 
+[[deps.ProtoStructs]]
+git-tree-sha1 = "b9367403c1f621c8960c412de7e11f9d1035bbd4"
+uuid = "437b6fc4-8e8e-11e9-3fa1-ad391e66c018"
+version = "1.0.0"
+
 [[deps.REPL]]
 deps = ["InteractiveUtils", "Markdown", "Sockets", "Unicode"]
 uuid = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
