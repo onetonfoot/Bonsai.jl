@@ -7,10 +7,9 @@ export ResponseCodes
 
 include("ResponseCodes.jl")
 
-include("json_schema.jl")
 include("mime_types.jl")
-include("path.jl")
 include("http.jl")
+include("json_schema.jl")
 include("handlers.jl")
 include("io.jl")
 include("cancel_token.jl")

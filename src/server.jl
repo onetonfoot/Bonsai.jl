@@ -91,16 +91,13 @@ function start(
 
     function handler_function(stream::HTTP.Stream)
         try 
-            handler = match_handler(app.router, stream)
-            middleware = match_middleware(app.router, stream)
+            handler, middleware = match(app, stream)
             if !isnothing(handler)
                 push!(middleware, (stream, next) -> handler(stream))
             else 
                 push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
             end
             combine_middleware(middleware)(stream)
-
-            @info "context" context=stream.message.context
         catch e
             @error e
             HTTP.setstatus(stream, 500)

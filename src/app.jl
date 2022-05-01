@@ -71,7 +71,7 @@ end
 function create_handler(app, method)
 	return (fn, path) -> begin 
 		handler = wrap_handler(fn)
-		node = handler isa Middleware ? app.middelware : app.paths
+		node = handler isa Middleware ? app.middleware : app.paths
 		register!(
 			node,
 			method,
@@ -98,6 +98,8 @@ function Base.getproperty(app::App, s::Symbol)
 		return create_handler(app, CONNECT)
 	elseif s == :patch
 		return create_handler(app, PATCH)
+	elseif s == :all
+		return create_handler(app, ALL)
 	else
 		return Base.getfield(app, s)
 	end

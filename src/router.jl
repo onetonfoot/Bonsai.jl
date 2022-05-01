@@ -47,7 +47,7 @@ function matchall(node::Node, params, method, segments, i)
 		m = matchall(node.exact[j], params, method, segments, i + 1)
 		anymissing = m === missing
 		m = coalesce(m, nothing)
-		@show :exact, m
+		# @show :exact, m
 		if m !== nothing
 			push!(matches, m...)
 			# return m
@@ -56,7 +56,7 @@ function matchall(node::Node, params, method, segments, i)
     # @info "Conditional" node=node.conditional
 	# check for conditional matches
 	for node in node.conditional
-		@show node.segment.pattern, segment
+		# @show node.segment.pattern, segment
 		if match(node.segment.pattern, segment) !== nothing
 			# matched a conditional node, recurse
 			m = matchall(node, params, method, segments, i + 1)
@@ -73,7 +73,7 @@ function matchall(node::Node, params, method, segments, i)
 		m = matchall(node.wildcard, params, method, segments, i + 1)
 		anymissing = m === missing
 		m = coalesce(m, nothing)
-        @show :wildcard, m
+        # @show :wildcard, m
 		if m !== nothing
 			push!(matches, m...)
 			# return m
@@ -145,36 +145,17 @@ end
 
 const Params = Dict{String, String}
 
-
-
 function Base.match(app, stream::Stream)
     req = stream.message
     url = URI(req.target)
     segments = split(url.path, '/'; keepempty=false)
     params = Params()
-    handler = match(app.paths, params , params, req.method, segments, 1)
-    middelware = matchall(app.middleware, params , params, req.method, segments, 1)
+
+    handler = match(app.paths, params, req.method, segments, 1)
+    middelware = matchall(app.middleware, params, req.method, segments, 1)
     req.context[:params] = params
     # handler and be nothing or missing
     # nothing - didn't match a registered route
     # missing - matched the path, but method not supported
     return handler, middelware
 end
-
-# function (r::Router)(req)
-#     handler = match(r.routes, params, req.method, segments, 1)
-#     if handler === nothing
-#         # didn't match a registered route
-#         return r._404(req)
-#     elseif handler === missing
-#         # matched the path, but method not supported
-#         return r._405(req)
-#     else
-#         if !isempty(params)
-#             req.context[:params] = params
-#         end
-#         return handler(req)
-#     end
-# end
-
-# end # module

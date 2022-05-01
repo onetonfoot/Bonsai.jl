@@ -35,6 +35,15 @@ end
 
 # OpenAPI
 
+rename HTTPParameter to HttpIo or better use a interface so people can easily extend for there own types
+
+```julia
+
+struct Custom{T}
+  t
+  val
+end
+```
 
 * Extract doc strings from structs
 

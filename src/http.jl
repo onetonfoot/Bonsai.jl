@@ -5,9 +5,8 @@ using CodeInfoTools: code_inferred
 import StructTypes: StructType, NoStructType
 import Base: |, ==
 
-export Headers, Query, Body, HttpPath, MissingHeaders, MissingCookies,
+export Headers, Query, Body, PathParams, MissingHeaders, MissingCookies,
 	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
-
 
 abstract type HttpParameter end
 
@@ -20,6 +19,7 @@ struct Connect <: HttpMethod end
 struct Options <: HttpMethod end
 struct Trace <: HttpMethod end
 struct Patch <: HttpMethod end
+struct All <: HttpMethod end
 
 Base.String(::HttpMethod) = "get"
 Base.String(::Post) = "post"
@@ -29,10 +29,7 @@ Base.String(::Connect) = "connect"
 Base.String(::Options) = "option"
 Base.String(::Trace) = "trace"
 Base.String(::Patch) = "patch"
-
-|(a::HttpMethod, b::HttpMethod) = (a, b)
-|(a::Tuple{Vararg{HttpMethod}}, b::HttpMethod) = (a..., b)
-|(a::HttpMethod, b::Tuple{Vararg{HttpMethod}}) = (a, b...)
+Base.String(::All) = "*"
 
 const GET = Get()
 const POST = Post()
@@ -42,42 +39,7 @@ const OPTIONS = Options()
 const CONNECT = Connect()
 const TRACE = Trace()
 const PATCH = Patch()
-const ALL = GET | POST | PUT | DELETE | OPTIONS | CONNECT | TRACE | PATCH
-
-function Base.convert(::Type{HttpMethod}, x::AbstractString)
-	if x == "GET"
-		GET
-	elseif x == "POST"
-		POST
-	elseif x == "PUT"
-		PUT
-	elseif x == "DELETE"
-		DELETE
-	elseif x == "OPTIONS"
-		OPTIONS
-	elseif x == "CONNECT"
-		CONNECT
-	elseif x == "TRACE"
-		TRACE
-	elseif x == "PATCH"
-		PATCH
-	else 
-		error("$x isn't a http method")
-	end
-end
-
-(==)(a::Union{AbstractString, Symbol}, b::HttpMethod) = b == a
-(==)(::Get, b) = b == "GET" || b == :GET
-(==)(::Post, b) = b == "POST" || b == :POST
-(==)(::Put, b) = b == "PUT" || b == :PUT
-(==)(::Delete, b) = b == "DELETE" || b == :DELETE
-(==)(::Options, b) = b == "OPTIONS" || b == :OPTIONS
-(==)(::Connect, b) = b == "CONNECT" || b == :CONNECT
-(==)(::Trace, b) = b == "TRACE" || b == :TRACE
-(==)(::Patch, b) = b == "PATCH" || b == :PATCH
-
-(==)(a::Tuple{Vararg{HttpMethod}} , b::Tuple{Vararg{HttpMethod}}) = b == a
-
+const ALL = All()
 
 struct Cookies{T} <: HttpParameter
 	t::Type{T}
@@ -85,6 +47,20 @@ end
 
 struct Headers{T} <: HttpParameter
 	t::Type{T}
+	val::Union{T, Nothing}
+end
+
+function Headers(val)
+	Headers(typeof(val), val)
+end
+
+function Headers(t::DataType)
+	Headers(t, nothing)
+end
+
+function Headers(;kwargs...)
+	nt = values(kwargs)
+	Headers(typeof(nt), nt)
 end
 
 struct Query{T} <: HttpParameter
@@ -93,7 +69,26 @@ end
 
 struct Body{T} <: HttpParameter
 	t::Type{T}
+	val::Union{T, Nothing}
 end
+
+function Body(val)
+	Body(typeof(val), val)
+end
+
+function Body(t::DataType)
+	Body(t, nothing)
+end
+
+function Body(;kwargs...)
+	nt = values(kwargs)
+	Body(typeof(nt), nt)
+end
+
+function parameter_type(t::Type{<:HttpParameter}) 
+	t.parameters[1]
+end
+
 
 struct PathParams{T} <: HttpParameter
 	t::Type{T}

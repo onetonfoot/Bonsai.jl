@@ -24,7 +24,6 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
 	end
 	h = match(app.paths,  Params(), "GET", ["path"], 1)
 	Bonsai.handler_writes(h.fn)
-	# h = app.router.paths[GET][1][2]
 	# for debuging
 	# code_inferred(h.fn, Tuple{Stream})
 	@test length(Bonsai.handler_writes(h.fn)) == 6

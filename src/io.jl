@@ -15,42 +15,66 @@ const CC = Core.Compiler
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-function write(stream::Stream, data::Number, status_code = ResponseCodes.Default())
-    Base.write(stream, string(data))
+# function write(stream::Stream, data::Number, status_code = ResponseCodes.Default())
+#     Base.write(stream, string(data))
+#     HTTP.setstatus(stream, Int(status_code))
+# end
+
+# function write(stream::Stream, data::NamedTuple, status_code = ResponseCodes.Default())
+#     JSON3.write(stream ,data)
+#     HTTP.setstatus(stream, Int(status_code))
+# end
+
+# function write(stream::Stream, data::AbstractDict, status_code = ResponseCodes.Default())
+#     JSON3.write(stream ,data)
+#     HTTP.setstatus(stream, Int(status_code))
+# end
+
+function write(stream::Stream, headers::Headers{T}, status_code = ResponseCodes.Default()) where T
+	for (header, value) in zip(fieldnames(headers), fieldvalues(headers))
+		HTTP.setheader(stream, headerize(header) => value)
+	end
     HTTP.setstatus(stream, Int(status_code))
 end
 
-function write(stream::Stream, data::NamedTuple, status_code = ResponseCodes.Default())
-    JSON3.write(stream ,data)
-    HTTP.setstatus(stream, Int(status_code))
-end
-
-function write(stream::Stream, data::AbstractDict, status_code = ResponseCodes.Default())
-    JSON3.write(stream ,data)
-    HTTP.setstatus(stream, Int(status_code))
-end
-
-function write(stream::Stream, data::T, status_code = ResponseCodes.Default()) where T
+function write(stream::Stream, data::Body{<:T}, status_code = ResponseCodes.Default()) where T
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
-        JSON3.write(stream ,data)
+        s = JSON3.write(data.val)
+		m = mime_type(data)
+
+		if !isnothing(m)
+			write(stream, Headers(content_type = m), status_code)
+		end
+
+		Base.write(stream, s)
     end
     HTTP.setstatus(stream, Int(status_code))
 end
 
-function write(stream::Stream, headers::Pair, status_code = ResponseCodes.Default())
-    HTTP.setheader(stream, headers)
-end
+# function write(stream::Stream, body::Body{T}, status_code = ResponseCodes.Default()) where T
+#     HTTP.setstatus(stream, Int(status_code))
+# end
+
 
 # allows for easier testing
 function write(stream::IOBuffer, data, status_code = ResponseCodes.Default())
     Base.write(stream, data)
 end
 
-function read(stream, body::Body{T}) where T
+function read(stream, ::Body{T}) where T
 	try
 		JSON3.read(stream, T)
+	catch e
+		@debug "Failed to convert body into $T"
+		rethrow(e)
+	end
+end
+
+function read(stream, ::PathParams{T}) where T
+	try
+		StructTypes.constructfrom(T, stream.context)
 	catch e
 		@debug "Failed to convert body into $T"
 		rethrow(e)
@@ -66,7 +90,7 @@ function convert_numbers!(data::AbstractDict, T)
 	data
 end
 
-function read(stream, query::Query{T}) where T
+function read(stream, ::Query{T}) where T
 	try
 		q::Dict{Symbol, Any} = Dict(Symbol(k) => v for (k,v) in queryparams(URI(stream.message.target)))
 		convert_numbers!(q, T)
@@ -77,7 +101,7 @@ function read(stream, query::Query{T}) where T
 	end
 end
 
-function read(stream, hs::Headers{T}) where T
+function read(stream, ::Headers{T}) where T
 	fields = fieldnames(T)
 	d = Dict()
 

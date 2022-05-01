@@ -121,7 +121,7 @@ StructTypes.StructType(::Type{MediaTypeObject}) = StructTypes.UnorderedStruct()
 StructTypes.omitempties(::Type{MediaTypeObject}) = true
 
 MediaTypeObject(t::DataType) = MediaTypeObject(
-	schema = JSONSchema(;json_schema(t)...)
+	schema = json_schema(t)
 )
 
 
@@ -305,7 +305,6 @@ end
 StructTypes.StructType(::Type{OpenAPI}) = StructTypes.Struct() 
 StructTypes.omitempties(::Type{OpenAPI}) = true
 
-http_parameters(f) = handler_reads(f)
 
 using HTTP.Handlers: Leaf
 
@@ -318,13 +317,27 @@ function open_api_parameters(leaf::Leaf)
 	l
 end
 
-function open_api_parameters(::PathParams{T}) where T
+function open_api_parameters(::Type{A}) where {A <: HttpParameter}
+
+	T = parameter_type(A)
+
 	l = ParameterObject[]
+
+	in = if A <: Query
+		"query"
+	elseif A <: PathParams
+		"path"
+	elseif A <: Headers
+		"header"
+	else
+		error("invalid type $A for ParameterObject")
+	end
+
 	StructTypes.foreachfield(T) do  i, field, field_type
-		schema = JSONSchema(;json_schema(field_type)...)
+		schema = json_schema(field_type)
 		d = (
 			name =  string(field),
-			in = "path",
+			in = in,
 			required = Missing <: field_type,
 			schema = schema,
 		)
@@ -333,47 +346,14 @@ function open_api_parameters(::PathParams{T}) where T
 	l
 end
 
-function open_api_parameters(::Headers{T}) where T
-	l = ParameterObject[]
-	StructTypes.foreachfield(T) do  i, field, field_type
-		schema = JSONSchema(;json_schema(field_type)...)
-		d = (
-			name =  headerize(string(field)),
-			in = "header",
-			required = Missing <: field_type,
-			schema = schema,
-		)
-		push!(l, ParameterObject(;d...))
-	end
-	l
-end
-
-
-function open_api_parameters(::Query{T}) where T
-	l = ParameterObject[]
-	StructTypes.foreachfield(T) do  i, field, field_type
-		schema = JSONSchema(;json_schema(field_type)...)
-		d = (
-			name =  string(field),
-			in = "query",
-			required = !(Missing <: field_type),
-			schema = schema,
-			allowReserved = false,
-
-		)
-		push!(l, ParameterObject(;d...))
-	end
-	l
-end
-
-	function RequestBodyObject(::Type{Body{T}}) where T
+function RequestBodyObject(::Type{Body{T}}) where T
 
 	if StructType(T) ==  NoStructType()
 		error("no struct type defined for $T")
 	end
 
 	media_type = MediaTypeObject(
-		schema = JSONSchema(;json_schema(T)...),
+		schema = json_schema(T),
 	)
 
 	RequestBodyObject(
@@ -412,7 +392,6 @@ function OperationObject(handler)
 	# and assume everything is a json response 
 	for (res_type, res_code) in writes
 		k =  string(Int(res_code))
-
 		responses[k] = ResponseObject(
 			content = Dict(
 				"application/json" => MediaTypeObject(res_type)
@@ -423,7 +402,7 @@ function OperationObject(handler)
 	params = ParameterObject[]
 	requestBody = nothing
 
-	for p in http_parameters(handler)
+	for p in handler_reads(handler)
 		# @debug "parameters" p=p
 		if p <: Body
 			requestBody = RequestBodyObject(p)
@@ -467,8 +446,6 @@ function OpenAPI(app)
 			paths[path] = d
 		# end
 	end
-
-	@info paths
 
 	paths = Dict(
 		k => PathItemObject(;v...) for (k, v) in paths
