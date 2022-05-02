@@ -75,10 +75,10 @@ app.get("/pets") do stream
 	end
 
 	Bonsai.write(stream, Headers(Next("/pets?limit=$(query.limit+1)&offset=$(query.offset)")))
-	Bonsai.write(stream, l)
+	Bonsai.write(stream, Body(l))
 end
 
-app.get("*") do stream, next
+app.get("**") do stream, next
 	try
 		next(stream)
 		if isopen(stream) && !iswritable(stream)
@@ -86,14 +86,16 @@ app.get("*") do stream, next
         end
 	catch e
 		@error e
-		Bonsai.write(stream, string(e), ResponseCodes.InternalServerError())
+		Bonsai.write(stream, Body(repr(e)), ResponseCodes.InternalServerError())
 	end
 end
 
-OpenAPI(app)
+JSON3.write("openapi.json", OpenAPI(app))
+
 
 start(app, port=10002)
 wait(app)
+
 stop(app)
 
 

@@ -145,10 +145,13 @@ end
 
 const Params = Dict{String, String}
 
-function Base.match(app, stream::Stream)
-    req = stream.message
+function Base.match(app, req::Request)
     url = URI(req.target)
-    segments = split(url.path, '/'; keepempty=false)
+    segments = if url.path == "/"
+		["/"]
+	else
+		split(url.path, '/'; keepempty=false)
+	end
     params = Params()
 
     handler = match(app.paths, params, req.method, segments, 1)
@@ -159,3 +162,5 @@ function Base.match(app, stream::Stream)
     # missing - matched the path, but method not supported
     return handler, middelware
 end
+
+Base.match(app, stream::Stream) = Base.match(app, stream.message)

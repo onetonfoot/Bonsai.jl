@@ -1,6 +1,7 @@
 using Test
 using Bonsai
 using Bonsai: register!, Node, Params, matchall
+using HTTP
 
 @testset "register!" begin
 	r = Node("*")
@@ -18,4 +19,23 @@ using Bonsai: register!, Node, Params, matchall
 	segments = split(p, "/"; keepempty=false)
 	ms = matchall(r, params, "GET", segments, 1)
 	@test sort(map(x -> x(nothing), ms)) == [1,2,3]
+end
+
+
+@testset "app" begin 
+
+	app = App()
+	app.get("**") do stream, next
+
+	end
+	app.get("**") do stream
+
+	end
+
+	req = HTTP.Request()
+	req.method = "GET"
+	req.target = "/"
+	handler, middleware =  match(app, req)
+	@test !isnothing(handler)
+	@test !isempty(middleware)
 end

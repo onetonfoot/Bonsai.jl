@@ -92,10 +92,15 @@ function start(
     function handler_function(stream::HTTP.Stream)
         try 
             handler, middleware = match(app, stream)
-            if !isnothing(handler)
-                push!(middleware, (stream, next) -> handler(stream))
-            else 
+
+            if isnothing(middleware) || ismissing(middleware)
+                middleware = []
+            end
+
+            if isnothing(handler) || ismissing(handler)
                 push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
+            else 
+                push!(middleware, (stream, next) -> handler(stream))
             end
             combine_middleware(middleware)(stream)
         catch e

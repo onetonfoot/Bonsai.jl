@@ -37,7 +37,7 @@ function write(stream::Stream, headers::Headers{T}, status_code = ResponseCodes.
 			HTTP.setheader(stream, headerize(header) => value)
 		end
 	end
-    # HTTP.setstatus(stream, Int(status_code))
+    HTTP.setstatus(stream, Int(status_code))
 end
 
 function write(stream::Stream, data::Body{T}, status_code = ResponseCodes.Default()) where T
@@ -55,7 +55,17 @@ function write(stream::Stream, data::Body{T}, status_code = ResponseCodes.Defaul
 			write(stream, Headers(content_type = m), status_code)
 		end
     end
-    # HTTP.setstatus(stream, Int(status_code))
+    HTTP.setstatus(stream, Int(status_code))
+end
+
+function write(stream::Stream, data::T, status_code = ResponseCodes.Default()) where T
+    if StructTypes.StructType(T) != StructTypes.NoStructType()
+		write(stream, Body(T), status_code)
+	elseif T isa Exception
+		write(stream, Body(string(data)), status_code)
+	else 
+		error("Unable in infer correct write location please wrap in Body or Headers")
+	end
 end
 
 # function write(stream::Stream, body::Body{T}, status_code = ResponseCodes.Default()) where T
