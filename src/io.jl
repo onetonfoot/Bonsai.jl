@@ -31,26 +31,31 @@ const CC = Core.Compiler
 # end
 
 function write(stream::Stream, headers::Headers{T}, status_code = ResponseCodes.Default()) where T
-	for (header, value) in zip(fieldnames(headers), fieldvalues(headers))
-		HTTP.setheader(stream, headerize(header) => value)
+	val = headers.val
+	if !isnothing(val)
+		for (header, value) in zip(fieldnames(val), fieldvalues(val))
+			HTTP.setheader(stream, headerize(header) => value)
+		end
 	end
-    HTTP.setstatus(stream, Int(status_code))
+    # HTTP.setstatus(stream, Int(status_code))
 end
 
-function write(stream::Stream, data::Body{<:T}, status_code = ResponseCodes.Default()) where T
+function write(stream::Stream, data::Body{T}, status_code = ResponseCodes.Default()) where T
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
-        s = JSON3.write(data.val)
-		m = mime_type(data)
+
+		if !isnothing(data.val)
+			JSON3.write(stream, data.val)
+		end
+
+		m = mime_type(data.val)
 
 		if !isnothing(m)
 			write(stream, Headers(content_type = m), status_code)
 		end
-
-		Base.write(stream, s)
     end
-    HTTP.setstatus(stream, Int(status_code))
+    # HTTP.setstatus(stream, Int(status_code))
 end
 
 # function write(stream::Stream, body::Body{T}, status_code = ResponseCodes.Default()) where T

@@ -30,7 +30,7 @@ end
 	offset::Union{Int, Missing}
 end
 
-# @testset "handler_writes" begin
+@testset "handler_writes" begin
 
 	function f(stream)
 		Bonsai.write(stream, Body("ok"), ResponseCodes.Ok())
@@ -44,8 +44,10 @@ end
 		end
 	end
 
-
-	@test length(handler_writes(handler)) == 4
+	# defining the mime type allows us to all write the correct
+	# content-type header
+	Bonsai.mime_type(::A1) = "application/json"
+	@test length(handler_writes(handler)) == 3
 
 	function g(stream)
 		query = Bonsai.read(stream, Query(Limit))
@@ -63,13 +65,14 @@ end
 			end
 		end
 
-		Bonsai.write(stream, Body(pets = l))
 		Bonsai.write(stream, Headers(x_next = "/pets?limit=$(query.limit+1)&offset=$(query.offset)"))
+		Bonsai.write(stream, Body(pets = l))
 	end
+
 
 	@test length(Bonsai.handler_writes(g)) == 2
 	@test length(Bonsai.handler_reads(g)) == 1
-# end
+end
 
 @testset "handler_reads" begin
 

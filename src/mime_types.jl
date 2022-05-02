@@ -89,3 +89,6 @@ function mime_type(t::DataType)
         return nothing
    end
 end
+
+# This is needed to allow type inference in io.jl
+mime_type(::Any) = nothing

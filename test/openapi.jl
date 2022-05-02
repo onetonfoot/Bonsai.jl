@@ -13,14 +13,15 @@ using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject,
 	id::String
 end
 
-@Struct struct Pet 
+@Struct struct Pet1
 	id::Int64
 	name::String
 	tag::String
 end
 
-@Struct struct Limit
+@Struct struct Limit1
 	limit::Int
+	offset::Int
 end
 
 @Struct struct Offset
@@ -34,7 +35,7 @@ end
 end
 
 @testset "Query" begin
-	@test length(open_api_parameters(Query{Limit})) == 1
+	@test length(open_api_parameters(Query{Limit1})) == 2
 	@test length(open_api_parameters(Query{Offset})) == 2
 end
 
@@ -51,17 +52,17 @@ end
 	end
 
 	app.get("/pets/") do stream
-		pet = Pet(body.id,"bob", "cat")
+		pet = Pet1(body.id,"bob", "cat")
 		Bonsai.write(stream , pet)
 	end
 
 	app.get("/pets/{id}") do stream
-		pets = [ Pet(body.id, "bob", "cat") for i in 1:10]
+		pets = [ Pet1(body.id, "bob", "cat") for i in 1:10]
 		Bonsai.write(pets)
 	end
 
 	app.get("/pets/{id}") do stream, next
-		pets = [ Pet(body.id, "bob", "cat") for i in 1:10]
+		pets = [ Pet1(body.id, "bob", "cat") for i in 1:10]
 		Bonsai.write(pets)
 	end
 

@@ -54,7 +54,6 @@ function json_schema(::Type{T}, d = Dict{Symbol, Any}()) where T
 
 	if T isa Union
 		types = union_types(T)
-		@info "types " types
 		return JSONSchema(
 			oneOf = unique(json_schema.(union_types(T)))
 		)
