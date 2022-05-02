@@ -9,6 +9,7 @@ using StructTypes: StringType, NumberType, BoolType, NullType
 using NamedTupleTools
 using Dates
 using UUIDs
+using Base.Docs
 
 const array_types = [ArrayType()]
 const object_types = [OrderedStruct(), UnorderedStruct(), Mutable(), DictType()]
@@ -50,10 +51,21 @@ array_type(::Type{<:Array{T}}) where T = T
 json_schema(::Type{Headers{T}}, d = Dict{Symbol, Any}()) where T = json_schema(T, d)
 json_schema(::Type{Body{T}}, d = Dict{Symbol, Any}()) where T = json_schema(T, d)
 
+
+function doc_str(t::Type{T}) where T
+	# Docs.getdocs could be usefull here
+	md = Docs.doc(T)
+	s = repr(md)
+	if startswith(s, "No documentation found.")
+		return nothing
+	else
+		return s
+	end
+end
+
 function json_schema(::Type{T}, d = Dict{Symbol, Any}()) where T
 
 	if T isa Union
-		types = union_types(T)
 		return JSONSchema(
 			oneOf = unique(json_schema.(union_types(T)))
 		)
@@ -64,6 +76,7 @@ function json_schema(::Type{T}, d = Dict{Symbol, Any}()) where T
 	# http://json-schema.org/understanding-json-schema/reference/object.html
 	if sT in object_types
 		d[:type] = "object"
+		d[:description] = doc_str(T)
 		if !(sT == DictType())
 			properties = Dict{String, Any}()
 			StructTypes.foreachfield(T) do  i, field, field_type
@@ -87,6 +100,7 @@ function json_schema(::Type{T}, d = Dict{Symbol, Any}()) where T
 		end
 	elseif sT in primative_types
 		if T <: Enum
+			d[:description] = doc_str(T)
 			d[:enum] = Base.Enums.namemap(T) |> values |> collect .|> String
 		else
 			d[:type] = json_type(T)

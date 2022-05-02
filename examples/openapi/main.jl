@@ -8,10 +8,16 @@ app = App()
 	id::Int
 end
 
-@Struct struct Limit 
+"""
+limit - How many items to return at one time (max 100)
+offset - Offset to start returning pets from
+"""
+struct Limit 
 	limit::Int
 	offset::Union{Int, Missing}
 end
+
+@Struct Limit
 
 @Struct struct Pet
 	id::Int
@@ -19,10 +25,15 @@ end
 	tag::String
 end
 
-@Struct struct Error 
+"""
+code - a numerical error code
+"""
+struct Error 
 	code::Int
 	type::String
 end
+
+@Struct Error
 
 @Struct struct Next
 	x_next::String
@@ -56,7 +67,6 @@ app.get("/pets/{id}") do stream
 		Bonsai.write(stream, err, ResponseCodes.NotFound())
 	end
 end
-
 
 app.get("/pets") do stream
 	query = Bonsai.read(stream, Query(Limit))

@@ -36,3 +36,11 @@ end
 	h = match(app.paths,  Params(), "GET", ["path"], 1)
 	@test length(Bonsai.handler_reads(h.fn)) == 3
 end
+
+
+# how to get this to pass
+# app = Bonsai.App()
+
+# "some function documenation"
+# app.get("/test-docs") do stream
+# end

@@ -69,7 +69,7 @@ function handlers(app::App)
 end
 
 function create_handler(app, method)
-	return (fn, path) -> begin 
+	return function(fn, path)  
 		handler = wrap_handler(fn)
 		node = handler isa Middleware ? app.middleware : app.paths
 		register!(
@@ -79,6 +79,16 @@ function create_handler(app, method)
 			handler
 		)
 	end
+	# return eval(:(function(fn, path)  
+	# 	handler = wrap_handler(fn)
+	# 	node = handler isa Middleware ? $(app).middleware : $(app).paths
+	# 	register!(
+	# 		node,
+	# 		$method,
+	# 		path,
+	# 		handler
+	# 	)
+	# end))
 end
 
 function Base.getproperty(app::App, s::Symbol)

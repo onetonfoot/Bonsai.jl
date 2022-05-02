@@ -6,11 +6,16 @@ using Dates
 
 @enum Fruit apple orange
 
-@Struct struct FruitBasket
+"""
+Fruit basket order
+"""
+struct FruitBasket
 	total::Int
 	prices::Vector{Int}
 	fruit::Vector{Fruit}
 end
+
+@Struct FruitBasket
 
 @testset "json_schema_format" begin
 	@test json_schema_format(DateTime) == "date-time"
@@ -25,6 +30,10 @@ end
 	@test !isnothing(json_schema(Tuple{Int, String}).prefixItems)
 	@test Bonsai.json_schema(typeof(Body(x=10))) isa JSONSchema
 	@test Bonsai.json_schema(typeof(Headers(x_next=12))) isa JSONSchema
+end
+
+@testset "doc_str" begin
+	@test !isnothing(Bonsai.doc_str(FruitBasket))
 end
 
 @testset "JSONSchema" begin

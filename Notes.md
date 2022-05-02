@@ -7,9 +7,11 @@
 * How to structure handlers in a way that supports live reload?
 * Add `app.all`
 
-Perhaps something like
+
+How to associate documentation with the handler in a intuative way?
 
 ```julia
+"Some documentation"
 app.get("/:id") do stream
 
 end
@@ -45,9 +47,7 @@ struct Custom{T}
 end
 ```
 
-* Extract doc strings from structs
-
-* Need a way to correctly guess the content type of writes to generate open-api, perhaps provide a function that can be overrided. For example to support other stuff like DataFrames
+* Need a way to correctly guess the content type of writes to generate open-api, perhaps provide a function that can be overrided. For example to support other stuff like DataFrames. `mime_type(::Type{T})`
 
 * Need to track writes of headers
 * Best to remove redoc and use swagger-ui, this will remove the NodsJS dep but will probably need to write a small react app

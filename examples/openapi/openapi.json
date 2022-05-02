@@ -1,1 +1,94 @@
-{"openapi":"3.0","info":{"title":"","description":null,"termsOfService":null,"contact":null,"license":null,"version":"3.0.0"},"paths":{"/pets/{id}":{"get":{"responses":{"404":{"content":{"application/json":{"schema":{"type":"object","properties":{"code":{"type":"integer"},"type":{"type":"str"}}}}}},"200":{"content":{"application/json":{"schema":{"type":"object","properties":{"name":{"type":"str"},"tag":{"type":"str"},"id":{"type":"integer"}}}}}}},"operationId":"/pets/{id}","depercated":false},"post":{"responses":{"200":{"content":{"application/json":{"schema":{"type":"str"}}}}},"operationId":"/pets/{id}","requestBody":{"content":{"application/json":{"schema":{"type":"object","properties":{"name":{"type":"str"},"tag":{"type":"str"},"id":{"type":"integer"}}}}},"required":true},"depercated":false}}}}
+{
+	"openapi": "3.0",
+	"info": {
+		"title": "",
+		"description": null,
+		"termsOfService": null,
+		"contact": null,
+		"license": null,
+		"version": "3.0.0"
+	},
+	"paths": {
+		"/pets/{id}": {
+			"get": {
+				"responses": {
+					"404": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"code": {
+											"type": "integer"
+										},
+										"type": {
+											"type": "str"
+										}
+									}
+								}
+							}
+						}
+					},
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"name": {
+											"type": "str"
+										},
+										"tag": {
+											"type": "str"
+										},
+										"id": {
+											"type": "integer"
+										}
+									}
+								}
+							}
+						}
+					}
+				},
+				"operationId": "/pets/{id}",
+				"depercated": false
+			},
+			"post": {
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "str"
+								}
+							}
+						}
+					}
+				},
+				"operationId": "/pets/{id}",
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "str"
+									},
+									"tag": {
+										"type": "str"
+									},
+									"id": {
+										"type": "integer"
+									}
+								}
+							}
+						}
+					},
+					"required": true
+				},
+				"depercated": false
+			}
+		}
+	}
+}
