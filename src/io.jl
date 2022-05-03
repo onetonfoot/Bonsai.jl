@@ -50,6 +50,7 @@ function write(stream::Stream, data::Body{T}, status_code=ResponseCodes.Default(
             startwrite(stream)
             s = JSON3.write(data.val)
             Base.write(stream, s)
+            closewrite(stream)
         end
 
         m = mime_type(data.val)
@@ -64,9 +65,7 @@ end
 # Code Inference is broken for this
 function write(stream::Stream, data::T, status_code=ResponseCodes.Default()) where {T<:AbstractPath}
     file = Base.read(data)
-    startwrite(stream)
-    Base.write(stream, file)
-    HTTP.setstatus(stream, Int(status_code))
+    write(stream, Body(file))
     m = mime_type(file)
     if !isnothing(m)
         HTTP.setheader(stream, "Content-Type" => m)
@@ -110,9 +109,14 @@ function write(stream::IOBuffer, data, status_code=ResponseCodes.Default())
 end
 
 function read(stream, ::Body{T}) where {T}
-    pre_read(stream)
     try
-        d = JSON3.read(stream)
+        d = if stream isa Stream
+            startread(stream)
+            JSON3.read(stream)
+            closeread(stream)
+        else
+            JSON3.read(stream)
+        end
         StructTypes.constructfrom(T, d)
     catch e
         @debug "Failed to convert body into $T"
