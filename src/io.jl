@@ -42,13 +42,14 @@ function write(stream::Stream, headers::Headers{T}, status_code=ResponseCodes.De
 end
 
 function write(stream::Stream, data::Body{T}, status_code=ResponseCodes.Default()) where {T}
-    startwrite(stream)
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
 
         if !isnothing(data.val)
-            JSON3.write(stream, data.val)
+            startwrite(stream)
+            s = JSON3.write(data.val)
+            Base.write(stream, s)
         end
 
         m = mime_type(data.val)
@@ -111,7 +112,7 @@ end
 function read(stream, ::Body{T}) where {T}
     pre_read(stream)
     try
-        d = JSON3.read(stream.message.body)
+        d = JSON3.read(stream)
         StructTypes.constructfrom(T, d)
     catch e
         @debug "Failed to convert body into $T"
