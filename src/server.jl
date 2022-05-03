@@ -74,7 +74,7 @@ end
 function Base.show(io::IO, e::NoHandler)
     print(
         io,
-        "Target - $(stream.message.target)\n"
+        "Target - $(stream.message.target)\n",
         "Method - $(stream.message.method)\n"
     )
 end
