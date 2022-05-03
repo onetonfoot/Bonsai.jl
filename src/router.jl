@@ -192,7 +192,6 @@ function Base.match(node::Node, params, method, segments, i)
     return anymissing ? missing : nothing
 end
 
-
 function matchall(node::Node, params, method, segments, i)
     matches = []
     # @info "Node"

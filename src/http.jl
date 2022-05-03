@@ -58,20 +58,29 @@ function Headers(t::DataType)
     Headers(t, nothing)
 end
 
-function Headers(; kwargs...)
-    nt = values(kwargs)
-    Headers(typeof(nt), nt)
-end
 
 function Headers(; kwargs...)
     k = []
     v = []
+    has_datatype = false
+
     for (x, y) in kwargs
+
+        if typeof(y) isa DataType
+            has_datatype = true
+        end
+
         push!(k, x)
         push!(v, y)
     end
-    t = NamedTuple{tuple(k...),Tuple{v...}}
-    Headers(t)
+
+    if has_datatype
+        nt = values(kwargs)
+        Headers(typeof(nt), nt)
+    else
+        t = NamedTuple{tuple(k...),Tuple{v...}}
+        Headers(t)
+    end
 end
 
 struct Query{T} <: HttpParameter
