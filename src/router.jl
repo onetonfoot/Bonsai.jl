@@ -84,7 +84,7 @@ function Base.insert!(node::Node, leaf, segments, i)
         if node.wildcard === nothing
             node.wildcard = Node(segment)
         end
-        return insert!(node.wildcard, leaf, segments, i + 1)
+        return Base.insert!(node.wildcard, leaf, segments, i + 1)
     elseif segment == "**"
         # double-star node
         if node.doublestar === nothing
@@ -93,7 +93,7 @@ function Base.insert!(node::Node, leaf, segments, i)
         if i < length(segments)
             error("/** double wildcard must be last segment in path")
         end
-        return insert!(node.doublestar, leaf, segments, i + 1)
+        return Base.insert!(node.doublestar, leaf, segments, i + 1)
     elseif segment isa Variable
         # conditional node
         # check if we've seen this exact conditional segment before
@@ -105,7 +105,7 @@ function Base.insert!(node::Node, leaf, segments, i)
         else
             n = node.conditional[j]
         end
-        return insert!(n, leaf, segments, i + 1)
+        return Base.insert!(n, leaf, segments, i + 1)
     else
         # exact node
         @assert segment isa String
@@ -115,10 +115,10 @@ function Base.insert!(node::Node, leaf, segments, i)
             n = Node(segment)
             push!(node.exact, n)
             sort!(node.exact; by=x -> x.segment)
-            return insert!(n, leaf, segments, i + 1)
+            return Base.insert!(n, leaf, segments, i + 1)
         else
             # existing exact match segment
-            return insert!(node.exact[j], leaf, segments, i + 1)
+            return Base.insert!(node.exact[j], leaf, segments, i + 1)
         end
     end
 end
@@ -152,7 +152,7 @@ function Base.match(node::Node, params, method, segments, i)
     j = find(segment, node.exact; by=x -> x.segment)
     if j !== nothing
         # found an exact match, recurse
-        m = match(node.exact[j], params, method, segments, i + 1)
+        m = Base.match(node.exact[j], params, method, segments, i + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
         # @show :exact, m
@@ -165,7 +165,7 @@ function Base.match(node::Node, params, method, segments, i)
         # @show node.segment.pattern, segment
         if match(node.segment.pattern, segment) !== nothing
             # matched a conditional node, recurse
-            m = match(node, params, method, segments, i + 1)
+            m = Base.match(node, params, method, segments, i + 1)
             anymissing = m === missing
             m = coalesce(m, nothing)
             if m !== nothing
@@ -174,7 +174,7 @@ function Base.match(node::Node, params, method, segments, i)
         end
     end
     if node.wildcard !== nothing
-        m = match(node.wildcard, params, method, segments, i + 1)
+        m = Base.match(node.wildcard, params, method, segments, i + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
         if m !== nothing
@@ -182,7 +182,7 @@ function Base.match(node::Node, params, method, segments, i)
         end
     end
     if node.doublestar !== nothing
-        m = match(node.doublestar, params, method, segments, length(segments) + 1)
+        m = Base.match(node.doublestar, params, method, segments, length(segments) + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
         if m !== nothing
@@ -297,7 +297,7 @@ function register!(n::Node, method::String, path, handler)
     else
         map(segment, split(path, '/'; keepempty=false))
     end
-    insert!(n, Leaf(method, Tuple{Int,String}[], path, handler), segments, 1)
+    Base.insert!(n, Leaf(method, Tuple{Int,String}[], path, handler), segments, 1)
     return
 end
 
