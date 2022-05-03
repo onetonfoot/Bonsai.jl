@@ -69,15 +69,15 @@ end
 #     return HTTP.WebSockets.WebSocket(io; server=true)
 # end
 
-struct NoHandler <: Exception 
+struct NoHandler <: Exception
     target::String
 end
 
 function start(
-      app::App;
-      host=ip"0.0.0.0", 
-      port=8081,
-      kwargs...)
+    app::App;
+    host=ip"0.0.0.0",
+    port=8081,
+    kwargs...)
 
 
     if !isnothing(app.redocs)
@@ -90,51 +90,64 @@ function start(
     end
 
     function handler_function(stream::HTTP.Stream)
-        try 
+        try
             handler, middleware = match(app, stream)
 
             if isnothing(middleware) || ismissing(middleware)
                 middleware = []
             end
 
+            if app.hot_reload
+                middleware = map(middleware) do fn
+                    (stream, next) -> Base.invokelatest(fn, stream, next)
+                end
+            end
+
+            # Base.invoke_in_world
             if isnothing(handler) || ismissing(handler)
                 push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
-            else 
-                push!(middleware, (stream, next) -> handler(stream))
+            else
+                if app.hot_reload
+                    push!(middleware, (stream, next) -> Base.invokelatest(handler, stream))
+                else
+                    push!(middleware, (stream, next) -> handler(stream))
+                end
             end
             combine_middleware(middleware)(stream)
         catch e
             @error e
             HTTP.setstatus(stream, 500)
-            Base.write(stream,  HTTP.statustext(500))
+            Base.write(stream, HTTP.statustext(500))
             rethrow(e)
         end
     end
 
     function serve_fn(server)
         HTTP.serve(
-            handler_function, 
+            handler_function,
             host, port; server=server, stream=true, kwargs...
-        ) 
+        )
     end
 
     token = app.cancel_token
     addr = Sockets.InetAddr(host, port)
     app.inet_addr = addr
-    running  = Threads.Atomic{Bool}(true)
-    restarts  = Threads.Atomic{Int}(0)
+    running = Threads.Atomic{Bool}(true)
+    restarts = Threads.Atomic{Int}(0)
     server_sockets = Channel(1)
 
     @info "Starting server"
     @async_logged "Server" begin
         while isopen(token)
+            # It this needed? Do we need to start a new server if we already invoke the latest app handlers?
             socket = Sockets.listen(addr)
             try
                 put!(server_sockets, socket)
+                # Is this involde latest needed?
                 Base.invokelatest(serve_fn, socket)
             catch e
                 app.inet_addr = nothing
-                if e isa Base.IOError && running[] 
+                if e isa Base.IOError && running[]
                     continue
                 else
                     rethrow()
@@ -148,19 +161,22 @@ function start(
     # necessary because we need to exit this loop cleanly when the user
     # cancels the server, regardless of any revision event.
     @async_logged "Revision Loop" while isopen(token)
-            wait(Revise.revision_event)
-            Revise.revise(throw=true)
-            close(take!(server_sockets))
-            restarts[] += 1
-            if isopen(token)
-                @info "Revision event $(restarts[])"
-            end
+        @info "REVISE EVENT"
+        wait(Revise.revision_event)
+        Revise.revise(throw=true)
+        close(take!(server_sockets))
+        # stop(app)
+        # start(app)
+        restarts[] += 1
+        if isopen(token)
+            @info "Revision event $(restarts[])"
+        end
     end
 
     app
 end
 
-function stop(app::App) 
+function stop(app::App)
     close(app.cancel_token)
     app.inet_addr = nothing
 end
