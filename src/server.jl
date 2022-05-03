@@ -91,29 +91,7 @@ function start(
 
     function handler_function(stream::HTTP.Stream)
         try
-            handler, middleware::Array{Any} = match(app, stream)
-
-            if isnothing(middleware) || ismissing(middleware)
-                middleware = []
-            end
-
-            if app.hot_reload
-                middleware = map(middleware) do fn
-                    (stream, next) -> Base.invokelatest(fn, stream, next)
-                end
-            end
-
-            # Base.invoke_in_world
-            if isnothing(handler) || ismissing(handler)
-                push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
-            else
-                if app.hot_reload
-                    push!(middleware, (stream, next) -> Base.invokelatest(handler, stream))
-                else
-                    push!(middleware, (stream, next) -> handler(stream))
-                end
-            end
-            combine_middleware(middleware)(stream)
+            app(stream)
         catch e
             @error e
             HTTP.setstatus(stream, 500)
