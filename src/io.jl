@@ -7,6 +7,7 @@ import JET:
     isexpr
 
 using HTTP: Stream
+using FilePathsBase: AbstractPath
 
 const CC = Core.Compiler
 
@@ -56,6 +57,17 @@ function write(stream::Stream, data::Body{T}, status_code = ResponseCodes.Defaul
 		end
     end
     HTTP.setstatus(stream, Int(status_code))
+end
+
+# Code Inference is broken for this
+function write(stream::Stream, data::T, status_code = ResponseCodes.Default()) where T <: AbstractPath
+	file = Base.read(data)
+	Base.write(stream, file)
+    HTTP.setstatus(stream, Int(status_code))
+	m = mime_type(file)
+	if !isnothing(m)
+		HTTP.setheader(stream, "Content-Type" => m)
+	end
 end
 
 function write(stream::Stream, data::T, status_code = ResponseCodes.Default()) where T

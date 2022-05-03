@@ -6,6 +6,8 @@ using StructTypes: @Struct
 using StructTypes
 using Bonsai: handler_writes, handler_reads, PathParams
 using Test
+using FilePaths: Path
+using FilePathsBase: /
 
 @Struct struct A1
 	data
@@ -72,7 +74,21 @@ end
 
 	@test length(Bonsai.handler_writes(g)) == 2
 	@test length(Bonsai.handler_reads(g)) == 1
+	
 end
+
+
+@testset "AbstractPath" begin
+	f = Path(@__DIR__) / "data/c.json"
+
+	function file(stream)
+		f = Path(@__DIR__) / "data/c.json"
+		Bonsai.write(stream, f)
+	end
+
+	@test_skip length(Bonsai.handler_writes(file)) == 1
+end
+
 
 @testset "handler_reads" begin
 

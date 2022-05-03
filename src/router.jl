@@ -110,7 +110,11 @@ The following path types are allowed for matching:
 function register! end
 
 function register!(n::Node, method::String, path, handler)
-    segments = map(segment, split(path, '/'; keepempty=false))
+	segments = if path == "/"
+		["/"]
+	else
+		map(segment, split(path, '/'; keepempty=false))
+	end
     insert!(n, Leaf(method, Tuple{Int, String}[], path, handler), segments, 1)
     return
 end

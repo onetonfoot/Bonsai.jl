@@ -20,7 +20,7 @@ mutable struct App
 
 	function App()
 		id = rand(Int)
-		return new(
+		app = new(
 			id,
 			"/docs",
 			CancelToken(),
@@ -28,6 +28,8 @@ mutable struct App
 			Node("*"),
 			Node("*"),
 		)
+		finalizer(stop, app) 
+		return app
 	end
 end
 
@@ -45,6 +47,7 @@ function AbstractTrees.children(node::Node)
 	if !isnothing(node.doublestar)
 		push!(l, node.wildcard)
 	end
+	filter!(x -> !isnothing(x), l)
 	return l
 end
 

@@ -39,3 +39,16 @@ end
 	@test !isnothing(handler)
 	@test !isempty(middleware)
 end
+
+@testset "/" begin
+	app = App()
+
+	app.get("/") do stream
+	end
+
+	req = HTTP.Request()
+	req.method = "GET"
+	req.target = "/"
+	handler, middleware =  match(app, req)
+	@test !isnothing(handler)
+end
