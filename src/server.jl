@@ -69,16 +69,6 @@ end
 #     return HTTP.WebSockets.WebSocket(io; server=true)
 # end
 
-
-
-function Base.show(io::IO, e::NoHandler)
-    print(
-        io,
-        "Target - $(stream.message.target)\n",
-        "Method - $(stream.message.method)\n"
-    )
-end
-
 function start(
     app::App;
     host=ip"0.0.0.0",

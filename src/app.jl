@@ -38,6 +38,14 @@ struct NoHandler <: Exception
     stream::Stream
 end
 
+function Base.show(io::IO, e::NoHandler)
+    print(
+        io,
+        "Target - $(e.stream.message.target)\n",
+        "Method - $(e.stream.message.method)"
+    )
+end
+
 function (app::App)(stream)
     handler, middleware::Array{Any} = match(app, stream)
 
