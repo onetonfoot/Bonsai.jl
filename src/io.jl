@@ -42,6 +42,7 @@ function write(stream::Stream, headers::Headers{T}, status_code=ResponseCodes.De
 end
 
 function write(stream::Stream, data::Body{T}, status_code=ResponseCodes.Default()) where {T}
+    startwrite(stream)
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
@@ -62,6 +63,7 @@ end
 # Code Inference is broken for this
 function write(stream::Stream, data::T, status_code=ResponseCodes.Default()) where {T<:AbstractPath}
     file = Base.read(data)
+    startwrite(stream)
     Base.write(stream, file)
     HTTP.setstatus(stream, Int(status_code))
     m = mime_type(file)
