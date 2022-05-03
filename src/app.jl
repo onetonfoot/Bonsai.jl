@@ -3,7 +3,6 @@ using AbstractTrees
 using Sockets: InetAddr
 
 export App
-# There must be a better way to handle multple app's
 
 function path_params(stream)
     stream.context[:params]
@@ -47,29 +46,46 @@ function Base.show(io::IO, e::NoHandler)
 end
 
 function (app::App)(stream)
-    handler, middleware::Array{Any} = match(app, stream)
+    request::Request = stream.message
+    request.body = Base.read(stream)
+    closeread(stream)
 
-    if isnothing(middleware) || ismissing(middleware)
-        middleware = []
-    end
 
-    if app.hot_reload
-        middleware = map(middleware) do fn
-            (stream, next) -> Base.invokelatest(fn, stream, next)
+
+    try
+        # request.response::Response = handler(request)
+        handler, middleware::Array{Any} = match(app, stream)
+
+        if isnothing(middleware) || ismissing(middleware)
+            middleware = []
         end
-    end
 
-    # Base.invoke_in_world
-    if (isnothing(handler) || ismissing(handler)) && isempty(middleware)
-        push!(middleware, (stream, next) -> throw(NoHandler(stream)))
-    else
         if app.hot_reload
-            push!(middleware, (stream, next) -> Base.invokelatest(handler, stream))
-        else
-            push!(middleware, (stream, next) -> handler(stream))
+            middleware = map(middleware) do fn
+                (stream, next) -> Base.invokelatest(fn, stream, next)
+            end
         end
+
+        # Base.invoke_in_world
+        if isnothing(handler) || ismissing(handler) || isempty(middleware)
+            push!(middleware, (stream, next) -> throw(NoHandler(stream)))
+        else
+            if app.hot_reload
+                push!(middleware, (stream, next) -> Base.invokelatest(handler, stream))
+            else
+                push!(middleware, (stream, next) -> handler(stream))
+            end
+        end
+        combine_middleware(middleware)(stream)
+
+    catch e
+        @error e
+    finally
+        request.response.request = request
+        @info request.response
+        startwrite(stream)
+        Base.write(stream, request.response.body)
     end
-    combine_middleware(middleware)(stream)
 end
 
 function AbstractTrees.children(node::Node)

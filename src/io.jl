@@ -8,6 +8,7 @@ import JET:
 
 using HTTP: Stream
 using FilePathsBase: AbstractPath
+import Parsers
 
 const CC = Core.Compiler
 
@@ -16,63 +17,49 @@ const CC = Core.Compiler
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-# function write(stream::Stream, data::Number, status_code = ResponseCodes.Default())
-#     Base.write(stream, string(data))
-#     HTTP.setstatus(stream, Int(status_code))
-# end
 
-# function write(stream::Stream, data::NamedTuple, status_code = ResponseCodes.Default())
-#     JSON3.write(stream ,data)
-#     HTTP.setstatus(stream, Int(status_code))
-# end
+write(stream::Stream{<:Request}, data, status_code=ResponseCodes.Default()) = write(stream.message.response, data, status_code)
 
-# function write(stream::Stream, data::AbstractDict, status_code = ResponseCodes.Default())
-#     JSON3.write(stream ,data)
-#     HTTP.setstatus(stream, Int(status_code))
-# end
-
-function write(stream::Stream, headers::Headers{T}, status_code=ResponseCodes.Default()) where {T}
+function write(res::Response, headers::Headers{T}, status_code=ResponseCodes.Default()) where {T}
     val = headers.val
     if !isnothing(val)
         for (header, value) in zip(fieldnames(val), fieldvalues(val))
-            HTTP.setheader(stream, headerize(header) => value)
+            HTTP.setheader(res, headerize(header) => value)
         end
     end
-    HTTP.setstatus(stream, Int(status_code))
+    # HTTP.setstatus(stream, Int(status_code))
 end
 
-function write(stream::Stream, data::Body{T}, status_code=ResponseCodes.Default()) where {T}
+function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()) where {T}
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
 
         if !isnothing(data.val)
-            startwrite(stream)
-            s = JSON3.write(data.val)
-            Base.write(stream, s)
-            closewrite(stream)
+            b = IOBuffer()
+            JSON3.write(b, data.val)
+            res.body = take!(b)
         end
 
-        m = mime_type(data.val)
-
+        m = mime_type(T)
         if !isnothing(m)
-            write(stream, Headers(content_type=m), status_code)
+            write(res, Headers(content_type=m), status_code)
         end
     end
-    HTTP.setstatus(stream, Int(status_code))
+    HTTP.setstatus(res, Int(status_code))
 end
 
 # Code Inference is broken for this
-function write(stream::Stream, data::T, status_code=ResponseCodes.Default()) where {T<:AbstractPath}
+function write(res::Response, data::T, status_code=ResponseCodes.Default()) where {T<:AbstractPath}
     file = Base.read(data)
-    write(stream, Body(file))
+    write(res, Body(file))
     m = mime_type(file)
     if !isnothing(m)
-        HTTP.setheader(stream, "Content-Type" => m)
+        write(res, Headers(content_type=m))
     end
 end
 
-function write(stream::Stream, data::T, status_code=ResponseCodes.Default()) where {T}
+function write(stream::Response, data::T, status_code=ResponseCodes.Default()) where {T}
     if StructTypes.StructType(T) != StructTypes.NoStructType()
         write(stream, Body(T), status_code)
     elseif T isa Exception
@@ -82,51 +69,22 @@ function write(stream::Stream, data::T, status_code=ResponseCodes.Default()) whe
     end
 end
 
-function pre_read(stream) end
+read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
+read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 
-function pre_read(stream::Stream)
-    request::Request = stream.message
-    request.body = Base.read(stream)
-    closeread(stream)
-end
-
-# function write(stream::Stream, body::Body{T}, status_code = ResponseCodes.Default()) where T
-#     HTTP.setstatus(stream, Int(status_code))
-# end
-
-#  function(stream::Stream)
-#         request.response::Response = handler(request)
-#         request.response.request = request
-#         startwrite(stream)
-#         write(stream, request.response.body)
-#         return
-#     end
-
-
-# allows for easier testing
-function write(stream::IOBuffer, data, status_code=ResponseCodes.Default())
-    Base.write(stream, data)
-end
-
-function read(stream, ::Body{T}) where {T}
+function read(req::Request, ::Body{T}) where {T}
     try
-        d = if stream isa Stream
-            startread(stream)
-            JSON3.read(stream)
-            closeread(stream)
-        else
-            JSON3.read(stream)
-        end
-        StructTypes.constructfrom(T, d)
+        return JSON3.read(req.body, T)
     catch e
         @debug "Failed to convert body into $T"
         rethrow(e)
     end
 end
 
-function read(stream, ::PathParams{T}) where {T}
+function read(req::Request, ::PathParams{T}) where {T}
     try
-        StructTypes.constructfrom(T, stream.context)
+        @info req.context[:params]
+        StructTypes.constructfrom(T, req.context[:params])
     catch e
         @debug "Failed to convert body into $T"
         rethrow(e)
@@ -135,16 +93,17 @@ end
 
 function convert_numbers!(data::AbstractDict, T)
     for (k, t) in zip(fieldnames(T), fieldtypes(T))
-        if t <: Number
-            data[k] = parse(t, data[k])
+        if t <: Union{Number,Missing,Nothing}
+            data[k] = Parsers.parse(Float64, data[k])
         end
     end
     data
 end
 
-function read(stream, ::Query{T}) where {T}
+function read(req::Request, ::Query{T}) where {T}
     try
-        q::Dict{Symbol,Any} = Dict(Symbol(k) => v for (k, v) in queryparams(URI(stream.message.target)))
+        q::Dict{Symbol,Any} = Dict(Symbol(k) => v for (k, v) in queryparams(req.url))
+        @info q
         convert_numbers!(q, T)
         StructTypes.constructfrom(T, q)
     catch e
@@ -153,14 +112,14 @@ function read(stream, ::Query{T}) where {T}
     end
 end
 
-function read(stream, ::Headers{T}) where {T}
+function read(req::Request, ::Headers{T}) where {T}
     fields = fieldnames(T)
     d = Dict()
 
     for i in fields
         h = headerize(i)
-        if HTTP.hasheader(stream, h)
-            d[i] = HTTP.header(stream, h)
+        if HTTP.hasheader(req, h)
+            d[i] = HTTP.header(req, h)
         else
             d[i] = missing
         end
@@ -265,6 +224,7 @@ function handler_writes(@nospecialize(handler))
         # @debug "writes" type=res_type code=res_code
         (extract_type(res_type), res_code)
     end
+    unique!(l)
 end
 
 
@@ -278,6 +238,7 @@ function handler_reads(@nospecialize(handler))
         # @debug "writes" type=res_type code=res_code
         (extract_type(res_type))
     end
+    unique!(l)
 end
 
 handler_reads(handler::AbstractHandler) = handler_reads(handler.fn)

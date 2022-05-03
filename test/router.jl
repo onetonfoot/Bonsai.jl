@@ -1,54 +1,65 @@
 using Test
 using Bonsai
 using Bonsai: register!, Node, Params, matchall
+using URIs
 using HTTP
 
-@testset "register!" begin
-	r = Node("*")
+@testset "match" begin
+    app = App()
+    app.get("/{x}") do stream
+    end
+    req = Request()
+    req.url = URI("http://locahost:4040/pet")
+    match(app, req)
+    @test_skip haskey(req.context[:params], "x")
+end
 
-	# matches
-	register!(r, GET, "/fish/{id}" , x -> 1)
-	register!(r, GET, "/fish/super", x -> 2)
-	register!(r, GET, "/fish/**"   , x -> 3)
-	# wrong method
-	register!(r, PUT, "/fish/**", x -> 4)
-	# wrong path
-	register!(r, PUT, "/turtle/super", x -> 5)
-	p = "/fish/super"
-	params = Params()
-	segments = split(p, "/"; keepempty=false)
-	ms = matchall(r, params, "GET", segments, 1)
-	@test sort(map(x -> x(nothing), ms)) == [1,2,3]
+@testset "register!" begin
+    r = Node("*")
+
+    # matches
+    register!(r, GET, "/fish/{id}", x -> 1)
+    register!(r, GET, "/fish/super", x -> 2)
+    register!(r, GET, "/fish/**", x -> 3)
+    # wrong method
+    register!(r, PUT, "/fish/**", x -> 4)
+    # wrong path
+    register!(r, PUT, "/turtle/super", x -> 5)
+    p = "/fish/super"
+    params = Params()
+    segments = split(p, "/"; keepempty=false)
+    ms = matchall(r, params, "GET", segments, 1)
+    @test sort(map(x -> x(nothing), ms)) == [1, 2, 3]
 end
 
 
-@testset "app" begin 
+@testset "app" begin
 
-	app = App()
-	app.get("**") do stream, next
+    app = App()
+    app.get("**") do stream, next
 
-	end
-	app.get("**") do stream
+    end
+    app.get("**") do stream
 
-	end
+    end
 
-	req = HTTP.Request()
-	req.method = "GET"
-	req.target = "/"
-	handler, middleware =  match(app, req)
-	@test !isnothing(handler)
-	@test !isempty(middleware)
+    req = HTTP.Request()
+    req.method = "GET"
+    req.target = "/"
+    handler, middleware = match(app, req)
+    @test !isnothing(handler)
+    @test !isempty(middleware)
 end
 
 @testset "/" begin
-	app = App()
+    app = App()
 
-	app.get("/") do stream
-	end
+    app.get("/") do stream
+    end
 
-	req = HTTP.Request()
-	req.method = "GET"
-	req.target = "/"
-	handler, middleware =  match(app, req)
-	@test !isnothing(handler)
+    req = HTTP.Request()
+    req.method = "GET"
+    req.target = "/"
+    handler, middleware = match(app, req)
+    @test !isnothing(handler)
 end

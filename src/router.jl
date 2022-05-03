@@ -333,11 +333,16 @@ function Base.match(app, req::Request)
     params = Params()
 
     handler = match(app.paths, params, req.method, segments, 1)
-    middelware::Array{AbstractHandler} = matchall(app.middleware, params, req.method, segments, 1)
+    middelware = matchall(app.middleware, params, req.method, segments, 1)
     req.context[:params] = params
     # handler and be nothing or missing
     # nothing - didn't match a registered route
     # missing - matched the path, but method not supported
+
+    if ismissing(middelware) || isnothing(middelware)
+        middelware = []
+    end
+
     return handler, middelware
 end
 

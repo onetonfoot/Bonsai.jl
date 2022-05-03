@@ -89,9 +89,9 @@ function start(
         try
             app(stream)
         catch e
-            @error e
-            HTTP.setstatus(stream, 500)
-            Base.write(stream, HTTP.statustext(500))
+            @error "an error occured" e = typeof(e)
+            # HTTP.setstatus(stream, 500)
+            # Base.write(stream, HTTP.statustext(500))
             rethrow(e)
         end
     end
