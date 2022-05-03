@@ -111,7 +111,8 @@ end
 function read(stream, ::Body{T}) where {T}
     pre_read(stream)
     try
-        JSON3.read(stream, T)
+        d = JSON3.read(stream.message.body)
+        StructTypes.constructfrom(T, d)
     catch e
         @debug "Failed to convert body into $T"
         rethrow(e)
