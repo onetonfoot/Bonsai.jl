@@ -34,6 +34,10 @@ mutable struct App
     end
 end
 
+struct NoHandler <: Exception
+    stream::Stream
+end
+
 function (app::App)(stream)
     handler, middleware::Array{Any} = match(app, stream)
 
@@ -49,7 +53,7 @@ function (app::App)(stream)
 
     # Base.invoke_in_world
     if isnothing(handler) || ismissing(handler)
-        push!(middleware, (stream, next) -> throw(NoHandler(stream.message.target)))
+        push!(middleware, (stream, next) -> throw(NoHandler(stream)))
     else
         if app.hot_reload
             push!(middleware, (stream, next) -> Base.invokelatest(handler, stream))

@@ -69,8 +69,14 @@ end
 #     return HTTP.WebSockets.WebSocket(io; server=true)
 # end
 
-struct NoHandler <: Exception
-    target::String
+
+
+function Base.show(io::IO, e::NoHandler)
+    print(
+        io,
+        "Target - $(stream.message.target)\n"
+        "Method - $(stream.message.method)\n"
+    )
 end
 
 function start(
@@ -139,7 +145,6 @@ function start(
     # necessary because we need to exit this loop cleanly when the user
     # cancels the server, regardless of any revision event.
     @async_logged "Revision Loop" while isopen(token)
-        @info "REVISE EVENT"
         wait(Revise.revision_event)
         Revise.revise(throw=true)
         close(take!(server_sockets))
