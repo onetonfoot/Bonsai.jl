@@ -30,7 +30,7 @@ end
     app = App()
 
     try
-        port = 10000
+        port = 11000
         start(app, port=port)
 
         app.get("/any") do stream

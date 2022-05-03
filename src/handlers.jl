@@ -1,8 +1,6 @@
 import FilePathsBase: /
 using Base.Libc
 
-export Folder
-
 """
 Has a field fn which takes stream as it's first argument
 
