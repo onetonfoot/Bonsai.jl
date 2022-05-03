@@ -2,7 +2,6 @@ module Bonsai
 
 using HTTP, JSON3, StructTypes, Dates, LRUCache, FilePaths
 import HTTP: Request, Response, Stream
-using HTTP: Handlers
 
 export ResponseCodes
 
