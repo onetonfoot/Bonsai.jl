@@ -277,7 +277,7 @@ end
 
 
 """
-    HTTP.register!(r::Router, [method,] path, handler)
+    HTTP.register!(r::Node, [method,] path, handler)
 
 Register a handler function that should be called when an incoming request matches `path`
 and the optionally provided `method` (if not provided, any method is allowed). Can be used

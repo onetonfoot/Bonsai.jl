@@ -60,7 +60,7 @@ function (app::App)(stream)
     end
 
     # Base.invoke_in_world
-    if isnothing(handler) || ismissing(handler)
+    if (isnothing(handler) || ismissing(handler)) && isempty(middleware)
         push!(middleware, (stream, next) -> throw(NoHandler(stream)))
     else
         if app.hot_reload
