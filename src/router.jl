@@ -291,7 +291,8 @@ The following path types are allowed for matching:
 """
 function register! end
 
-function register!(n::Node, method::String, path, handler)
+function register!(n::Node, method, path, handler)
+    method = uppercase(String(method))
     segments = if path == "/"
         ["/"]
     else
@@ -299,15 +300,6 @@ function register!(n::Node, method::String, path, handler)
     end
     Base.insert!(n, Leaf(method, Tuple{Int,String}[], path, handler), segments, 1)
     return
-end
-
-function register!(router::Node, method::HttpMethod, path, handler)
-    register!(
-        router,
-        uppercase(String(method)),
-        path,
-        handler
-    )
 end
 
 function wrap_handler(handler)
