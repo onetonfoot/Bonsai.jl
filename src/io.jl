@@ -82,6 +82,8 @@ function write(stream::Stream, data::T, status_code=ResponseCodes.Default()) whe
     end
 end
 
+function pre_read(stream) end
+
 function pre_read(stream::Stream)
     request::Request = stream.message
     request.body = Base.read(stream)
@@ -109,7 +111,7 @@ end
 function read(stream, ::Body{T}) where {T}
     pre_read(stream)
     try
-        JSON3.read(stream.message.body, T)
+        JSON3.read(stream, T)
     catch e
         @debug "Failed to convert body into $T"
         rethrow(e)
