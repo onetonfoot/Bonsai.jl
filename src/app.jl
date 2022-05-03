@@ -1,7 +1,6 @@
 using Bonsai: CancelToken, register!
 using AbstractTrees
 using Sockets: InetAddr
-using HTTP.Handlers: Leaf
 
 export App
 # There must be a better way to handle multple app's

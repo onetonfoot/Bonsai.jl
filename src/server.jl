@@ -91,7 +91,7 @@ function start(
 
     function handler_function(stream::HTTP.Stream)
         try
-            handler, middleware = match(app, stream)
+            handler, middleware::Array{Any} = match(app, stream)
 
             if isnothing(middleware) || ismissing(middleware)
                 middleware = []
