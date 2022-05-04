@@ -68,7 +68,7 @@ function Headers(; kwargs...)
 
     for (x, y) in kwargs
 
-        if typeof(y) isa DataType
+        if y isa DataType
             has_datatype = true
         end
 
@@ -77,11 +77,11 @@ function Headers(; kwargs...)
     end
 
     if has_datatype
-        nt = values(kwargs)
-        Headers(typeof(nt), nt)
-    else
         t = NamedTuple{tuple(k...),Tuple{v...}}
         Headers(t)
+    else
+        nt = values(kwargs)
+        Headers(typeof(nt), nt)
     end
 end
 

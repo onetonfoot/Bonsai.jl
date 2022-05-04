@@ -122,10 +122,15 @@ function read(req::Request, ::Body{T}) where {T}
     end
 end
 
+function construct_data(data, T::DataType)
+    convert_numbers!(data, T)
+    StructTypes.constructfrom(T, data)
+end
+
 function read(req::Request, ::PathParams{T}) where {T}
     try
-        @info req.context[:params]
-        StructTypes.constructfrom(T, req.context[:params])
+        d = req.context[:params]
+        return construct_data(d, T)
     catch e
         @debug "Failed to convert body into $T"
         rethrow(e)
@@ -144,9 +149,7 @@ end
 function read(req::Request, ::Query{T}) where {T}
     try
         q::Dict{Symbol,Any} = Dict(Symbol(k) => v for (k, v) in queryparams(req.url))
-        @info q
-        convert_numbers!(q, T)
-        StructTypes.constructfrom(T, q)
+        return construct_data(q, T)
     catch e
         @debug "Failed to convert query into $T"
         rethrow(e)
@@ -155,7 +158,7 @@ end
 
 function read(req::Request, ::Headers{T}) where {T}
     fields = fieldnames(T)
-    d = Dict()
+    d = Dict{Symbol, Any}()
 
     for i in fields
         h = headerize(i)
@@ -167,8 +170,7 @@ function read(req::Request, ::Headers{T}) where {T}
     end
 
     try
-        convert_numbers!(d, T)
-        StructTypes.constructfrom(T, d)
+        return construct_data(d, T)
     catch e
         rethrow(e)
     end

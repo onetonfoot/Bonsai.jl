@@ -1,6 +1,6 @@
 using Test
 using Bonsai
-using Bonsai: register!, Node, Params, matchall
+using Bonsai: register!, Node, Params, match_middleware
 using URIs
 using HTTP
 
@@ -28,7 +28,7 @@ end
     p = "/fish/super"
     params = Params()
     segments = split(p, "/"; keepempty=false)
-    ms = matchall(r, params, "GET", segments, 1)
+    ms = match_middleware(r, params, "GET", segments, 1)
     @test sort(map(x -> x(nothing), ms)) == [1, 2, 3]
 end
 

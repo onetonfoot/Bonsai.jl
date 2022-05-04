@@ -1,6 +1,7 @@
 using JET, InteractiveUtils # to use analysis entry points
 using CodeInfoTools
 using HTTP: Stream
+using JSON3
 using Bonsai
 using StructTypes: @Struct
 using StructTypes
@@ -59,7 +60,6 @@ end
     app = App()
     app.get("{x}") do stream
     end
-    match(app, req)
     @test Bonsai.read(req, Query(Limit)) isa Limit
     @test Bonsai.read(req, Headers(x_next=String)) isa NamedTuple
     @test_skip Bonsai.read(req, PathParams(x=String))
@@ -105,7 +105,7 @@ end
         Bonsai.write(stream, Body(pets=l))
     end
 
-    @test length(Bonsai.handler_writes(g)) == 2
+    @test length(Bonsai.handler_writes(g)) == 3
     Bonsai.mime_type(::T) where {T<:NamedTuple} = "application/json"
     # Ideally we'd pick up on the Content-Type writes
     @test_skip length(Bonsai.handler_writes(g)) == 3

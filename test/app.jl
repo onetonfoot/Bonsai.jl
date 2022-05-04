@@ -23,7 +23,7 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
     # for debuging
     # code_inferred(h.fn, Tuple{Stream})
     # Bonsai.handler_writes(h.fn)
-    @test length(Bonsai.handler_writes(h.fn)) == 3
+    @test length(Bonsai.handler_writes(h.fn)) == 4
 end
 
 @testset "handler_reads" begin
