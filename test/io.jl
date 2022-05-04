@@ -34,6 +34,19 @@ end
     offset::Union{Int,Missing}
 end
 
+@testset "DataMissingKey" begin
+    j_typo = """
+        {
+            "limi" : 10,
+            "offset" : 1
+        }
+    """
+
+    req = Request()
+    req.body = Vector{UInt8}(j_typo)
+    @test_throws Bonsai.DataMissingKey Bonsai.read(req, Body(Limit))
+end
+
 
 @testset "Bonsai.read" begin
     req = Request()

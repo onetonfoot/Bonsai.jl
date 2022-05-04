@@ -17,6 +17,38 @@ const CC = Core.Compiler
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
+struct DataMissingKey{T} <: Exception
+    t::Type{T}
+    struct_keys::Array{Symbol}
+    data_keys::Array{Symbol}
+end
+
+function Base.show(io::IO, e::DataMissingKey) 
+    println(io, "DataMissingKey:")
+    println(io, "  Expected - $(e.struct_keys)")
+    print(io,   "  Given    - $(e.data_keys)")
+end
+
+function construct_error(T::DataType, d)
+    struct_keys = collect(fieldnames(T))
+    data_keys = collect(keys(d))
+    ks = Symbol[]
+
+    for k in struct_keys
+        if !(k in data_keys)
+            push!(ks, k)
+        end
+    end
+
+    if isempty(ks)
+        return nothing
+    else
+        return DataMissingKey(T, 
+            sort!(struct_keys),
+            sort!(data_keys), 
+        )
+    end
+end
 
 write(stream::Stream{<:Request}, data, status_code=ResponseCodes.Default()) = write(stream.message.response, data, status_code)
 
@@ -69,17 +101,24 @@ function write(stream::Response, data::T, status_code=ResponseCodes.Default()) w
     end
 end
 
+function write(res::Response, status_code::Union{ResponseCodes.ResponseCode, Int})
+    res.status = Int(status_code)
+end
+
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 
 function read(req::Request, ::Body{T}) where {T}
+    d = JSON3.read(req.body)
     try
-        d = JSON3.read(req.body)
         return StructTypes.constructfrom(T, d)
-        # return JSON3.read(req.body, T)
     catch e
-        @debug "Failed to convert body into $T"
-        rethrow(e)
+        maybe_e = construct_error(T, d)
+        if isnothing(e)
+            rethrow(e)
+        else
+            throw(maybe_e)
+        end
     end
 end
 
