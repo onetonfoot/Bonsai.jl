@@ -7,7 +7,7 @@ using HTTP: Stream
 # using HTTP.Handlers: Node, Leaf, find, segment, insert!, match
 using URIs
 
-export register!
+export register!, matchall
 
 # tree-based router handler
 mutable struct Variable
