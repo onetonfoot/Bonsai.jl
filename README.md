@@ -10,19 +10,17 @@ This project is in currently still in early development so use with caution
 
 # Intro
 
-Each handler is a function with the signature `f(stream::HTTP.Stream)`, to 
-register a handler use the respective HTTP method e.g  `get!(router::Router, "/", handler)`
+Each handler is a function with the signature `f(stream::HTTP.Stream)`
 
 ```julia
+app = App()
 
-function f(s::Stream)
-	write(s, "Hello")
+app.get("/") do stream
+	Bonsai.write(s, Body("Hello"))
 end
 
-server = Router()
-get!(router, "/",  f) # register handler 
-start(server)
-wait(sever) # block until server stop running
+start(app)
+wait(app) # block until server stops running
 ```
 
 
@@ -31,7 +29,9 @@ wait(sever) # block until server stop running
 Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the stack. 
 
 ```julia
-function timer(stream, next)
+app = App()
+
+app.get("**") do stream, next
     x = now()
     # the next middleware or handler in the stack
     next(stream)
@@ -39,8 +39,10 @@ function timer(stream, next)
     @info "$(stream.message.target) took $elapsed" 
 end
 
-server = Router()
-all!(server, "*", timer)
+app.get("/") do stream
+	Bonsai.write(s, Body("Hello"))
+end
+
 start(server)
 wait(server)
 ```

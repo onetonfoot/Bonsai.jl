@@ -1,14 +1,27 @@
 using Bonsai, FilePaths
 using FilePathsBase: /
+using HTTP
 
-const folder = Path(@__DIR__) / "data"
-const app = App()
+folder = Path(@__DIR__) / "data"
+app = App()
+app.hot_reload = true
 
 app.get("/") do stream
-    Bonsai.write(stream , folder / "index.html")
+    # Bonsai.write(stream, folder / "index.html")
+    Bonsai.write(stream, Body("ok"))
+    HTTP.setheader(stream, "Content-Type" => "text/plain")
 end
 
-OpenAPI(app)
+app.get("**") do stream, next
+    try
+        next(stream)
+    catch e
+        @error e
+        Bonsai.write(stream, Body(error=repr(e)))
+    end
+end
 
-start(app, port=10000)
+
+start(app, port=10001)
 wait(app)
+stop(app)
