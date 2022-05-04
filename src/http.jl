@@ -1,5 +1,4 @@
 using StructTypes, URIs, HTTP.Messages
-using StringCases: dasherize
 using CodeInfoTools: code_inferred
 
 import StructTypes: StructType, NoStructType
@@ -7,6 +6,9 @@ import Base: |, ==
 
 export Headers, Query, Body, PathParams, MissingHeaders, MissingCookies,
 	GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
+
+include("dasherize.jl")
+
 
 abstract type HttpParameter end
 
