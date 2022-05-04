@@ -96,12 +96,7 @@ function start(
         end
     end
 
-    function serve_fn(server)
-        HTTP.serve(
-            handler_function,
-            host, port; server=server, stream=true, kwargs...
-        )
-    end
+    function serve_fn(server) end
 
     token = app.cancel_token
     addr = Sockets.InetAddr(host, port)
@@ -110,47 +105,61 @@ function start(
     restarts = Threads.Atomic{Int}(0)
     server_sockets = Channel(1)
 
-    @info "Starting server"
-    @async_logged "Server" begin
-        while isopen(token)
-            # It this needed? Do we need to start a new server if we already invoke the latest app handlers?
-            socket = Sockets.listen(addr)
-            try
-                put!(server_sockets, socket)
-                # Is this involde latest needed?
-                Base.invokelatest(serve_fn, socket)
-            catch e
-                app.inet_addr = nothing
-                if e isa Base.IOError && running[]
-                    continue
-                else
-                    rethrow()
-                end
-            end
-        end
-        @info "Shutdown server"
-    end
+    server = Sockets.listen(addr)
+
+    HTTP.serve(
+        handler_function,
+        host, port; server=server, stream=true, kwargs...
+    )
+
+    app.server = server
+
+    # @info "Starting server"
+    # @async_logged "Server" begin
+    #     while isopen(token)
+    #         # It this needed? Do we need to start a new server if we already invoke the latest app handlers?
+    #         socket = Sockets.listen(addr)
+    #         try
+    #             put!(server_sockets, socket)
+    #             # Is this involde latest needed?
+    #             serve_fn(socket)
+    #         catch e
+    #             app.inet_addr = nothing
+    #             if e isa Base.IOError && running[]
+    #                 continue
+    #             else
+    #                 rethrow()
+    #             end
+    #         end
+    #     end
+    #     @info "Shutdown server"
+    # end
 
     # This is like Revise.entr but we control the event loop. This is
     # necessary because we need to exit this loop cleanly when the user
     # cancels the server, regardless of any revision event.
     @async_logged "Revision Loop" while isopen(token)
         wait(Revise.revision_event)
-        Revise.revise(throw=true)
-        close(take!(server_sockets))
-        # stop(app)
-        # start(app)
-        restarts[] += 1
-        if isopen(token)
-            @info "Revision event $(restarts[])"
-        end
+        @info "Revision event"
+        #     Revise.revise(throw=false)
+        #     close(take!(server_sockets))
+        #     # stop(app)
+        #     # start(app)
+        #     restarts[] += 1
+        #     if isopen(token)
+        #         @info "Revision event $(restarts[])"
+        #     end
     end
 
+
+
+    @info "Started Server"
     app
 end
 
 function stop(app::App)
     close(app.cancel_token)
+    close(app.server)
     app.inet_addr = nothing
 end
 

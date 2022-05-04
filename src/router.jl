@@ -7,7 +7,7 @@ using HTTP: Stream
 # using HTTP.Handlers: Node, Leaf, find, segment, insert!, match
 using URIs
 
-export register!, matchall
+export register!, match_middleware
 
 # tree-based router handler
 mutable struct Variable
@@ -192,7 +192,7 @@ function Base.match(node::Node, params, method, segments, i)
     return anymissing ? missing : nothing
 end
 
-function matchall(node::Node, params, method, segments, i)
+function match_middleware(node::Node, params, method, segments, i)
     matches = []
     # @info "Node"
     # @show node.segment, i, segments
@@ -225,7 +225,7 @@ function matchall(node::Node, params, method, segments, i)
     # @info "Exact"
     if j !== nothing
         # found an exact match, recurse
-        m = matchall(node.exact[j], params, method, segments, i + 1)
+        m = match_middleware(node.exact[j], params, method, segments, i + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
         # @show :exact, m
@@ -240,7 +240,7 @@ function matchall(node::Node, params, method, segments, i)
         # @show node.segment.pattern, segment
         if match(node.segment.pattern, segment) !== nothing
             # matched a conditional node, recurse
-            m = matchall(node, params, method, segments, i + 1)
+            m = match_middleware(node, params, method, segments, i + 1)
             anymissing = m === missing
             m = coalesce(m, nothing)
             if m !== nothing
@@ -251,7 +251,7 @@ function matchall(node::Node, params, method, segments, i)
     end
     # @info "Wildcard" wildcard=node.wildcard
     if node.wildcard !== nothing
-        m = matchall(node.wildcard, params, method, segments, i + 1)
+        m = match_middleware(node.wildcard, params, method, segments, i + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
         # @show :wildcard, m
@@ -262,7 +262,7 @@ function matchall(node::Node, params, method, segments, i)
     end
     # @info "Double Star"
     if node.doublestar !== nothing
-        m = matchall(node.doublestar, params, method, segments, length(segments) + 1)
+        m = match_middleware(node.doublestar, params, method, segments, length(segments) + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
         if m !== nothing
@@ -332,7 +332,7 @@ function Base.match(app, req::Request)
     params = Params()
 
     handler = match(app.paths, params, req.method, segments, 1)
-    middelware = matchall(app.middleware, params, req.method, segments, 1)
+    middelware = match_middleware(app.middleware, params, req.method, segments, 1)
     req.context[:params] = params
     # handler and be nothing or missing
     # nothing - didn't match a registered route

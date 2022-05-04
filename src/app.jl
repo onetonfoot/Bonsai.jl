@@ -1,6 +1,6 @@
 using Bonsai: CancelToken, register!
 using AbstractTrees
-using Sockets: InetAddr
+using Sockets: InetAddr, TCPServer
 
 export App
 
@@ -14,6 +14,7 @@ mutable struct App
     redocs::Union{String,Nothing}
     cancel_token::CancelToken
     inet_addr::Union{InetAddr,Nothing}
+    server::Union{TCPServer,Nothing}
     paths::Node
     middleware::Node
 
@@ -25,10 +26,11 @@ mutable struct App
             nothing,
             CancelToken(),
             nothing,
+            nothing,
             Node("*"),
             Node("*"),
         )
-        finalizer(stop, app)
+        # finalizer(stop, app)
         return app
     end
 end
