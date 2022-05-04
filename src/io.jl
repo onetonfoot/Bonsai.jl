@@ -46,7 +46,7 @@ function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()
             write(res, Headers(content_type=m), status_code)
         end
     end
-    HTTP.setstatus(res, Int(status_code))
+    res.status = Int(status_code)
 end
 
 # Code Inference is broken for this
@@ -74,7 +74,9 @@ read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 
 function read(req::Request, ::Body{T}) where {T}
     try
-        return JSON3.read(req.body, T)
+        d = JSON3.read(req.body)
+        return StructTypes.constructfrom(T, d)
+        # return JSON3.read(req.body, T)
     catch e
         @debug "Failed to convert body into $T"
         rethrow(e)
