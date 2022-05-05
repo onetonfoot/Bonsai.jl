@@ -333,7 +333,9 @@ function Base.match(app, req::Request)
 
     handler = match(app.paths, params, req.method, segments, 1)
     middelware = match_middleware(app.middleware, params, req.method, segments, 1)
-    req.context[:params] = params
+    if hasfield(Request, :context) 
+        req.context[:params] = params
+    end
     # handler and be nothing or missing
     # nothing - didn't match a registered route
     # missing - matched the path, but method not supported

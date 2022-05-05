@@ -34,7 +34,6 @@ function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
-
         if !isnothing(data.val)
             b = IOBuffer()
             JSON3.write(b, data.val)
@@ -69,6 +68,10 @@ function write(stream::Response, data::T, status_code=ResponseCodes.Default()) w
     end
 end
 
+function write(stream::Response, data::Int) where {T}
+    HTTP.setstatus(stream, data)
+end
+
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 
@@ -83,10 +86,13 @@ end
 
 function read(req::Request, ::PathParams{T}) where {T}
     try
-        @info req.context[:params]
-        StructTypes.constructfrom(T, req.context[:params])
+        if hasfield(Request, :context)
+            StructTypes.constructfrom(T, req.context[:params])
+        else
+            error("PathParams not supported on this version of HTTP")
+        end
     catch e
-        @debug "Failed to convert body into $T"
+        @debug "Failed to convert path params into $T"
         rethrow(e)
     end
 end
