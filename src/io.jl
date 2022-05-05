@@ -17,6 +17,38 @@ const CC = Core.Compiler
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
+struct DataMissingKey{T} <: Exception
+    t::Type{T}
+    struct_keys::Array{Symbol}
+    data_keys::Array{Symbol}
+end
+
+function Base.show(io::IO, e::DataMissingKey)
+    println(io, "DataMissingKey:")
+    println(io, "  Expected - $(e.struct_keys)")
+    print(io, "  Given    - $(e.data_keys)")
+end
+
+function construct_error(T::DataType, d)
+    struct_keys = collect(fieldnames(T))
+    data_keys = collect(keys(d))
+    ks = Symbol[]
+
+    for k in struct_keys
+        if !(k in data_keys)
+            push!(ks, k)
+        end
+    end
+
+    if isempty(ks)
+        return nothing
+    else
+        return DataMissingKey(T,
+            sort!(struct_keys),
+            sort!(data_keys),
+        )
+    end
+end
 
 write(stream::Stream{<:Request}, data, status_code=ResponseCodes.Default()) = write(stream.message.response, data, status_code)
 
@@ -45,7 +77,7 @@ function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()
             write(res, Headers(content_type=m), status_code)
         end
     end
-    HTTP.setstatus(res, Int(status_code))
+    res.status = Int(status_code)
 end
 
 # Code Inference is broken for this
@@ -68,26 +100,37 @@ function write(stream::Response, data::T, status_code=ResponseCodes.Default()) w
     end
 end
 
-function write(stream::Response, data::Int) where {T}
-    HTTP.setstatus(stream, data)
+function write(res::Response, status_code::Union{ResponseCodes.ResponseCode,Int})
+    res.status = Int(status_code)
 end
 
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 
 function read(req::Request, ::Body{T}) where {T}
+    d = JSON3.read(req.body)
     try
-        return JSON3.read(req.body, T)
+        return StructTypes.constructfrom(T, d)
     catch e
-        @debug "Failed to convert body into $T"
-        rethrow(e)
+        maybe_e = construct_error(T, d)
+        if isnothing(e)
+            rethrow(e)
+        else
+            throw(maybe_e)
+        end
     end
+end
+
+function construct_data(data, T::DataType)
+    convert_numbers!(data, T)
+    StructTypes.constructfrom(T, data)
 end
 
 function read(req::Request, ::PathParams{T}) where {T}
     try
         if hasfield(Request, :context)
-            StructTypes.constructfrom(T, req.context[:params])
+            d = req.context[:params]
+            return construct_data(d, T)
         else
             error("PathParams not supported on this version of HTTP")
         end
@@ -109,9 +152,7 @@ end
 function read(req::Request, ::Query{T}) where {T}
     try
         q::Dict{Symbol,Any} = Dict(Symbol(k) => v for (k, v) in queryparams(req.url))
-        @info q
-        convert_numbers!(q, T)
-        StructTypes.constructfrom(T, q)
+        return construct_data(q, T)
     catch e
         @debug "Failed to convert query into $T"
         rethrow(e)
@@ -120,7 +161,7 @@ end
 
 function read(req::Request, ::Headers{T}) where {T}
     fields = fieldnames(T)
-    d = Dict()
+    d = Dict{Symbol,Any}()
 
     for i in fields
         h = headerize(i)
@@ -132,8 +173,7 @@ function read(req::Request, ::Headers{T}) where {T}
     end
 
     try
-        convert_numbers!(d, T)
-        StructTypes.constructfrom(T, d)
+        return construct_data(d, T)
     catch e
         rethrow(e)
     end

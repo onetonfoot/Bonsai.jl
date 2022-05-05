@@ -70,7 +70,7 @@ end
 	get_pets = match(app.paths,  Params(), "GET", ["pets"], 1)
 	create_pets = match(app.paths,  Params(), "POST", ["pets"], 1)
 
-	get_pets = Bonsai.matchall(app.paths,  Params(), "GET", ["pets"], 1)
+	get_pets = Bonsai.match_middleware(app.paths,  Params(), "GET", ["pets"], 1)
 
 	@test Bonsai.RequestBodyObject(
 		Bonsai.handler_reads(create_pets.fn)[1]

@@ -1,5 +1,4 @@
 using StructTypes, URIs, HTTP.Messages
-using StringCases: dasherize
 using CodeInfoTools: code_inferred
 
 import StructTypes: StructType, NoStructType
@@ -7,6 +6,9 @@ import Base: |, ==
 
 export Headers, Query, Body, PathParams, MissingHeaders, MissingCookies,
     GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
+
+include("dasherize.jl")
+
 
 abstract type HttpParameter end
 
@@ -66,7 +68,7 @@ function Headers(; kwargs...)
 
     for (x, y) in kwargs
 
-        if typeof(y) isa DataType
+        if y isa DataType
             has_datatype = true
         end
 
@@ -75,11 +77,11 @@ function Headers(; kwargs...)
     end
 
     if has_datatype
-        nt = values(kwargs)
-        Headers(typeof(nt), nt)
-    else
         t = NamedTuple{tuple(k...),Tuple{v...}}
         Headers(t)
+    else
+        nt = values(kwargs)
+        Headers(typeof(nt), nt)
     end
 end
 

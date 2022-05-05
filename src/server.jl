@@ -107,7 +107,7 @@ function start(
 
     server = Sockets.listen(addr)
 
-    HTTP.serve(
+    @async HTTP.serve(
         handler_function,
         host, port; server=server, stream=true, kwargs...
     )

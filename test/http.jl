@@ -1,6 +1,7 @@
 using Bonsai, Test, StructTypes, HTTP, JSON3, HTTP.Messages
 using StructTypes: @Struct
 using HTTP: Request
+using URIs: URI
 
 struct Payload
     x
@@ -28,32 +29,10 @@ end
 end
 
 @testset "Query" begin
-
-    app = App()
-
-    try
-        port = 11000
-        start(app, port=port)
-
-        app.get("/any") do stream
-            q = Bonsai.read(stream, Query(Payload))
-            JSON3.write(stream, q)
-        end
-
-        app.get("/typed") do stream
-            q = Bonsai.read(stream, Query(PayloadTyped))
-            JSON3.write(stream, q)
-        end
-
-        res = HTTP.get("http://localhost:$port/any?x=10")
-        @test res.status == 200
-
-        res = HTTP.get("http://localhost:$port/typed?x=10")
-        @test res.status == 200
-    catch
-    finally
-        stop(app)
-    end
+    req = Request()
+    req.url = URI("http://localhost?x=10")
+    @test Bonsai.read(req, Query(Payload)) isa Payload
+    @test Bonsai.read(req, Query(PayloadTyped)) isa PayloadTyped
 end
 
 
