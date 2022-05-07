@@ -47,10 +47,46 @@ function Base.show(io::IO, e::NoHandler)
     )
 end
 
+function ws_upgrade(http::HTTP.Stream; binary=false)
+
+    @info "upgrading"
+    @info http
+
+    # check_upgrade(http)
+    if !hasheader(http, "Sec-WebSocket-Version", "13")
+        throw(WebSocketError(0, "Expected \"Sec-WebSocket-Version: 13\"!\n" *
+                                "$(http.message)"))
+    end
+
+    setstatus(http, 101)
+    setheader(http, "Upgrade" => "websocket")
+    setheader(http, "Connection" => "Upgrade")
+    key = header(http, "Sec-WebSocket-Key")
+    setheader(http, "Sec-WebSocket-Accept" => accept_hash(key))
+
+    startwrite(http)
+
+    io = http.stream
+    req = http.message
+    ws = WebSocket(io; binary=binary, server=true, request=req)
+    return ws
+end
+
+function is_ws(stream)
+
+end
+
 function (app::App)(stream)
     request::Request = stream.message
-    request.body = Base.read(stream)
-    closeread(stream)
+    @info "request" request = request
+
+    if hasheader(stream, "Sec-WebSocket-Version", "13")
+        @info "I'm a web socket"
+    else
+        request.body = Base.read(stream)
+        closeread(stream)
+    end
+
 
 
 
@@ -69,7 +105,7 @@ function (app::App)(stream)
         end
 
         # Base.invoke_in_world
-        if isnothing(handler) || ismissing(handler) || isempty(middleware)
+        if isempty(middleware) && (isnothing(handler) || ismissing(handler))
             push!(middleware, (stream, next) -> throw(NoHandler(stream)))
         else
             if app.hot_reload
@@ -81,7 +117,7 @@ function (app::App)(stream)
         combine_middleware(middleware)(stream)
 
     catch e
-        @error e
+        @error "error" type = typeof(e) e = e
     finally
         request.response.request = request
         @info request.response

@@ -59,7 +59,6 @@ function write(res::Response, headers::Headers{T}, status_code=ResponseCodes.Def
             HTTP.setheader(res, headerize(header) => value)
         end
     end
-    # HTTP.setstatus(stream, Int(status_code))
 end
 
 function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()) where {T}
@@ -80,11 +79,11 @@ function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()
     res.status = Int(status_code)
 end
 
-# Code Inference is broken for this
-function write(res::Response, data::T, status_code=ResponseCodes.Default()) where {T<:AbstractPath}
-    file = Base.read(data)
-    write(res, Body(file))
-    m = mime_type(file)
+function write(res::Response, path::AbstractPath, status_code=ResponseCodes.Default())
+    body = Base.read(path)
+    res.body = body
+    m = mime_type(path)
+    @info "mime type" m = ma
     if !isnothing(m)
         write(res, Headers(content_type=m))
     end

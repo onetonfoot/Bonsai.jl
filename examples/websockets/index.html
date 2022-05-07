@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Document</title>
-	<input type="text" >
+	<input type="text">
 	<script>
 
-		const ws = new WebSocket("ws://localhost:9999/ws")
-		ws.onmessage(e => {
-			console.log("E: ", e)
-		})
-
-		ws.send("Dom data")
+		window.ws = new WebSocket("ws://localhost:9999/ws")
+		ws.addEventListener('message', function (event) {
+			console.log('Message from server ', event.data);
+		});
 
 	</script>
 </head>
+
 <body>
-	
+
 </body>
+
 </html>

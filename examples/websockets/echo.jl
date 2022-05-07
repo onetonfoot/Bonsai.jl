@@ -1,29 +1,30 @@
-# using Bonsai, FilePaths
+using Bonsai, FilePaths
+using FilePathsBase: /
+using AbstractTrees: print_tree
 
-# function ws_handler(stream)
-# 	ws = Bonsai.ws_upgrade(stream)
-	
-# 	try
-# 		while !eof(ws)
-# 			data = readavailable(ws)
-# 			@info String(data)
-# 			write(ws, data)
-# 		end
-# 	catch e
-# 		@error e
-# 	finally
-# 		close(ws)
-# 	end
-# end
+const app = App()
+const static = Path(@__DIR__)
 
-# const static = Static(Path(@__DIR__))
+app.get("/") do stream
+    Bonsai.write(stream, static / "index.html")
+end
 
-# function index_handler(stream)
-# 	static(stream, "index.html")
-# end
+app.get("/ws") do stream
+    ws = Bonsai.ws_upgrade(stream)
+    try
+        while !eof(ws)
+            data = readavailable(ws)
+            s = String(data)
+            write(ws, s)
+        end
+    catch e
+        @error e
+    finally
+        close(ws)
+    end
+end
 
-# router = Router()
-# get!(router, "/", index_handler)
-# get!(router, "/ws", ws_handler)
-# start(router, port=9999, verbose=true)
-# wait(router)
+
+start(app, port=9999, verbose=true)
+stop(app)
+wait(router)
