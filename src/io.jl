@@ -67,7 +67,7 @@ function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()
     else
         if !isnothing(data.val)
             b = IOBuffer()
-            JSON3.write(b, data.val)
+            JSON3.write(b, data.val, allow_inf=true)
             res.body = take!(b)
         end
 
