@@ -119,6 +119,9 @@ Base.Int(::URITooLong) = 414
 struct UnsupportedMediatype <: ResponseCode end
 Base.Int(::UnsupportedMediatype) = 415
 
+struct UnprocessableEntity <: ResponseCode end
+Base.Int(::UnprocessableEntity) = 422
+
 # Server error codes
 
 struct InternalServerError <: ResponseCode end
