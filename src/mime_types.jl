@@ -83,6 +83,8 @@ end
 function mime_type(t::DataType)
    if StructTypes.StructType(t) != StructTypes.NoStructType()
         return "application/json"
+   elseif t <: NamedTuple
+        return "application/json"
    elseif t <: AbstractString
         return "text/plain"
    else 
