@@ -6,7 +6,7 @@
 [action-img]: https://github.com/onetonfoot/Bonsai.jl/actions/workflows/ci.yaml/badge.svg
 [action-url]: https://github.com/onetonfoot/Bonsai.jl/actions
 
-This project is in currently still in early development 
+This project is still in early development 
 and many of the features rely on `HTTP.jl` master branch 
 so use with caution.
 
@@ -20,6 +20,9 @@ The handler can read and write data from the stream using `Bonsai.read` and `Bon
 Use `Bonsai.read` and a wrapper type
 `Body`, `Query`, `Headers` or `PathParams` to specify the location
 or the data.  The data type being read must have a `StructType` defined or be a `AbstractDict` or `NamedTuple`.
+
+
+### All
 
 ```julia
 using Bonsai
@@ -41,6 +44,7 @@ start(app)
 
 Kwargs constructors exist for the wrapper types which can be used to return a `NamedTuple`
 
+### Headers
 
 ```julia
 app.get("/") do stream
@@ -76,6 +80,20 @@ app.get("/") do stream
 end
 ```
 
+You can overide mime type for type in `Body(::T)` to also set the correct `Content-Type` header, during writing. For example
+
+```julia
+Bonsai.mime_type(::MyType) = "text/plain"
+```
+
+This is already defined for the following
+
+* NamedTyple - application/json
+* AbstractString - text/plain
+* StructType(::T) - applicaiton/json
+* AbstractPath - Will attempt to set the correct mime_type base on the file extension
+
+
 ## Websockets
 
 A web sockets can be obtained using `ws_upgrade`, bellow is an example of a echo socket.
@@ -99,7 +117,7 @@ end
 
 # Routing
 
-Routing relies on the router from in `HTTP` master branch. As such the functionality is the same (see the copied doc stings bellow).
+Routing relies on the router from `HTTP`, as such the functionality is the same (see the copied doc stings bellow).
 
 The following path types are allowed for matching:
   * `/api/widgets`: exact match of static strings
@@ -108,17 +126,17 @@ The following path types are allowed for matching:
   * `/api/widget/{id:[0-9]+}`: Define a path variable `id` that only matches integers for this segment
   * `/api/**`: double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
 
+The type `PathParams`  can be used to obtain the variables.
+
 # Middleware 
 
-
-Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the stack. 
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the stack. Bellow the middleware logs the time taken for each request.
 
 ```julia
 app = App()
 
 app.get("**") do stream, next
     x = now()
-    # the next middleware or handler in the stack
     next(stream)
     elapsed = now() - x
     @info "$(stream.message.target) took $elapsed" 
@@ -130,6 +148,21 @@ end
 
 start(server)
 ```
+
+# OpenAPI
+
+An open api spec can be generated for a `App` which can be used with tools like [Swagger UI](https://swagger.io/tools/swagger-ui/), to generate documentation.
+
+```julia
+app = App()
+
+# add some handlers
+
+open_api = OpenApi(app)
+JSON3.write("open-api.json", open_api)
+```
+
+[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec.
 
 # Example
 
