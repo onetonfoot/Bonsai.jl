@@ -9,7 +9,6 @@ end
 
 StructTypes.StructType(::Type{Payload}) = StructTypes.Struct()
 
-
 struct PayloadTyped
     x::Int
 end
@@ -30,6 +29,7 @@ end
 
 @testset "Query" begin
     req = Request()
+    # only on latest master currently
     req.url = URI("http://localhost?x=10")
     @test Bonsai.read(req, Query(Payload)) isa Payload
     @test Bonsai.read(req, Query(PayloadTyped)) isa PayloadTyped

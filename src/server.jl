@@ -72,9 +72,6 @@ function start(
         try
             app(stream)
         catch e
-            @error "an error occured" e = typeof(e)
-            # HTTP.setstatus(stream, 500)
-            # Base.write(stream, HTTP.statustext(500))
             rethrow(e)
         end
     end
@@ -93,11 +90,6 @@ function start(
 
     app.server = server
     @info "Started Server"
-    # wait(app.cancel_token)
-
-    # if !isnothing(app.inet_addr)
-    #     stop(app)
-    # end
 end
 
 function stop(app::App)

@@ -87,6 +87,22 @@ end
 
 struct Query{T} <: HttpParameter
     t::Type{T}
+    val::Union{T,Nothing}
+end
+
+function Query(t::DataType)
+    Query(t, nothing)
+end
+
+function Query(; kwargs...)
+    k = []
+    v = []
+    for (x, y) in kwargs
+        push!(k, x)
+        push!(v, y)
+    end
+    t = NamedTuple{tuple(k...),Tuple{v...}}
+    Query(t)
 end
 
 struct Body{T} <: HttpParameter
@@ -103,8 +119,14 @@ function Body(t::DataType)
 end
 
 function Body(; kwargs...)
-    nt = values(kwargs)
-    Body(typeof(nt), nt)
+    k = []
+    v = []
+    for (x, y) in kwargs
+        push!(k, x)
+        push!(v, y)
+    end
+    t = NamedTuple{tuple(k...),Tuple{v...}}
+    Body(t)
 end
 
 function parameter_type(t::Type{<:HttpParameter})
@@ -125,16 +147,6 @@ function PathParams(; kwargs...)
     end
     t = NamedTuple{tuple(k...),Tuple{v...}}
     PathParams(t)
-end
-
-struct MissingCookies{T} <: Exception
-    t::Type{T}
-    k::Vector{String}
-end
-
-struct MissingHeaders{T} <: Exception
-    t::Type{T}
-    k::Array{String}
 end
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/

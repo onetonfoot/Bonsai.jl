@@ -9,6 +9,7 @@ include("ResponseCodes.jl")
 
 include("mime_types.jl")
 include("http.jl")
+include("exceptions.jl")
 include("json_schema.jl")
 include("handlers.jl")
 include("io.jl")

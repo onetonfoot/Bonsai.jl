@@ -430,7 +430,7 @@ function OpenAPI(app)
     for leaf in leaves
         (; path, handler, method) = leaf
 
-        if path == app.redocs
+        if path == app.docs
             @warn "skiping $(path)"
             continue
         end

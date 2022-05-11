@@ -17,18 +17,6 @@ const CC = Core.Compiler
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-struct DataMissingKey{T} <: Exception
-    t::Type{T}
-    struct_keys::Array{Symbol}
-    data_keys::Array{Symbol}
-end
-
-function Base.show(io::IO, e::DataMissingKey)
-    println(io, "DataMissingKey:")
-    println(io, "  Expected - $(e.struct_keys)")
-    print(io, "  Given    - $(e.data_keys)")
-end
-
 function construct_error(T::DataType, d)
     struct_keys = collect(fieldnames(T))
     data_keys = collect(keys(d))
