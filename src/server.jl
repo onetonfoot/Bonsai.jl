@@ -51,14 +51,21 @@ function start(
     port=8081,
     kwargs...)
 
+    addr = Sockets.InetAddr(host, port)
 
-    if !isnothing(app.redocs)
-        docs = create_docs(OpenAPI(app))
-        app.get(app.redocs) do stream
-            HTTP.setheader(stream, "Content-Type" => "text/html; charset=UTF-8")
-            HTTP.setstatus(stream, 200)
-            Base.write(stream, docs)
-        end
+    if !isnothing(app.docs)
+        # app.get(app.docs) do stream
+        #     @info "docs"
+        #     html = create_docs_html(app)
+        #     Bonsai.write(stream, Body(html))
+        #     Bonsai.write(stream, Header(content_type="text/html; charset=UTF-8"))
+        # end
+
+        # app.get(app.docs * ".json") do stream
+        #     @info "docs json"
+        #     json = JSON3.write(OpenAPI(app))
+        #     Bonsai.write(stream, Body(json))
+        # end
     end
 
     function handler_function(stream::HTTP.Stream)
@@ -74,12 +81,8 @@ function start(
 
     function serve_fn(server) end
 
-    token = app.cancel_token
-    addr = Sockets.InetAddr(host, port)
     app.inet_addr = addr
-    running = Threads.Atomic{Bool}(true)
-    restarts = Threads.Atomic{Int}(0)
-    server_sockets = Channel(1)
+    app.cancel_token = CancelToken()
 
     server = Sockets.listen(addr)
 
@@ -89,51 +92,16 @@ function start(
     )
 
     app.server = server
-
-    # @info "Starting server"
-    # @async_logged "Server" begin
-    #     while isopen(token)
-    #         # It this needed? Do we need to start a new server if we already invoke the latest app handlers?
-    #         socket = Sockets.listen(addr)
-    #         try
-    #             put!(server_sockets, socket)
-    #             # Is this involde latest needed?
-    #             serve_fn(socket)
-    #         catch e
-    #             app.inet_addr = nothing
-    #             if e isa Base.IOError && running[]
-    #                 continue
-    #             else
-    #                 rethrow()
-    #             end
-    #         end
-    #     end
-    #     @info "Shutdown server"
-    # end
-
-    # This is like Revise.entr but we control the event loop. This is
-    # necessary because we need to exit this loop cleanly when the user
-    # cancels the server, regardless of any revision event.
-    @async_logged "Revision Loop" while isopen(token)
-        wait(Revise.revision_event)
-        @info "Revision event"
-        #     Revise.revise(throw=false)
-        #     close(take!(server_sockets))
-        #     # stop(app)
-        #     # start(app)
-        #     restarts[] += 1
-        #     if isopen(token)
-        #         @info "Revision event $(restarts[])"
-        #     end
-    end
-
-
-
     @info "Started Server"
-    app
+    # wait(app.cancel_token)
+
+    # if !isnothing(app.inet_addr)
+    #     stop(app)
+    # end
 end
 
 function stop(app::App)
+    @info "Stopping Server"
     close(app.cancel_token)
     close(app.server)
     app.inet_addr = nothing
