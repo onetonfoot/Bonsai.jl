@@ -8,36 +8,31 @@ function path_params(stream)
     stream.context[:params]
 end
 
-mutable struct App
-    id::Int
-    hot_reload::Bool
-    redocs::Union{String,Nothing}
-    cancel_token::CancelToken
-    inet_addr::Union{InetAddr,Nothing}
-    server::Union{TCPServer,Nothing}
-    paths::Node
-    middleware::Node
+Base.@kwdef mutable struct App
+    id::Int = rand(Int)
+    docs::Union{String,Nothing} = nothing
+    cancel_token::CancelToken = CancelToken()
+    inet_addr::Union{InetAddr,Nothing} = nothing
+    server::Union{TCPServer,Nothing} = nothing
+    paths::Node = Node("*")
+    middleware::Node = Node("*")
 
-    function App()
-        id = rand(Int)
-        app = new(
-            id,
-            false,
-            nothing,
-            CancelToken(),
-            nothing,
-            nothing,
-            Node("*"),
-            Node("*"),
-        )
-        # finalizer(stop, app)
-        return app
-    end
+    # function App()
+    #     id = rand(Int)
+    #     app = new(
+    #         id,
+    #         nothing,
+    #         CancelToken(),
+    #         nothing,
+    #         nothing,
+    #         Node("*"),
+    #         Node("*"),
+    #     )
+    #     # finalizer(stop, app)
+    #     return app
+    # end
 end
 
-struct NoHandler <: Exception
-    stream::Stream
-end
 
 function Base.show(io::IO, e::NoHandler)
     print(
@@ -78,49 +73,35 @@ end
 
 function (app::App)(stream)
     request::Request = stream.message
-    @info "request" request = request
 
-    if hasheader(stream, "Sec-WebSocket-Version", "13")
-        @info "I'm a web socket"
-    else
+    if !hasheader(stream, "Sec-WebSocket-Version", "13")
         request.body = Base.read(stream)
         closeread(stream)
     end
 
-
-
-
     try
-        # request.response::Response = handler(request)
         handler, middleware::Array{Any} = match(app, stream)
 
         if isnothing(middleware) || ismissing(middleware)
             middleware = []
         end
 
-        if app.hot_reload
-            middleware = map(middleware) do fn
-                (stream, next) -> Base.invokelatest(fn, stream, next)
-            end
-        end
 
-        # Base.invoke_in_world
-        if isempty(middleware) && (isnothing(handler) || ismissing(handler))
+        if ismissing(handler) || isnothing(handler)
             push!(middleware, (stream, next) -> throw(NoHandler(stream)))
         else
-            if app.hot_reload
-                push!(middleware, (stream, next) -> Base.invokelatest(handler, stream))
-            else
-                push!(middleware, (stream, next) -> handler(stream))
-            end
+            push!(middleware, (stream, next) -> handler(stream))
         end
         combine_middleware(middleware)(stream)
 
     catch e
-        @error "error" type = typeof(e) e = e
+        if e isa NoHandler
+            @warn e
+        else
+            @error "error" type = typeof(e) e = e
+        end
     finally
         request.response.request = request
-        @info request.response
         startwrite(stream)
         Base.write(stream, request.response.body)
     end
@@ -175,16 +156,6 @@ function create_handler(app, method)
             handler
         )
     end
-    # return eval(:(function(fn, path)  
-    # 	handler = wrap_handler(fn)
-    # 	node = handler isa Middleware ? $(app).middleware : $(app).paths
-    # 	register!(
-    # 		node,
-    # 		$method,
-    # 		path,
-    # 		handler
-    # 	)
-    # end))
 end
 
 function Base.getproperty(app::App, s::Symbol)
