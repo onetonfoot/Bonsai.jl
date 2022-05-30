@@ -20,6 +20,9 @@ StructTypes.StructType(::Type{PayloadTyped}) = StructTypes.Struct()
     req = Request()
     req.body = take!(io)
     @test Bonsai.read(req, Body(Payload)) == Payload(10)
+
+    b = Body(error="test", message="kwconstructor")
+    @test b.val  == (error ="test", message="kwconstructor")
 end
 
 

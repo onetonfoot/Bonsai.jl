@@ -90,15 +90,14 @@ struct Query{T} <: HttpParameter
     val::Union{T,Nothing}
 end
 
-function Query(t::DataType)
-    Query(t, nothing)
-end
+Query(t::DataType) = Query(t, nothing)
 
 function Query(; kwargs...)
     k = []
     v = []
     for (x, y) in kwargs
         push!(k, x)
+        @assert y isa DataType
         push!(v, y)
     end
     t = NamedTuple{tuple(k...),Tuple{v...}}
@@ -110,29 +109,13 @@ struct Body{T} <: HttpParameter
     val::Union{T,Nothing}
 end
 
-function Body(val)
-    Body(typeof(val), val)
-end
-
-function Body(t::DataType)
-    Body(t, nothing)
-end
-
-function Body(; kwargs...)
-    k = []
-    v = []
-    for (x, y) in kwargs
-        push!(k, x)
-        push!(v, y)
-    end
-    t = NamedTuple{tuple(k...),Tuple{v...}}
-    Body(t)
-end
+Body(val) = Body(typeof(val), val)
+Body(t::DataType) = Body(t, nothing)
+Body(; kwargs...) = Body(namedtuple(kwargs))
 
 function parameter_type(t::Type{<:HttpParameter})
     t.parameters[1]
 end
-
 
 struct PathParams{T} <: HttpParameter
     t::Type{T}
