@@ -1,6 +1,6 @@
 using Test
 using Bonsai
-using Bonsai: register!, Node, Params, match_middleware
+using Bonsai: register!, Node, match_middleware
 using URIs
 using HTTP
 
@@ -26,7 +26,7 @@ end
     # wrong path
     register!(r, PUT, "/turtle/super", x -> 5)
     p = "/fish/super"
-    params = Params()
+    params = Dict()
     segments = split(p, "/"; keepempty=false)
     ms = match_middleware(r, params, "GET", segments, 1)
     @test sort(map(x -> x(nothing), ms)) == [1, 2, 3]

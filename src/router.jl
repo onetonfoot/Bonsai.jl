@@ -1,5 +1,3 @@
-# module R
-
 # Copied and modified from
 # https://github.com/JuliaWeb/HTTP.jl/blob/master/src/Handlers.jl
 
@@ -320,7 +318,6 @@ function wrap_handler(handler)
     end
 end
 
-const Params = Dict{String,String}
 
 function Base.match(app, req::Request)
     url = URI(req.target)
@@ -329,12 +326,15 @@ function Base.match(app, req::Request)
     else
         split(url.path, '/'; keepempty=false)
     end
-    params = Params()
+
+    params = Dict{String,String}()
 
     handler = match(app.paths, params, req.method, segments, 1)
     middelware = match_middleware(app.middleware, params, req.method, segments, 1)
+
+    # needed for HTTP 0.9 compat
     if hasfield(Request, :context) 
-        req.context[:params] = params
+        req.context[:params] = Dict(Symbol(k) => v for (k,v) in params)
     end
     # handler and be nothing or missing
     # nothing - didn't match a registered route

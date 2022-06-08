@@ -1,12 +1,18 @@
-
-
-
 # Handlers
 
 * How to extract path parameters? In a declarative way
 * How to structure handlers in a way that supports live reload?
 * Add `app.all`
 
+
+Path parameters
+
+```julia
+app.get("/:id") do stream
+      path_params()
+
+end
+```
 
 How to associate documentation with the handler in a intuative way?
 
@@ -17,19 +23,9 @@ app.get("/:id") do stream
 end
 ```
 
-Should add a web socket handler
+Maybe add a web socket method
 
 ```julia
-
-struct WebSocketHandler
-  fn
-end
-
-function (h::WebSocketHandler)(stream)
-    ws = setup_ws(stream)
-    h.fn(ws)
-end
-
 app.ws("/ws") do ws 
 
 end
@@ -51,12 +47,6 @@ end
 
 * Need to track writes of headers
 * Best to remove redoc and use swagger-ui, this will remove the NodsJS dep but will probably need to write a small react app
-
-# Routing
-
-* Should probably be using a tree like structure with static arrays
-* Need to think more about the path syntax, as this will effect how
-`path_params` will work
 
 # Other Framework Handlers
 

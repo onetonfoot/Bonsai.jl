@@ -7,8 +7,7 @@ app = App()
 app.hot_reload = true
 
 app.get("/") do stream
-    # Bonsai.write(stream, folder / "index.html")
-    Bonsai.write(stream, Body("ok"))
+    Bonsai.write(stream, folder / "index.html")
     HTTP.setheader(stream, "Content-Type" => "text/plain")
 end
 

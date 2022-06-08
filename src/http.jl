@@ -4,7 +4,7 @@ using CodeInfoTools: code_inferred
 import StructTypes: StructType, NoStructType
 import Base: |, ==
 
-export Headers, Query, Body, PathParams, MissingHeaders, MissingCookies,
+export Headers, Query, Body, Params, MissingHeaders, MissingCookies,
     GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
 
 include("dasherize.jl")
@@ -52,16 +52,19 @@ struct Headers{T} <: HttpParameter
     val::Union{T,Nothing}
 end
 
-function Headers(val)
-    Headers(typeof(val), val)
+function kw_constructor_data_type(T; kwargs...)
+    k = []
+    v = []
+    for (x, y) in kwargs
+        @assert y isa DataType "Argument is not a DataType"
+        push!(k, x)
+        push!(v, y)
+    end
+    t = NamedTuple{tuple(k...),Tuple{v...}}
+    T(t)
 end
 
-function Headers(t::DataType)
-    Headers(t, nothing)
-end
-
-
-function Headers(; kwargs...)
+function kw_constructor(T; kwargs...)
     k = []
     v = []
     has_datatype = false
@@ -77,13 +80,28 @@ function Headers(; kwargs...)
     end
 
     if has_datatype
+        @assert all(map(x -> x isa DataType, v))
         t = NamedTuple{tuple(k...),Tuple{v...}}
-        Headers(t)
+        return T(t, nothing)
     else
         nt = values(kwargs)
-        Headers(typeof(nt), nt)
+        T(typeof(nt), nt)
     end
 end
+
+Headers(;kwargs...) = kw_constructor(Headers; kwargs...)
+Headers(t::DataType) =  Headers(t, nothing)
+
+function fieldnames_to_header(T)
+    fields = string.(fieldnames(T))
+    l = []
+    for i in fields
+        push!(l, dasherize(i))
+    end
+    l
+end
+
+headerize(s) = dasherize(string(s))
 
 struct Query{T} <: HttpParameter
     t::Type{T}
@@ -91,46 +109,29 @@ struct Query{T} <: HttpParameter
 end
 
 Query(t::DataType) = Query(t, nothing)
-
-function Query(; kwargs...)
-    k = []
-    v = []
-    for (x, y) in kwargs
-        push!(k, x)
-        @assert y isa DataType
-        push!(v, y)
-    end
-    t = NamedTuple{tuple(k...),Tuple{v...}}
-    Query(t)
-end
+Query(; kwargs...) = kw_constructor_data_type(Query; kwargs...)
 
 struct Body{T} <: HttpParameter
     t::Type{T}
     val::Union{T,Nothing}
 end
 
-Body(val) = Body(typeof(val), val)
 Body(t::DataType) = Body(t, nothing)
-Body(; kwargs...) = Body(namedtuple(kwargs))
+Body(;kwargs...) = kw_constructor(Body; kwargs...)
+Body(t) = Body(typeof(t), t)
 
 function parameter_type(t::Type{<:HttpParameter})
     t.parameters[1]
 end
 
-struct PathParams{T} <: HttpParameter
+
+struct Params{T} <: HttpParameter
     t::Type{T}
+    val::Union{T,Nothing}
 end
 
-function PathParams(; kwargs...)
-    k = []
-    v = []
-    for (x, y) in kwargs
-        push!(k, x)
-        push!(v, y)
-    end
-    t = NamedTuple{tuple(k...),Tuple{v...}}
-    PathParams(t)
-end
+Params(; kwargs...) = kw_constructor_data_type(Params; kwargs...)
+Params(t::DataType) = Params(t, nothing)
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 
@@ -156,14 +157,3 @@ function (c::Cookies{T})(stream) where {T}
         rethrow(e)
     end
 end
-
-function fieldnames_to_header(T)
-    fields = string.(fieldnames(T))
-    l = []
-    for i in fields
-        push!(l, dasherize(i))
-    end
-    l
-end
-
-headerize(s) = dasherize(string(s))

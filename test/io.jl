@@ -6,7 +6,7 @@ using Bonsai
 using StructTypes: @Struct
 using StructTypes
 using HTTP.Messages: Request, Response
-using Bonsai: handler_writes, handler_reads, PathParams
+using Bonsai: handler_writes, handler_reads, Params
 using Test
 using FilePaths: Path
 using FilePathsBase: /
@@ -32,7 +32,7 @@ end
 
 @Struct struct Limit
     limit::Int
-    offset::Union{Int,Missing}
+    offset::Union{Int, Missing}
 end
 
 @testset "DataMissingKey" begin
@@ -62,8 +62,10 @@ end
     end
     @test Bonsai.read(req, Query(Limit)) isa Limit
     @test Bonsai.read(req, Headers(x_next=String)) isa NamedTuple
-    @test_skip Bonsai.read(req, PathParams(x=String))
+    @test_skip Bonsai.read(req, Params(x=String))
 end
+
+
 
 @testset "handler_writes" begin
 
@@ -128,7 +130,7 @@ end
 @testset "handler_reads" begin
 
     function g(stream)
-        Bonsai.read(stream, PathParams(A))
+        Bonsai.read(stream, Params(A))
     end
 
     l = handler_reads(g)

@@ -1,13 +1,17 @@
 using Test, FilePaths, Bonsai
+using HTTP: Response
+using FilePathsBase: /
+using JSON3
 
-# @testset "Folder" begin
-# 	write_file = Folder(Path(@__DIR__))
-# 	io = IOBuffer()
-# 	b = read(joinpath(@__DIR__, "data/a.json"))
-# 	write_file(io, "data/a.json")
-# 	@test take!(io) == b
 
-# 	io = IOBuffer()
-# 	write_file(io, "i-dont-exist")
-# 	@test length(take!(io)) > 0
-# end
+@testset "Path" begin
+	file = joinpath(Path(@__DIR__), "data/a.json")
+
+	# writing
+	res = Response()
+	Bonsai.write(res, file)
+	k, v = res.headers[1]
+	@test k == "content-type" 
+	@test v == "application/json"
+	@test JSON3.read(res.body, Dict) isa Dict
+end

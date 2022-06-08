@@ -3,38 +3,57 @@ using StructTypes: @Struct
 using HTTP: Request
 using URIs: URI
 
-struct Payload
+@Struct struct Payload
     x
 end
 
-StructTypes.StructType(::Type{Payload}) = StructTypes.Struct()
-
-struct PayloadTyped
+@Struct struct PayloadTyped
     x::Int
 end
 
-StructTypes.StructType(::Type{PayloadTyped}) = StructTypes.Struct()
+@Struct struct PayloadMissing
+    x
+    y::Union{Float64, Nothing}
+end
 
 @testset "Body" begin
+    # constructors
+    b = Body("ok")
+    @test b.val == "ok"
+    @test b.t == String
+
+    b = Body(error="test", message="kwconstructor")
+    @test b.t == NamedTuple{(:error, :message), Tuple{String, String}}
+    @test b.val  == (error ="test", message="kwconstructor")
+
+    b = Body(x=String, y=Float64)
+    @test b.t == NamedTuple{(:x, :y), Tuple{String, Float64}}
+    @test isnothing(b.val)
+
+    # reading
     io = IOBuffer(JSON3.write(Payload(10)))
     req = Request()
     req.body = take!(io)
     @test Bonsai.read(req, Body(Payload)) == Payload(10)
 
-    b = Body(error="test", message="kwconstructor")
-    @test b.val  == (error ="test", message="kwconstructor")
-end
-
-
-@testset "convert_numbers!" begin
-    @test Bonsai.convert_numbers!(Dict{Symbol,Any}(:x => "10"), PayloadTyped)[:x] == 10
+    io = IOBuffer(JSON3.write(Payload(10)))
+    req = Request()
+    req.body = take!(io)
+    payload = Bonsai.read(req, Body(PayloadMissing)) 
+    @test payload.x  == 10
+    @test isnothing(payload.y) 
 end
 
 @testset "Query" begin
+    # constructors
+    @test Query(x=String).val |> isnothing 
+    @test_throws Exception Query(x="x")
+
+    # reading - requires HTTP master
     req = Request()
-    # only on latest master currently
     req.url = URI("http://localhost?x=10")
     @test Bonsai.read(req, Query(Payload)) isa Payload
+    @test Bonsai.convert_numbers!(Dict{Symbol,Any}(:x => "10"), PayloadTyped)[:x] == 10
     @test Bonsai.read(req, Query(PayloadTyped)) isa PayloadTyped
 end
 
@@ -65,17 +84,9 @@ end
     @test_throws Exception Bonsai.read(bad_req, Headers(A))
 end
 
-# @testset "Cookies" begin
-#     req = HTTP.Messages.Request()
-#     req.headers = [
-#         "Cookie" => "a=choco; b=1"
-#     ]
-
-#     @Struct struct C1
-#         a::String
-#         b::String
-#     end
-
-#     read_cookies = Bonsai.Cookies(C1)
-#     @test read_cookies(req).b == "1"
-# end
+@testset "Params" begin
+    req = HTTP.Messages.Request()
+    # Base.match(app, req) should perform this for us
+    req.context[:params] = Dict{Any, Any}(:id => "10")
+    @test Bonsai.read(req, Params(id=Int)).id == 10
+end

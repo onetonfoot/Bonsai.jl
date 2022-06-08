@@ -10,24 +10,35 @@ This project is still in early development
 and many of the features rely on `HTTP.jl` master branch 
 so use with caution.
 
-# Handlers
+```
+]add Bonsai
+]add HTTP#master
+```
 
-Each handler is a function with the signature `f(stream::HTTP.Stream)`.
-The handler can read and write data from the stream using `Bonsai.read` and `Bonsai.write`. 
+# Intro
 
-## Reading 
-
-Use `Bonsai.read` and a wrapper type
-`Body`, `Query`, `Headers` or `PathParams` to specify the location
-or the data.  The data type being read must have a `StructType` defined or be a `AbstractDict` or `NamedTuple`.
-
-
-### All
+A short intro
 
 ```julia
 using Bonsai
-using StructTypes: @Struct
 
+app = App()
+
+app.get("/") do stream
+    Bonsai.write(stream, Body("Hi"))
+end
+
+start(app)
+```
+
+# Handlers
+
+Each handler is a function with the signature `f(stream::HTTP.Stream)`.
+The handler can read and write data from the stream using `Bonsai.read` or `Bonsai.write` and a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location.  The data type being read / written should have a `StructType` defined or be a `AbstractDict` or `NamedTuple`.
+
+## Body
+
+```julia
 @Struct struct JsonPayload
     x::Int
     y::Float
@@ -37,14 +48,49 @@ end
 app.get("/") do stream
     payload = Bonsai.read(stream, Body(JsonPayload))
 end
-
-# blocks until server stops running
-start(app)
 ```
 
-Kwargs constructors exist for the wrapper types which can be used to return a `NamedTuple`
+If you don't want to define a `struct` for you payload, instead you can use 
+keyword constructor, this will read payload into a named tuple.
 
-### Headers
+```julia
+payload = Bonsia.read(stream, Body(x=Int, y=Float, z=String))
+```
+
+Writing data is similar. 
+
+```julia
+Bonsia.write(stream, Body(x=1, y=1.0, z="hi"))
+```
+
+The write will try to set the correct content-type header for the data, however this can be changed if needed by over writting `mime_type`
+
+```julia
+Bonsai.mime_type(::MyType) = "text/plain"
+```
+
+* Union{NamedTuple, AbstractDict} - application/json
+* AbstractString - text/plain
+* AbstractPath - Will attempt to set the correct mime_type base on the file extension
+
+
+## Files
+
+Writing files supports `AbstractPaths` defined in [FilePaths](https://github.com/rofinn/FilePaths.jl). The content type will be set based on the file extension.
+
+```julia
+file =  Path("data/some-file.json")
+Bonsai.write(stream, Body(file))
+```
+
+A nice feature of this is we can easily use other `AbstractPath` implementations for example like that in [AWSS3](https://github.com/JuliaCloud/AWSS3.jl)
+
+```julia
+file = S3Path("s3://my.bucket/test1.txt") 
+Bonsai.write(stream, Body(file))
+```
+
+## Headers
 
 ```julia
 app.get("/") do stream
@@ -65,36 +111,20 @@ Bonsai.headerize(:content_type)
 # "content-type"
 ```
 
-## Writing
+## Query and Path Parameters
 
-In a similar manner data can be written using `Bonsai.write`
+Like the rest just use a wrapper combined with a type. 
 
 ```julia
-app.get("/") do stream
-    Bonsai.write(
-        stream, Body(
-            x = 1,
-            y = 2
-        )
-    )
+app.get("/car/:id") do stream
+    query = Bonsai.read(stream, Query(id = Int))
+    params = Bonsai.read(stream, Params(color = String))
 end
 ```
 
-You can overide mime type for type in `Body(::T)` to also set the correct `Content-Type` header, during writing. For example
+For query ensure that the type's fields match the key's in the path.
 
-```julia
-Bonsai.mime_type(::MyType) = "text/plain"
-```
-
-This is already defined for the following
-
-* NamedTyple - application/json
-* AbstractString - text/plain
-* StructType(::T) - applicaiton/json
-* AbstractPath - Will attempt to set the correct mime_type base on the file extension
-
-
-## Websockets
+## Web sockets
 
 A web sockets can be obtained using `ws_upgrade`, bellow is an example of a echo socket.
 
@@ -126,7 +156,7 @@ The following path types are allowed for matching:
   * `/api/widget/{id:[0-9]+}`: Define a path variable `id` that only matches integers for this segment
   * `/api/**`: double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
 
-The type `PathParams`  can be used to obtain the variables.
+The type `Params`  can be used to obtain the variables.
 
 # Middleware 
 

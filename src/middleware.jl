@@ -1,3 +1,5 @@
+using HTTP.Messages: Response
+
 function cors(stream::Stream, next)
 
     headers = [

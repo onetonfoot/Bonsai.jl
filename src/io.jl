@@ -71,7 +71,6 @@ function write(res::Response, path::AbstractPath, status_code=ResponseCodes.Defa
     body = Base.read(path)
     res.body = body
     m = mime_type(path)
-    @info "mime type" m = ma
     if !isnothing(m)
         write(res, Headers(content_type=m))
     end
@@ -113,13 +112,13 @@ function construct_data(data, T::DataType)
     StructTypes.constructfrom(T, data)
 end
 
-function read(req::Request, ::PathParams{T}) where {T}
+function read(req::Request, ::Params{T}) where {T}
     try
         if hasfield(Request, :context)
             d = req.context[:params]
             return construct_data(d, T)
         else
-            error("PathParams not supported on this version of HTTP")
+            error("Params not supported on this version of HTTP")
         end
     catch e
         @debug "Failed to convert path params into $T"
@@ -129,7 +128,7 @@ end
 
 function convert_numbers!(data::AbstractDict, T)
     for (k, t) in zip(fieldnames(T), fieldtypes(T))
-        if t <: Union{Number,Missing,Nothing}
+        if t <: Union{Number, Missing, Nothing}
             data[k] = Parsers.parse(Float64, data[k])
         end
     end
