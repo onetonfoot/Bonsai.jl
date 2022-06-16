@@ -31,6 +31,16 @@ app.ws("/ws") do ws
 end
 ```
 
+
+Need a easy way to get the handlers back maybe?
+
+```julia
+app.get("/the handler")
+```
+
+Do we need to enforce at the call site that the route starts with a slash?
+
+
 # OpenAPI
 
 rename HTTPParameter to HttpIo or better use a interface so people can easily extend for there own types
@@ -98,6 +108,7 @@ app.post('/', (req, res) => {
 })
 ```
 
+https://github.com/ndortega/Oxygen.jl
 
 # Error handling
 

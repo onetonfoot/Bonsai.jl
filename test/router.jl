@@ -1,8 +1,37 @@
 using Test
 using Bonsai
-using Bonsai: register!, Node, match_middleware
+using Bonsai: register!, Node, match_middleware, split_route
 using URIs
 using HTTP
+using HTTP: Request
+using AbstractTrees
+
+@testset "split_route" begin
+    @test split_route("/") == ["/"]
+    @test split_route("/a/b") == split_route("/a/b/")
+end
+
+@testset "register!" begin
+    r = Node("*")
+
+    # 3 get routes
+    register!(r, GET, "/fish/{id}", x -> 1)
+    register!(r, GET, "/fish/super", x -> 2)
+    register!(r, GET, "/fish/**", x -> 3)
+    # 1 put
+    register!(r, PUT, "/fish/**", x -> 4)
+    # no fish route
+    register!(r, PUT, "/turtle/super", x -> 5)
+
+    p = "/fish/super"
+    params = Dict()
+    segments = split(p, "/"; keepempty=false)
+    ms = match_middleware(r, params, "GET", segments, 1)
+    @test sort(map(x -> x(nothing), ms)) == [1, 2, 3]
+
+    match(r, "GET", p)
+
+end
 
 @testset "match" begin
     app = App()
@@ -10,35 +39,43 @@ using HTTP
     end
     req = Request()
     req.url = URI("http://locahost:4040/pet")
+    req.method = "GET"
+    # mutates the request storing the match in ctx
     match(app, req)
-    @test_skip haskey(req.context[:params], "x")
-end
-
-@testset "register!" begin
-    r = Node("*")
-
-    # matches
-    register!(r, GET, "/fish/{id}", x -> 1)
-    register!(r, GET, "/fish/super", x -> 2)
-    register!(r, GET, "/fish/**", x -> 3)
-    # wrong method
-    register!(r, PUT, "/fish/**", x -> 4)
-    # wrong path
-    register!(r, PUT, "/turtle/super", x -> 5)
-    p = "/fish/super"
-    params = Dict()
-    segments = split(p, "/"; keepempty=false)
-    ms = match_middleware(r, params, "GET", segments, 1)
-    @test sort(map(x -> x(nothing), ms)) == [1, 2, 3]
+    @test haskey(req.context[:params], :x)
 end
 
 
 @testset "app" begin
-
     app = App()
-    app.get("**") do stream, next
+
+    app.get("/") do stream
 
     end
+
+    node = app.paths
+    method = "GET"
+
+    handler, params = Base.match(node,  method, "/")
+    @test !isnothing(handler) && isempty(params)
+
+    req = HTTP.Request()
+    req.method = "GET"
+    req.target = "/"
+    handler, middleware = match(app, req)
+    @test !isnothing(handler) && isempty(middleware)
+end
+
+
+@testset "app with middleware" begin
+    app = App()
+
+    app.get("**") do stream, next
+    end
+
+    app.get("/") do stream, next
+    end
+
     app.get("**") do stream
 
     end
@@ -47,8 +84,9 @@ end
     req.method = "GET"
     req.target = "/"
     handler, middleware = match(app, req)
-    @test !isnothing(handler)
-    @test !isempty(middleware)
+
+    @test !isnothing(handler) 
+    @test length(middleware) == 2
 end
 
 @testset "/" begin

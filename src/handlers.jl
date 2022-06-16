@@ -10,11 +10,11 @@ abstract type AbstractHandler end
 
 (handler::AbstractHandler)(args...) = handler.fn(args...)
 
-struct Middleware  <: AbstractHandler 
+mutable struct Middleware  <: AbstractHandler 
     fn 
 end
 
-struct HttpHandler  <: AbstractHandler
+mutable struct HttpHandler  <: AbstractHandler
 	fn
 end
 

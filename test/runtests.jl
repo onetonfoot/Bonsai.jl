@@ -4,6 +4,10 @@ using Sockets
 using Sockets: InetAddr
 import StructTypes: StructType
 
+using Base.Meta: show_sexpr
+using ExprManipulation
+using AbstractTrees
+
 include("http.jl")
 include("handlers.jl")
 include("middleware.jl")

@@ -246,6 +246,7 @@ end
 extract_type(::Type{T}) where {T} = T
 
 function handler_writes(@nospecialize(handler))
+    @info handler
     calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer)
     reports = JET.get_reports(calls)
     fn = Core.Const((@__MODULE__).write)

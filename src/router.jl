@@ -1,9 +1,10 @@
-# Copied and modified from
+# Copied and slightly modified from
 # https://github.com/JuliaWeb/HTTP.jl/blob/master/src/Handlers.jl
 
 using HTTP: Stream
 # using HTTP.Handlers: Node, Leaf, find, segment, insert!, match
 using URIs
+using  AbstractTrees
 
 export register!, match_middleware
 
@@ -26,7 +27,7 @@ end
 
 struct Leaf
     method::String
-    variables::Vector{Tuple{Int,String}}
+    variables::Vector{Tuple{Int,String}} # [(path_segement_idx, value)]
     path::String
     handler::Any
 end
@@ -39,16 +40,49 @@ mutable struct Node
     conditional::Vector{Node} # unsorted; will be applied in source-order; all x.segment are Regex
     wildcard::Union{Node,Nothing} # unconditional variable or wildcard
     doublestar::Union{Node,Nothing} # /** to match any length of path; must be final segment
+
+    # should this be a dict instead
     methods::Vector{Leaf}
 end
 
-Base.show(io::IO, x::Node) = print(io, "Node($(x.segment))")
+function Base.show(io::IO, x::Node) 
+    print(io, "Node($(x.segment))")
+end
 
 isvariable(x) = startswith(x, "{") && endswith(x, "}")
 segment(x) = segment == "*" ? String(segment) : isvariable(x) ? Variable(x) : String(x)
 
 Node(x) = Node(x, Node[], Node[], nothing, nothing, Leaf[])
 Node() = Node("*")
+
+function AbstractTrees.children(node::Node)
+    l = []
+    # the order they are return in the list will
+    # determin which order they are iterated in
+    if !isempty(node.exact)
+        push!(l, node.exact...)
+    end
+    if !isempty(node.conditional)
+        push!(l, node.conditional...)
+    end
+    if !isnothing(node.wildcard)
+        push!(l, node.wildcard)
+    end
+    if !isnothing(node.doublestar)
+        push!(l, node.wildcard)
+    end
+    filter!(x -> !isnothing(x), l)
+    return l
+end
+
+AbstractTrees.nodetype(::Type{Node}) = Node
+# AbstractTrees.nodevalue(n::Node) = n.methods
+
+#   nodevalue(tree, node_index)
+
+function AbstractTrees.printnode(io, x)
+     print(io, "Node($(x.segment))")
+end
 
 function find(y, itr; by=identity, eq=(==))
     for (i, x) in enumerate(itr)
@@ -121,8 +155,14 @@ function Base.insert!(node::Node, leaf, segments, i)
     end
 end
 
+function Base.match(node::Node, method::String, s::AbstractString) 
+    params = Dict()
+    m = Base.match(node, params,  method, split_route(s), 1)
+    return m, Dict(Symbol(k) => v for (k,v) in params)
+end
+
 function Base.match(node::Node, params, method, segments, i)
-    # @show node.segment, i, segments
+    @show node.segment, i, segments
     if i > length(segments)
         if isempty(node.methods)
             return nothing
@@ -134,7 +174,7 @@ function Base.match(node::Node, params, method, segments, i)
             return missing
         else
             leaf = node.methods[j]
-            # @show leaf.variables, segments
+            @show leaf.variables, segments
             if !isempty(leaf.variables)
                 # we have variables to fill in
                 for (i, v) in leaf.variables
@@ -153,14 +193,14 @@ function Base.match(node::Node, params, method, segments, i)
         m = Base.match(node.exact[j], params, method, segments, i + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
-        # @show :exact, m
+        @show :exact, m
         if m !== nothing
             return m
         end
     end
     # check for conditional matches
     for node in node.conditional
-        # @show node.segment.pattern, segment
+        @show node.segment.pattern, segment
         if match(node.segment.pattern, segment) !== nothing
             # matched a conditional node, recurse
             m = Base.match(node, params, method, segments, i + 1)
@@ -299,49 +339,52 @@ function register!(n::Node, method, path, handler)
     return
 end
 
-function wrap_handler(handler)
-    m = nothing
+function safe_which(fn, args)
     try
-        m = which(handler, Tuple{Any})
-        return HttpHandler(handler)
-    catch e
-    end
-
-    try
-        m = which(handler, Tuple{Any,Any})
-        return Middleware(handler)
-    catch e
-    end
-
-    if isnothing(m)
-        error("""Unable to infer correct handler type. Please wrap handler with correct AbstractHandler subtype""")
+        which(fn, args)
+    catch
+        nothing
     end
 end
 
 
-function Base.match(app, req::Request)
-    url = URI(req.target)
-    segments = if url.path == "/"
+function wrap_handler(handler)
+    if !isnothing(safe_which(handler, Tuple{Any}))
+        return HttpHandler(handler)
+    elseif !isnothing(safe_which(handler, Tuple{Any, Any}))
+        return Middleware(handler)
+    else
+        error("Unable to infer correct handler type")
+    end
+end
+
+function split_route(s)
+    if s == "/"
         ["/"]
     else
-        split(url.path, '/'; keepempty=false)
+        split(s, '/'; keepempty=false)
     end
+end
 
-    params = Dict{String,String}()
+function Base.match(app, req::Request)
+    url = URI(req.target)
 
-    handler = match(app.paths, params, req.method, segments, 1)
+    
+    handler, params = match(app.paths, req.method, url.path)
+    segments = split_route(url.path)
+    # todo clean up this matching logic so it uses the 3 args version
     middelware = match_middleware(app.middleware, params, req.method, segments, 1)
 
     # needed for HTTP 0.9 compat
     if hasfield(Request, :context) 
-        req.context[:params] = Dict(Symbol(k) => v for (k,v) in params)
+        req.context[:params] = params
     end
     # handler and be nothing or missing
     # nothing - didn't match a registered route
     # missing - matched the path, but method not supported
 
     if ismissing(middelware) || isnothing(middelware)
-        middelware = []
+        middelware = Middleware[]
     end
 
     return handler, middelware

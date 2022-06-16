@@ -435,6 +435,8 @@ function OpenAPI(app)
             continue
         end
 
+        @info path
+
         d = get(paths, path, Dict())
         o = OperationObject(handler)
         o.operationId = path

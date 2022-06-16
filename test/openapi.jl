@@ -40,7 +40,7 @@ end
 end
 
 @testset "Body" begin
-	b1 = Body(Pet)
+	b1 = Body(Pet1)
 	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
@@ -51,21 +51,19 @@ end
 		body = Bonsai.read(stream, Body(Id))
 	end
 
-	app.get("/pets/") do stream
-		pet = Pet1(body.id,"bob", "cat")
-		Bonsai.write(stream , pet)
-	end
+	# app.get("/pets/") do stream
+	# 	pet = Pet1(body.id,"bob", "cat")
+	# 	Bonsai.write(stream , pet)
+	# end
 
 	app.get("/pets/{id}") do stream
 		pets = [ Pet1(body.id, "bob", "cat") for i in 1:10]
 		Bonsai.write(pets)
 	end
 
-	app.get("/pets/{id}") do stream, next
-		pets = [ Pet1(body.id, "bob", "cat") for i in 1:10]
-		Bonsai.write(pets)
-	end
+	get_pets = match(app.paths, "GET", "/pets")
 
+	get_pets = match(app.paths,  Params(), "GET", ["/", "pets"], 1)
 
 	get_pets = match(app.paths,  Params(), "GET", ["pets"], 1)
 	create_pets = match(app.paths,  Params(), "POST", ["pets"], 1)

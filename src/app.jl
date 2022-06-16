@@ -15,22 +15,18 @@ Base.@kwdef mutable struct App
     inet_addr::Union{InetAddr,Nothing} = nothing
     server::Union{TCPServer,Nothing} = nothing
     paths::Node = Node("*")
+    paths_docs::Dict{Symbol, Dict{String, String}} = Dict(
+        :get => Dict(),
+        :post => Dict(),
+        :put => Dict(),
+        :trace => Dict(),
+        :delete => Dict(),
+        :options => Dict(),
+        :patch => Dict(),
+        :all => Dict(),
+        :summary => Dict(),
+    )
     middleware::Node = Node("*")
-
-    # function App()
-    #     id = rand(Int)
-    #     app = new(
-    #         id,
-    #         nothing,
-    #         CancelToken(),
-    #         nothing,
-    #         nothing,
-    #         Node("*"),
-    #         Node("*"),
-    #     )
-    #     # finalizer(stop, app)
-    #     return app
-    # end
 end
 
 
@@ -107,23 +103,6 @@ function (app::App)(stream)
     end
 end
 
-function AbstractTrees.children(node::Node)
-    l = []
-    if !isempty(node.exact)
-        push!(l, node.exact...)
-    end
-    if !isempty(node.conditional)
-        push!(l, node.conditional...)
-    end
-    if !isnothing(node.wildcard)
-        push!(l, node.wildcard)
-    end
-    if !isnothing(node.doublestar)
-        push!(l, node.wildcard)
-    end
-    filter!(x -> !isnothing(x), l)
-    return l
-end
 
 function middleware(app::App)
     leaves = Leaf[]
@@ -146,6 +125,8 @@ function handlers(app::App)
 end
 
 function create_handler(app, method)
+
+
     return function (fn, path)
         handler = wrap_handler(fn)
         node = handler isa Middleware ? app.middleware : app.paths
@@ -155,6 +136,9 @@ function create_handler(app, method)
             path,
             handler
         )
+        # We need to return this hanlder for the open api doc functionality
+        # to work
+        handler
     end
 end
 

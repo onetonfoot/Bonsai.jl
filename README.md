@@ -31,10 +31,11 @@ end
 start(app)
 ```
 
+
 # Handlers
 
 Each handler is a function with the signature `f(stream::HTTP.Stream)`.
-The handler can read and write data from the stream using `Bonsai.read` or `Bonsai.write` and a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location.  The data type being read / written should have a `StructType` defined or be a `AbstractDict` or `NamedTuple`.
+The handler can read and write from the stream using either `Bonsai.read` or `Bonsai.write`, and a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location. The data type being read / written should have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined or be a `AbstractDict` or `NamedTuple`.
 
 ## Body
 
@@ -50,8 +51,8 @@ app.get("/") do stream
 end
 ```
 
-If you don't want to define a `struct` for you payload, instead you can use 
-keyword constructor, this will read payload into a named tuple.
+If you don't want to define a `struct` for you payload, instead you can use a
+keyword constructor, this will read data into a named tuple.
 
 ```julia
 payload = Bonsia.read(stream, Body(x=Int, y=Float, z=String))
@@ -69,9 +70,11 @@ The write will try to set the correct content-type header for the data, however 
 Bonsai.mime_type(::MyType) = "text/plain"
 ```
 
-* Union{NamedTuple, AbstractDict} - application/json
-* AbstractString - text/plain
-* AbstractPath - Will attempt to set the correct mime_type base on the file extension
+The content type is defined for the following types already
+
+* `Union{NamedTuple, AbstractDict}` - application/json
+* `AbstractString` - text/plain
+* `AbstractPath` - Will attempt to set the correct content type based on the file extension.
 
 
 ## Files
@@ -122,7 +125,7 @@ app.get("/car/:id") do stream
 end
 ```
 
-For query ensure that the type's fields match the key's in the path.
+For query ensure that the type's fields match the key's in the route.
 
 ## Web sockets
 
@@ -156,11 +159,9 @@ The following path types are allowed for matching:
   * `/api/widget/{id:[0-9]+}`: Define a path variable `id` that only matches integers for this segment
   * `/api/**`: double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
 
-The type `Params`  can be used to obtain the variables.
-
 # Middleware 
 
-Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the stack. Bellow the middleware logs the time taken for each request.
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. The bellow the middleware logs the time taken for each request.
 
 ```julia
 app = App()
@@ -179,15 +180,13 @@ end
 start(server)
 ```
 
-# OpenAPI
+Middleware is called in the order it was added, with the matching handler (if any) called last.
+
+# OpenAPI / Swagger
 
 An open api spec can be generated for a `App` which can be used with tools like [Swagger UI](https://swagger.io/tools/swagger-ui/), to generate documentation.
 
 ```julia
-app = App()
-
-# add some handlers
-
 open_api = OpenApi(app)
 JSON3.write("open-api.json", open_api)
 ```
