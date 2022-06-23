@@ -215,8 +215,7 @@ end
     slottypes
 end
 
-JETInterface.get_msg(::Type{IoReport}, args...) =
-    return "detected io" #: signature of this MethodInstance
+JETInterface.print_report(::IO, ::IoReport) =  "detected io" 
 
 function (::DispatchAnalysisPass)(::Type{IoReport}, analyzer::DispatchAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
     (; src, linfo, slottypes, sptypes) = opt
@@ -242,11 +241,9 @@ function (::DispatchAnalysisPass)(::Type{IoReport}, analyzer::DispatchAnalyzer, 
     end
 end
 
-# TODO: needs another instance to handle Core.Const
 extract_type(::Type{T}) where {T} = T
 
 function handler_writes(@nospecialize(handler))
-    @info handler
     calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer)
     reports = JET.get_reports(calls)
     fn = Core.Const((@__MODULE__).write)
@@ -254,9 +251,9 @@ function handler_writes(@nospecialize(handler))
     l = map(reports) do r
         res_type = r.slottypes[3]
         res_code = r.slottypes[4].val
-        # @debug "writes" type=res_type code=res_code
         (extract_type(res_type), res_code)
     end
+    filter!(x -> x[1] != Any, l)
     unique!(l)
 end
 
@@ -266,10 +263,12 @@ function handler_reads(@nospecialize(handler))
     reports = JET.get_reports(calls)
     fn = Core.Const((@__MODULE__).read)
     filter!(x -> x.slottypes[1] == fn, reports)
+
     l = map(reports) do r
         res_type = r.slottypes[3]
-        # @debug "writes" type=res_type code=res_code
-        (extract_type(res_type))
+        # extracts the type from Core.Const
+        res_type = CC.widenconst(res_type)
+        return res_type
     end
     unique!(l)
 end

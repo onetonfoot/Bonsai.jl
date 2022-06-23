@@ -23,7 +23,6 @@ Base.@kwdef mutable struct App
         :delete => Dict(),
         :options => Dict(),
         :patch => Dict(),
-        :all => Dict(),
         :summary => Dict(),
     )
     middleware::Node = Node("*")
@@ -159,6 +158,8 @@ function Base.getproperty(app::App, s::Symbol)
         return create_handler(app, CONNECT)
     elseif s == :patch
         return create_handler(app, PATCH)
+    elseif s == :summary
+        return (x) -> nothing
     elseif s == :all
         return create_handler(app, ALL)
     else

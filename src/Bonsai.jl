@@ -14,8 +14,6 @@ const expander = Core.atdoc
 
 __init__() = (Core.atdoc!(doc_hook); nothing)
 
-# const setter! = Core.atdoc!
-
 doc_hook(args...) = expander(args...)
 # I don't know if this second one is needed but it's here because I adapted the code
 # from  https://github.com/JuliaDocs/DocStringExtensions.jl/blob/master/src/templates.jl
@@ -32,6 +30,18 @@ function doc_hook(a::LineNumberNode, b::Module, c::String, expr::Expr)
 	# @info "args" a=a b=b c=c d=expr
 	# @info "typeof" a=typeof(a) b=typeof(b) c=typeof(c) d=typeof(expr)
 
+	# _expr[] = expr
+
+	# TODO: Still need to handle this case so you can add a summary doc string
+
+	# "Some doc string for this"
+	# app.summary("/pets/")
+
+	# this won't hanlde the case of assigment although it's unlikely you need that
+	# app.summary("/pets/")
+	# mexpr = MExpr(:call, MExpr(:. , Capture(:app),  MExpr(:_)), Capture(:route))
+
+
 	# this won't hanlde the case of assigment although it's unlikely you need that
 	# f = app.get("/") do stream end
 	mexpr = MExpr(:do, MExpr(:call, Capture(:_), Capture(:route)), Capture(:_))
@@ -40,33 +50,36 @@ function doc_hook(a::LineNumberNode, b::Module, c::String, expr::Expr)
 
 	if !isnothing(m)
 		app = expr.args[1].args[1].args[1]
-		method = expr.args[1].args[1].args[2].value
 		app = eval(getfield(b, app))
+		if app isa App
 
-		route = m.route
+			method = expr.args[1].args[1].args[2].value
+			route = m.route
 
-		# handles cases where route is passed in as a variable
-		if !(route isa AbstractString)
-			route = eval(getfield(b, route))
+			# handles cases where route is passed in as a variable
+			if !(route isa AbstractString)
+				route = eval(getfield(b, route))
+			end
+
+			# @info  "route" route=route app= app
+			# show_sexpr(expr)
+			_expr[] = expr
+
+			v = gensym()
+
+			# we need to modify the expression to assign to a variable
+			# so we are able to associate documentation with the handler
+			expr = quote
+				$v = $expr;
+			end
+
+			app.paths_docs[method][route] = c
+
 		end
 
-		# @info  "route" route=route app= app
-		# show_sexpr(expr)
-		_expr[] = expr
-
-		v = gensym()
-
-		# we need to modify the expression to assign to a variable
-		# so we are able to associate documentation with the handler
-		expr = quote
-			$v = $expr;
-		end
-
-		app.paths_docs[method][route] = c
 	end
  	return expander(a,b,c,expr)
 end
-
 
 include("ResponseCodes.jl")
 include("mime_types.jl")

@@ -67,8 +67,7 @@ end
 
 
 
-@testset "handler_writes" begin
-
+@testset "Bonsai.write" begin
     function f(stream)
         Bonsai.write(stream, Body("ok"), ResponseCodes.Ok())
     end
@@ -85,7 +84,10 @@ end
     # content-type header
     Bonsai.mime_type(::A1) = "application/json"
     @test length(Bonsai.handler_writes(h)) == 4
+end
 
+
+@testset "Bonsai.read and Bonsai.write" begin
 
     function g(stream)
         query = Bonsai.read(stream, Query(Limit))
@@ -107,23 +109,23 @@ end
         Bonsai.write(stream, Body(pets=l))
     end
 
+    # content_type + headers + body = 3 writes
     @test length(Bonsai.handler_writes(g)) == 3
-    Bonsai.mime_type(::T) where {T<:NamedTuple} = "application/json"
-    # Ideally we'd pick up on the Content-Type writes
-    @test_skip length(Bonsai.handler_writes(g)) == 3
     @test length(Bonsai.handler_reads(g)) == 1
 end
 
-
 @testset "AbstractPath" begin
-    f = Path(@__DIR__) / "data/c.json"
 
-    function file(stream)
-        f = Path(@__DIR__) / "data/c.json"
-        Bonsai.write(stream, f)
+    function file_handler(stream)
+        file = Path((@__DIR__, "data/c.json"))
+        # oddly this break the type inference but the above doesn't
+        # file = Path(@__DIR__) /  "data/c.json"
+        Bonsai.write(stream, file)
     end
 
-    @test length(Bonsai.handler_writes(file)) == 1
+    # content_type + path = 2
+    Bonsai.handler_writes(file_handler)
+    @test length(Bonsai.handler_writes(file_handler)) == 2
 end
 
 

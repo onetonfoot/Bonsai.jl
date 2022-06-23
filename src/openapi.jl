@@ -218,7 +218,7 @@ StructTypes.StructType(::Type{OperationObject}) = StructTypes.Struct()
 StructTypes.omitempties(::Type{OperationObject}) = true
 
 
-Base.@kwdef struct PathItemObject
+Base.@kwdef mutable struct PathItemObject
     summary::Union{String,Nothing} = nothing
     description::Union{String,Nothing} = nothing
     get::Union{Nothing,OperationObject} = nothing
@@ -415,10 +415,20 @@ function OperationObject(handler)
     )
 end
 
+function OperationObject(leaf::Leaf) 
+    o = OperationObject(leaf.handler)
+    o.operationId = leaf.path
+    return o
+end
+
+# function PathItemObject(leaves::Array{Leaf})
+#     PathItemObject(;d...)
+# end
+
 
 function OpenAPI(app)
 
-    paths = Dict()
+    paths = Dict{String, Dict{Symbol, Any}}()
 
     leaves = []
     for n in PostOrderDFS(app.paths)
@@ -428,22 +438,27 @@ function OpenAPI(app)
     end
 
     for leaf in leaves
-        (; path, handler, method) = leaf
+        (; path, method) = leaf
 
         if path == app.docs
             @warn "skiping $(path)"
             continue
         end
 
-        @info path
+        # @info "METHOD" method=method path=path
+        # @info path
+
 
         d = get(paths, path, Dict())
-        o = OperationObject(handler)
-        o.operationId = path
-        # push!(o.parameters, open_api_parameters(leaf)...)
-        d[Symbol(lowercase(method))] = o
+        o = OperationObject(leaf)
+
+        method = Symbol(lowercase(method)) # "GET" -> :get
+        docs = app.paths_docs[method]
+        description = get(docs, path, nothing)
+        o.description = description
+
+        d[method] = o
         paths[path] = d
-        # end
     end
 
     paths = Dict(

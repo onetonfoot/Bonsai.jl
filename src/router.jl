@@ -10,9 +10,13 @@ export register!, match_middleware
 
 # tree-based router handler
 mutable struct Variable
-    name::String
+    # would it be better to use symbol
+    # so captured variable can easily be converted to namedtuples
+    name::String 
     pattern::Union{Nothing,Regex}
 end
+
+Base.show(io::IO, x::Variable) = print(io, "Variable(name=:$(x.name), pattern=$(x.pattern)")
 
 const VARREGEX = r"^{([[:alnum:]]+):?(.*)}$"
 
@@ -26,7 +30,7 @@ function Variable(pattern)
 end
 
 struct Leaf
-    method::String
+    method::String # should be a lowercase symbol
     variables::Vector{Tuple{Int,String}} # [(path_segement_idx, value)]
     path::String
     handler::Any
@@ -162,7 +166,7 @@ function Base.match(node::Node, method::String, s::AbstractString)
 end
 
 function Base.match(node::Node, params, method, segments, i)
-    @show node.segment, i, segments
+    # @show node.segment, i, segments
     if i > length(segments)
         if isempty(node.methods)
             return nothing
@@ -174,7 +178,7 @@ function Base.match(node::Node, params, method, segments, i)
             return missing
         else
             leaf = node.methods[j]
-            @show leaf.variables, segments
+            # @show leaf.variables, segments
             if !isempty(leaf.variables)
                 # we have variables to fill in
                 for (i, v) in leaf.variables
@@ -193,14 +197,14 @@ function Base.match(node::Node, params, method, segments, i)
         m = Base.match(node.exact[j], params, method, segments, i + 1)
         anymissing = m === missing
         m = coalesce(m, nothing)
-        @show :exact, m
+        # @show :exact, m
         if m !== nothing
             return m
         end
     end
     # check for conditional matches
     for node in node.conditional
-        @show node.segment.pattern, segment
+        # @show node.segment.pattern, segment
         if match(node.segment.pattern, segment) !== nothing
             # matched a conditional node, recurse
             m = Base.match(node, params, method, segments, i + 1)

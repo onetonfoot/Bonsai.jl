@@ -1,7 +1,7 @@
 using Revise
 using Sockets
 using HTTP: setstatus, setheader, header, hasheader
-using HTTP.WebSockets: WebSocket, accept_hash, check_upgrade, WebSocketError
+using HTTP.WebSockets: WebSocket, WebSocketError
 
 export start, stop
 
@@ -30,21 +30,6 @@ macro async_logged(exs...)
     end
 end
 
-
-
-# function ws_upgrade(http::HTTP.Stream)
-#     # adapted from HTTP.WebSockets.upgrade; note that here the upgrade will always
-#     # have  the right format as it always triggered by after a Response
-#     HTTP.setstatus(http, 101)
-#     HTTP.setheader(http, "Upgrade" => "websocket")
-#     HTTP.setheader(http, "Connection" => "Upgrade")
-#     key = HTTP.header(http, "Sec-WebSocket-Key")
-#     HTTP.setheader(http, "Sec-WebSocket-Accept" => HTTP.WebSockets.accept_hash(key))
-#     HTTP.startwrite(http)
-#     io = http.stream
-#     return HTTP.WebSockets.WebSocket(io; server=true)
-# end
-
 function start(
     app::App;
     host=ip"0.0.0.0",
@@ -52,21 +37,6 @@ function start(
     kwargs...)
 
     addr = Sockets.InetAddr(host, port)
-
-    if !isnothing(app.docs)
-        # app.get(app.docs) do stream
-        #     @info "docs"
-        #     html = create_docs_html(app)
-        #     Bonsai.write(stream, Body(html))
-        #     Bonsai.write(stream, Header(content_type="text/html; charset=UTF-8"))
-        # end
-
-        # app.get(app.docs * ".json") do stream
-        #     @info "docs json"
-        #     json = JSON3.write(OpenAPI(app))
-        #     Bonsai.write(stream, Body(json))
-        # end
-    end
 
     function handler_function(stream::HTTP.Stream)
         try
