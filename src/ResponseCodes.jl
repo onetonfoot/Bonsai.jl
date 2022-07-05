@@ -6,10 +6,6 @@ using HTTP
 abstract type ResponseCode end
 
 
-# Internal code to make generating the open-api easier
-struct Default <: ResponseCode end
-Base.Int(::Default) = 200
-
 # Information codes
 struct Continue <: ResponseCode end
 Base.Int(::Continue) = 100
@@ -23,6 +19,9 @@ Base.Int(::Processing) = 102
 struct EarlyHints <: ResponseCode end
 Base.Int(::EarlyHints) = 103
 
+# Internal code to make generating the open-api easier
+struct Default <: ResponseCode end
+Base.Int(::Default) = 200
 
 # Sucess codes
 struct Ok <: ResponseCode end

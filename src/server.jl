@@ -13,23 +13,6 @@ export start, stop
 # https://github.com/JuliaWeb/HTTP.jl/issues/587
 
 
-macro async_logged(exs...)
-    if length(exs) == 2
-        taskname, body = exs
-    elseif length(exs) == 1
-        taskname = "Task"
-        body = only(exs)
-    end
-    quote
-        @async try
-            $(esc(body))
-        catch exc
-            @error string($(esc(taskname)), " failed") exception = (exc, catch_backtrace())
-            rethrow()
-        end
-    end
-end
-
 function start(
     app::App;
     host=ip"0.0.0.0",
@@ -45,8 +28,6 @@ function start(
             rethrow(e)
         end
     end
-
-    function serve_fn(server) end
 
     app.inet_addr = addr
     app.cancel_token = CancelToken()

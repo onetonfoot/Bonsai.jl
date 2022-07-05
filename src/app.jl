@@ -29,42 +29,6 @@ Base.@kwdef mutable struct App
 end
 
 
-function Base.show(io::IO, e::NoHandler)
-    print(
-        io,
-        "Target - $(e.stream.message.target)\n",
-        "Method - $(e.stream.message.method)"
-    )
-end
-
-function ws_upgrade(http::HTTP.Stream; binary=false)
-
-    @info "upgrading"
-    @info http
-
-    # check_upgrade(http)
-    if !hasheader(http, "Sec-WebSocket-Version", "13")
-        throw(WebSocketError(0, "Expected \"Sec-WebSocket-Version: 13\"!\n" *
-                                "$(http.message)"))
-    end
-
-    setstatus(http, 101)
-    setheader(http, "Upgrade" => "websocket")
-    setheader(http, "Connection" => "Upgrade")
-    key = header(http, "Sec-WebSocket-Key")
-    setheader(http, "Sec-WebSocket-Accept" => accept_hash(key))
-
-    startwrite(http)
-
-    io = http.stream
-    req = http.message
-    ws = WebSocket(io; binary=binary, server=true, request=req)
-    return ws
-end
-
-function is_ws(stream)
-
-end
 
 function (app::App)(stream)
     request::Request = stream.message

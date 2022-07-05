@@ -5,6 +5,13 @@ struct NoHandler <: Exception
     stream::Stream
 end
 
+function Base.show(io::IO, e::NoHandler)
+    print(
+        io,
+        "NoHandler(method=$(e.stream.message.method), target=$(e.stream.message.target))",
+    )
+end
+
 struct MissingCookies{T} <: Exception
     t::Type{T}
     k::Vector{String}

@@ -93,6 +93,8 @@ include("router.jl")
 include("middleware.jl")
 include("openapi.jl")
 include("app.jl")
+include("utils.jl")
+include("web_socket.jl")
 include("server.jl")
 include("docs.jl")
 
