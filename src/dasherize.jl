@@ -1,6 +1,6 @@
+# Code copied and adapted from https://github.com/djsegal/StringCases.jl
 
 const downcase = lowercase
-
 
 function _decamelize(cur_string::AbstractString)
   capital_letters = collect(m.match for m in eachmatch(r"[A-Z]+", cur_string))

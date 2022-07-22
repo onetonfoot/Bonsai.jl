@@ -38,9 +38,20 @@ function construct_error(T::DataType, d)
     end
 end
 
-write(stream::Stream{<:Request}, data, status_code=ResponseCodes.Default()) = write(stream.message.response, data, status_code)
 
-function write(res::Response, headers::Headers{T}, status_code=ResponseCodes.Default()) where {T}
+const default_status = Val(:default)
+
+write(res, data, status_code::Integer) = write(res, data, Val(status_code))
+
+# We are passing status code so that the generated OpenAPI docs knows status code
+# these headers are associated with however we don't write it. This feels a little messy 
+# there may be a better way to associate the status code, perhaps the type itself should
+# have the code Body{T, Val{200}}() or Headers{T, Val{200}}().
+
+# However these parametric types feels a little like rust generics, which is fine as URITooLong
+# as the burden of constructing them doesn't fall to heavily on the user
+
+function write(res::Response, headers::Headers{T}, status_code=default_status) where {T}
     val = headers.val
     if !isnothing(val)
         for (header, value) in zip(fieldnames(val), fieldvalues(val))
@@ -49,7 +60,7 @@ function write(res::Response, headers::Headers{T}, status_code=ResponseCodes.Def
     end
 end
 
-function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()) where {T}
+function write(res::Response, data::Body{T}, status_code=default_status) where {T}
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
@@ -64,19 +75,20 @@ function write(res::Response, data::Body{T}, status_code=ResponseCodes.Default()
             write(res, Headers(content_type=m), status_code)
         end
     end
-    res.status = Int(status_code)
+    write(res, status_code)
 end
 
-function write(res::Response, path::AbstractPath, status_code=ResponseCodes.Default())
+function write(res::Response, path::AbstractPath, status_code=default_status)
     body = Base.read(path)
     res.body = body
     m = mime_type(path)
     if !isnothing(m)
         write(res, Headers(content_type=m))
+        write(res, status_code)
     end
 end
 
-function write(stream::Response, data::T, status_code=ResponseCodes.Default()) where {T}
+function write(stream::Response, data::T, status_code=default_status) where {T}
     if StructTypes.StructType(T) != StructTypes.NoStructType()
         write(stream, Body(T), status_code)
     elseif T isa Exception
@@ -86,9 +98,8 @@ function write(stream::Response, data::T, status_code=ResponseCodes.Default()) w
     end
 end
 
-function write(res::Response, status_code::Union{ResponseCodes.ResponseCode,Int})
-    res.status = Int(status_code)
-end
+write(res::Response, ::Val{T}) where T =  res.status = Int(T)
+write(res::Response, ::Val{:default})  =  res.status = 200
 
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
@@ -217,8 +228,14 @@ end
 
 JETInterface.print_report(::IO, ::IoReport) =  "detected io" 
 
+
+ref = Ref{Any}()
+
 function (::DispatchAnalysisPass)(::Type{IoReport}, analyzer::DispatchAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
     (; src, linfo, slottypes, sptypes) = opt
+
+    # In slottypes the first argument is the function name
+    # the remaining are the arguments
 
     fn = get(slottypes, 1, nothing)
     if fn == Core.Const((@__MODULE__).read)
@@ -227,7 +244,13 @@ function (::DispatchAnalysisPass)(::Type{IoReport}, analyzer::DispatchAnalyzer, 
 
     elseif fn == Core.Const((@__MODULE__).write)
 
+        ref[] = opt
+
+
         status_code = get(slottypes, 4, nothing)
+
+        # println("STATUS CODE: ", status_code)
+
         if !(status_code isa Core.Const)
             return
         end

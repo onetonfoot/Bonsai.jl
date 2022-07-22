@@ -65,16 +65,14 @@ end
     @test_skip Bonsai.read(req, Params(x=String))
 end
 
-
-
 @testset "Bonsai.write" begin
     function f(stream)
-        Bonsai.write(stream, Body("ok"), ResponseCodes.Ok())
+        Bonsai.write(stream, Body("ok"))
     end
 
     function h(stream)
         if rand() > 0.5
-            Bonsai.write(stream, Body(A1(1)), ResponseCodes.Created())
+            Bonsai.write(stream, Body(A1(1)), 201)
         else
             f(stream)
         end
@@ -83,6 +81,11 @@ end
     # defining the mime type allows us to all write the correct
     # content-type header
     Bonsai.mime_type(::A1) = "application/json"
+
+    Bonsai.handler_writes(f)
+
+    Bonsai.handler_writes(h)
+
     @test length(Bonsai.handler_writes(h)) == 4
 end
 
