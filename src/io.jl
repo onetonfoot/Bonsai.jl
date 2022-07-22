@@ -98,6 +98,7 @@ function write(stream::Response, data::T) where {T}
     end
 end
 
+write(stream::Stream{<:Request}, data) = write(stream.message.response, data)
 write(res::Response, ::Status{T}) where T =  res.status = Int(T)
 write(res::Response, ::Status{:default})  =  res.status = 200
 
