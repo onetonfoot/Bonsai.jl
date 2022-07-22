@@ -39,19 +39,19 @@ function construct_error(T::DataType, d)
 end
 
 
-const default_status = Val(:default)
+const default_status = Status(:default)
 
-write(res, data, status_code::Integer) = write(res, data, Val(status_code))
+# write(res, data, status_code::Integer) = write(res, data, Val(status_code))
 
 # We are passing status code so that the generated OpenAPI docs knows status code
 # these headers are associated with however we don't write it. This feels a little messy 
 # there may be a better way to associate the status code, perhaps the type itself should
 # have the code Body{T, Val{200}}() or Headers{T, Val{200}}().
 
-# However these parametric types feels a little like rust generics, which is fine as URITooLong
-# as the burden of constructing them doesn't fall to heavily on the user
+# However these parametric types feels a little like rust generics a bit verbose, 
+# this is fine if the burden of constructing them doesn't fall to heavily on the user
 
-function write(res::Response, headers::Headers{T}, status_code=default_status) where {T}
+function write(res::Response, headers::Headers{T}) where {T}
     val = headers.val
     if !isnothing(val)
         for (header, value) in zip(fieldnames(val), fieldvalues(val))
@@ -60,7 +60,7 @@ function write(res::Response, headers::Headers{T}, status_code=default_status) w
     end
 end
 
-function write(res::Response, data::Body{T}, status_code=default_status) where {T}
+function write(res::Response, data::Body{T}) where {T}
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
@@ -72,37 +72,47 @@ function write(res::Response, data::Body{T}, status_code=default_status) where {
 
         m = mime_type(T)
         if !isnothing(m)
-            write(res, Headers(content_type=m), status_code)
+            write(res, Headers(content_type=m))
         end
     end
-    write(res, status_code)
 end
 
-function write(res::Response, path::AbstractPath, status_code=default_status)
+function write(res::Response, path::AbstractPath)
     body = Base.read(path)
     res.body = body
     m = mime_type(path)
     if !isnothing(m)
         write(res, Headers(content_type=m))
-        write(res, status_code)
     end
 end
 
-function write(stream::Response, data::T, status_code=default_status) where {T}
+function write(stream::Response, data::T) where {T}
     if StructTypes.StructType(T) != StructTypes.NoStructType()
-        write(stream, Body(T), status_code)
+        write(stream, Body(T))
+        write(stream, Status(200))
     elseif T isa Exception
-        write(stream, Body(string(data)), status_code)
+        write(stream, Body(string(data)))
+        write(stream, Status(500))
     else
         error("Unable in infer correct write location please wrap in Body or Headers")
     end
 end
 
-write(res::Response, ::Val{T}) where T =  res.status = Int(T)
-write(res::Response, ::Val{:default})  =  res.status = 200
+write(res::Response, ::Status{T}) where T =  res.status = Int(T)
+write(res::Response, ::Status{:default})  =  res.status = 200
 
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
+
+
+# This function could be the entry point for the static analysis writes
+# allow us to group together headers and status codes etc
+function write(res::Response, args...) 
+    @assert args isa Tuple{Vararg{<:HttpParameter}}
+    for i in args
+        write(res, i)
+    end
+end
 
 function read(req::Request, ::Body{T}) where {T}
     d = JSON3.read(req.body)

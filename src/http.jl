@@ -6,7 +6,7 @@ import StructTypes: StructType, NoStructType
 import Base: |, ==
 import HTTP
 
-export Headers, Query, Body, Params, MissingHeaders, MissingCookies,
+export Headers, Query, Body, Params, Status, MissingHeaders, MissingCookies,
     GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
 
 include("dasherize.jl")
@@ -127,3 +127,9 @@ function (c::Cookies{T})(stream) where {T}
         rethrow(e)
     end
 end
+
+struct Status{T} <: HttpParameter
+    val::Union{Int, Symbol}
+end
+
+Status(x) = Status{x}(x)

@@ -66,13 +66,31 @@ end
 end
 
 @testset "Bonsai.write" begin
+
+
+    res = Response()
+    Bonsai.write(res, Body("ok"))
+    @test !isempty(res.body)
+    Bonsai.write(res, Status(201))
+    @test res.status == 201
+    Bonsai.write(res, Headers(content_type = "json and that"))
+    @test !isempty(res.headers)
+
+    res = Response()
+
+    Bonsai.write(
+        res,
+        Body("ok"),
+        Status(201),
+    )
+
     function f(stream)
         Bonsai.write(stream, Body("ok"))
     end
 
     function h(stream)
         if rand() > 0.5
-            Bonsai.write(stream, Body(A1(1)), 201)
+            Bonsai.write(stream, Body(A1(1)))
         else
             f(stream)
         end
@@ -83,7 +101,6 @@ end
     Bonsai.mime_type(::A1) = "application/json"
 
     Bonsai.handler_writes(f)
-
     Bonsai.handler_writes(h)
 
     @test length(Bonsai.handler_writes(h)) == 4
