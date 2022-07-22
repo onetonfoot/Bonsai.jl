@@ -2,6 +2,17 @@ using Bonsai, Test
 using Bonsai: ws_upgrade
 using HTTP
 
+@testset "start and stop" begin
+	app = App()
+	@test !isopen(app)
+	@async start(app, port=10001)
+	sleep(2)
+	@test isopen(app)
+	stop(app)
+	@test !isopen(app)
+end
+
+
 # @testset "start and stop" begin
 # 	router = Router()
 # 	start(router, port=9999, verbose=true)
