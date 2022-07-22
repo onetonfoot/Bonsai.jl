@@ -41,6 +41,7 @@ function start(
 
     app.server = server
     @info "Started Server"
+    wait(app)
 end
 
 function stop(app::App)
