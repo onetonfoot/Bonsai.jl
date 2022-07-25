@@ -6,13 +6,9 @@
 [action-img]: https://github.com/onetonfoot/Bonsai.jl/actions/workflows/ci.yaml/badge.svg
 [action-url]: https://github.com/onetonfoot/Bonsai.jl/actions
 
-This project is still in early development 
-and many of the features rely on `HTTP.jl` master branch 
-so use with caution.
-
+This project is still in early development and likely to change pre 1.0
 ```
 ]add Bonsai
-]add HTTP#master
 ```
 
 # Intro
@@ -120,12 +116,13 @@ Like the rest just use a wrapper combined with a type.
 
 ```julia
 app.get("/car/:id") do stream
-    query = Bonsai.read(stream, Query(id = Int))
-    params = Bonsai.read(stream, Params(color = String))
+    query = Bonsai.read(stream, Query(color = Union{Nothing, String}))
+    params = Bonsai.read(stream, Params(id = Int))
 end
 ```
 
-For query ensure that the type's fields match the key's in the route.
+To handle optional types you can use `Union{Nothing, String}`. 
+
 
 ## Web sockets
 
@@ -133,17 +130,11 @@ A web sockets can be obtained using `ws_upgrade`, bellow is an example of a echo
 
 ```julia
 app.get("/ws") do stream
-    ws = Bonsai.ws_upgrade(stream)
-    try
-        while !eof(ws)
-            data = readavailable(ws)
-            s = String(data)
-            write(ws, s)
+    ws_upgrade(stream) do ws
+        for msg in ws
+            @info msg
+            send(ws, msg)
         end
-    catch e
-        @error e
-    finally
-        close(ws)
     end
 end
 ```
