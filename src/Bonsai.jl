@@ -6,8 +6,6 @@ using Base.Meta: show_sexpr
 
 using ExprManipulation
 
-export ResponseCodes
-
 # we need keep a reference to the original atdoc function
 # because atdoc! will overwrite it but i need i later 
 const expander = Core.atdoc

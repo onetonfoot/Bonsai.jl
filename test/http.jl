@@ -70,11 +70,11 @@ end
     end
 
     @Struct struct B
-        x_missing::Union{String,Missing}
+        x_missing::Union{String, Nothing}
     end
 
     @test Bonsai.read(req, Headers(A)).x_test == "wagwan"
-    @test Bonsai.read(req, Headers(B)).x_missing |> ismissing
+    @test Bonsai.read(req, Headers(B)).x_missing |> isnothing
 
     bad_req = HTTP.Messages.Request()
     bad_req.headers = [

@@ -9,6 +9,7 @@ using ExprManipulation
 using AbstractTrees
 
 include("http.jl")
+include("utils.jl")
 include("handlers.jl")
 include("middleware.jl")
 include("router.jl")

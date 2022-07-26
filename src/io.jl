@@ -17,28 +17,6 @@ const CC = Core.Compiler
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-function construct_error(T::DataType, d)
-    struct_keys = collect(fieldnames(T))
-    data_keys = collect(keys(d))
-    ks = Symbol[]
-
-    for k in struct_keys
-        if !(k in data_keys)
-            push!(ks, k)
-        end
-    end
-
-    if isempty(ks)
-        return nothing
-    else
-        return DataMissingKey(T,
-            sort!(struct_keys),
-            sort!(data_keys),
-        )
-    end
-end
-
-
 const default_status = Status(:default)
 
 # write(res, data, status_code::Integer) = write(res, data, Val(status_code))
@@ -103,69 +81,34 @@ write(stream::Stream{<:Request}, data...) = write(stream.message.response, data.
 write(res::Response, ::Status{T}) where T =  res.status = Int(T)
 write(res::Response, ::Status{:default})  =  res.status = 200
 
-read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
-read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 
 
 # This function could be the entry point for the static analysis writes
 # allow us to group together headers and status codes etc
 function write(res::Response, args...) 
-    @assert args isa Tuple{Vararg{<:HttpParameter}}
     for i in args
         write(res, i)
     end
 end
 
-function read(req::Request, ::Body{T}) where {T}
-    d = JSON3.read(req.body)
-    try
-        return StructTypes.constructfrom(T, d)
-    catch e
-        maybe_e = construct_error(T, d)
-        if isnothing(e)
-            rethrow(e)
-        else
-            throw(maybe_e)
-        end
-    end
-end
-
-function construct_data(data, T::DataType)
-    convert_numbers!(data, T)
-    StructTypes.constructfrom(T, data)
-end
+read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
+read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
+read(req::Request, ::Body{T}) where {T} = read(req.body, T)
 
 function read(req::Request, ::Params{T}) where {T}
-    try
-        if hasfield(Request, :context)
-            d = req.context[:params]
-            return construct_data(d, T)
-        else
-            error("Params not supported on this version of HTTP")
-        end
-    catch e
-        @debug "Failed to convert path params into $T"
-        rethrow(e)
+    if hasfield(Request, :context)
+        d = req.context[:params]
+        convert_numbers!(d, T)
+        return read(d, T)
+    else
+        error("Params not supported on this version of HTTP")
     end
-end
-
-function convert_numbers!(data::AbstractDict, T)
-    for (k, t) in zip(fieldnames(T), fieldtypes(T))
-        if t <: Union{Number, Missing, Nothing}
-            data[k] = Parsers.parse(Float64, data[k])
-        end
-    end
-    data
 end
 
 function read(req::Request, ::Query{T}) where {T}
-    try
-        q::Dict{Symbol,Any} = Dict(Symbol(k) => v for (k, v) in queryparams(req.url))
-        return construct_data(q, T)
-    catch e
-        @debug "Failed to convert query into $T"
-        rethrow(e)
-    end
+    q::Dict{Symbol,Any} = Dict(Symbol(k) => v for (k, v) in queryparams(req.url))
+    convert_numbers!(q, T)
+    read(q, T)
 end
 
 function read(req::Request, ::Headers{T}) where {T}
@@ -176,16 +119,11 @@ function read(req::Request, ::Headers{T}) where {T}
         h = headerize(i)
         if HTTP.hasheader(req, h)
             d[i] = HTTP.header(req, h)
-        else
-            d[i] = missing
         end
     end
 
-    try
-        return construct_data(d, T)
-    catch e
-        rethrow(e)
-    end
+    convert_numbers!(d, T)
+    read(d, T)
 end
 
 struct DispatchAnalyzer{T} <: AbstractAnalyzer

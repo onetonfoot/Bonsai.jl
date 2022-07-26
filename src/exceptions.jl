@@ -29,7 +29,12 @@ struct DataMissingKey{T} <: Exception
 end
 
 function Base.show(io::IO, e::DataMissingKey)
-    println(io, "DataMissingKey:")
-    println(io, "  Expected - $(e.struct_keys)")
-    print(io, "  Given    - $(e.data_keys)")
+
+    l = []
+    for k in e.struct_keys
+        if !(k in e.data_keys)
+            push!(l, ":$(k)")
+        end
+    end
+    println(io, "DataMissingKey{$(e.t)}(", join(l, ", ")  ,")" )
 end

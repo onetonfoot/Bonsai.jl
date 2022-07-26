@@ -18,6 +18,7 @@ mutable struct HttpHandler  <: AbstractHandler
 	fn
 end
 
+# TODO: Remove this but keep t
 struct Folder{T <: AbstractPath}  <: AbstractHandler
     path::T
     fn
