@@ -182,7 +182,7 @@ open_api = OpenApi(app)
 JSON3.write("open-api.json", open_api)
 ```
 
-[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec.
+[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec. This feature is currently very alpha and likely to break
 
 # Example
 
