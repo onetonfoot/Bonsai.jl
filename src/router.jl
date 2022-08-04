@@ -371,9 +371,7 @@ function split_route(s)
 end
 
 function Base.match(app, req::Request)
-    url = URI(req.target)
-
-    
+    url = req.url
     handler, params = match(app.paths, req.method, url.path)
     segments = split_route(url.path)
     # todo clean up this matching logic so it uses the 3 args version

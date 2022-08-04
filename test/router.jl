@@ -43,6 +43,7 @@ end
     # mutates the request storing the match in ctx
     match(app, req)
     @test haskey(req.context[:params], :x)
+    @test req.context[:params][:x] == "pet"
 end
 
 
@@ -61,7 +62,7 @@ end
 
     req = HTTP.Request()
     req.method = "GET"
-    req.target = "/"
+    req.url = URI("/")
     handler, middleware = match(app, req)
     @test !isnothing(handler) && isempty(middleware)
 end
@@ -82,7 +83,7 @@ end
 
     req = HTTP.Request()
     req.method = "GET"
-    req.target = "/"
+    req.url = URI("/")
     handler, middleware = match(app, req)
 
     @test !isnothing(handler) 
@@ -97,7 +98,7 @@ end
 
     req = HTTP.Request()
     req.method = "GET"
-    req.target = "/"
+    req.url = URI("/")
     handler, middleware = match(app, req)
     @test !isnothing(handler)
 end

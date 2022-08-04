@@ -10,24 +10,24 @@ using HTTP: Stream
 using FilePathsBase: AbstractPath
 import Parsers
 
-const CC = Core.Compiler
+
+# current implementation is hacked together from the JET examples without much
+# understanding of how JET really works. Nevertheless it does the job, at a later
+# date however this should probably be cleaned up. 
+
+# At some point read this to better understand the abstract compiler interface
+# https://github.com/JuliaLang/julia/blob/master/base/compiler/types.jl
 
 # avoid kwargs in write due as it makes the analysis more complicated
 # https://github.com/JuliaLang/julia/issues/9551
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
+const CC = Core.Compiler
+
+
 const default_status = Status(:default)
 
-# write(res, data, status_code::Integer) = write(res, data, Val(status_code))
-
-# We are passing status code so that the generated OpenAPI docs knows status code
-# these headers are associated with however we don't write it. This feels a little messy 
-# there may be a better way to associate the status code, perhaps the type itself should
-# have the code Body{T, Val{200}}() or Headers{T, Val{200}}().
-
-# However these parametric types feels a little like rust generics a bit verbose, 
-# this is fine if the burden of constructing them doesn't fall to heavily on the user
 
 function write(res::Response, headers::Headers{T}) where {T}
     val = headers.val
@@ -42,6 +42,7 @@ function write(res::Response, data::Body{T}) where {T}
     if StructTypes.StructType(T) == StructTypes.NoStructType()
         error("Unsure how to write type $T to stream")
     else
+        # what is you wanted to write null to the body?
         if !isnothing(data.val)
             b = IOBuffer()
             JSON3.write(b, data.val, allow_inf=true)
@@ -55,10 +56,10 @@ function write(res::Response, data::Body{T}) where {T}
     end
 end
 
-function write(res::Response, path::AbstractPath)
-    body = Base.read(path)
+function write(res::Response, data::Body{T}) where T <: AbstractPath
+    body = Base.read(data.val)
     res.body = body
-    m = mime_type(path)
+    m = mime_type(data.val)
     if !isnothing(m)
         write(res, Headers(content_type=m))
     end
@@ -80,8 +81,6 @@ write(stream::Stream{<:Request}, data) = write(stream.message.response, data)
 write(stream::Stream{<:Request}, data...) = write(stream.message.response, data...)
 write(res::Response, ::Status{T}) where T =  res.status = Int(T)
 write(res::Response, ::Status{:default})  =  res.status = 200
-
-
 
 # This function could be the entry point for the static analysis writes
 # allow us to group together headers and status codes etc
@@ -126,13 +125,17 @@ function read(req::Request, ::Headers{T}) where {T}
     read(d, T)
 end
 
+
+#######
+# JET #
+#######
+
 struct DispatchAnalyzer{T} <: AbstractAnalyzer
     state::AnalyzerState
     opts::BitVector
     frame_filter::T
     __cache_key::UInt
 end
-
 
 function DispatchAnalyzer(;
     ## a predicate, which takes `CC.InfernceState` and returns whether we want to analyze the call or not
@@ -166,84 +169,179 @@ function CC.finish!(analyzer::DispatchAnalyzer, frame::Core.Compiler.InferenceSt
     ret = @invoke CC.finish!(analyzer::AbstractAnalyzer, frame::CC.InferenceState)
 
     if analyzer.frame_filter(frame.linfo)
-        ReportPass(analyzer)(IoReport, analyzer, caller, src)
+        ReportPass(analyzer)(WriteReport, analyzer, caller, src)
     end
 
     return ret
 end
 
-@reportdef struct IoReport <: InferenceErrorReport
+
+struct StreamAnalyzer{T} <: AbstractAnalyzer
+    state::AnalyzerState
+    opts::BitVector
+    frame_filter::T
+    __cache_key::UInt
+end
+
+function StreamAnalyzer(;
+    ## a predicate, which takes `CC.InfernceState` and returns whether we want to analyze the call or not
+    frame_filter=x::Core.MethodInstance -> true,
+    jetconfigs...)
+    state = AnalyzerState(; jetconfigs...)
+    ## we want to run different analysis with a different filter, so include its hash into the cache key
+    cache_key = state.param_key
+    cache_key = hash(frame_filter, cache_key)
+    return StreamAnalyzer(state, BitVector(), frame_filter, cache_key)
+end
+
+## AbstractAnalyzer API requirements
+JETInterface.AnalyzerState(analyzer::StreamAnalyzer) = analyzer.state
+JETInterface.AbstractAnalyzer(analyzer::StreamAnalyzer, state::AnalyzerState) = StreamAnalyzer(state, analyzer.opts, analyzer.frame_filter, analyzer.__cache_key)
+JETInterface.ReportPass(analyzer::StreamAnalyzer) = StreamAnalysisPass()
+JETInterface.get_cache_key(analyzer::StreamAnalyzer) = analyzer.__cache_key
+
+struct StreamAnalysisPass <: ReportPass end
+## ignore all reports defined by JET, since we'll just define our own reports
+(::StreamAnalysisPass)(T::Type{<:InferenceErrorReport}, @nospecialize(_...)) = return
+
+frame_ref = Ref{Any}()
+
+
+function CC.finish!(analyzer::StreamAnalyzer, frame::Core.Compiler.InferenceState)
+
+    caller = frame.result
+    frame_ref[] = frame
+
+    ## get the source before running `finish!` to keep the reference to `OptimizationState`
+    src = caller.src
+    ## run `finish!(::AbstractAnalyzer, ::CC.InferenceState)` first to convert the optimized `IRCode` into optimized `CodeInfo`
+    ret = @invoke CC.finish!(analyzer::AbstractAnalyzer, frame::CC.InferenceState)
+
+    if analyzer.frame_filter(frame.linfo)
+        ReportPass(analyzer)(StreamReport, analyzer, caller, src)
+    end
+
+    return ret
+end
+
+@jetreport struct StreamReport <: InferenceErrorReport
     slottypes
 end
 
-JETInterface.print_report(::IO, ::IoReport) =  "detected io" 
+@jetreport struct WriteReport <: InferenceErrorReport
+    slottypes
+end
 
 
-ref = Ref{Any}()
+@jetreport struct ReadReport <: InferenceErrorReport
+    slottypes
+end
 
-function (::DispatchAnalysisPass)(::Type{IoReport}, analyzer::DispatchAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
+JETInterface.print_report_message(::IO, ::WriteReport) =  "detected response io" 
+JETInterface.print_report_message(::IO, ::ReadReport) =  "detected request io" 
+JETInterface.print_report_message(::IO, ::StreamReport) =  "detected stream io" 
+
+write_ref = Ref{Any}()
+read_ref = Ref{Any}()
+
+function (::DispatchAnalysisPass)(::Type{WriteReport}, analyzer::DispatchAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
     (; src, linfo, slottypes, sptypes) = opt
 
-    # In slottypes the first argument is the function name
-    # the remaining are the arguments
+    fn = get(slottypes, 1, nothing)
+    io_type = get(slottypes, 2, nothing)
+    data_type = get(slottypes, 3, nothing)
+    # probably shouldn't be adding different report types here
+    # but rather spliting them into serperate report passes...
+
+    if fn == Core.Const((@__MODULE__).read) && 
+       io_type <: Request
+
+        read_ref[] = opt
+        add_new_report!(analyzer, caller, ReadReport(caller, slottypes))
+
+    elseif fn == Core.Const((@__MODULE__).write) && 
+           io_type <: Response &&
+           data_type <: HttpParameter
+
+        write_ref[] = opt
+
+        add_new_report!(analyzer, caller, WriteReport(caller, slottypes))
+    end
+end
+
+function (::StreamAnalysisPass)(::Type{StreamReport}, analyzer::StreamAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
+    (; src, linfo, slottypes, sptypes) = opt
 
     fn = get(slottypes, 1, nothing)
-    if fn == Core.Const((@__MODULE__).read)
+    io_type = get(slottypes, 2, nothing)
 
-        add_new_report!(analyzer, caller, IoReport(caller, slottypes))
-
-    elseif fn == Core.Const((@__MODULE__).write)
-
-        ref[] = opt
-
-
-        status_code = get(slottypes, 4, nothing)
-
-        # println("STATUS CODE: ", status_code)
-
-        if !(status_code isa Core.Const)
-            return
-        end
-
-        data = get(slottypes, 3, nothing)
-        if !(data isa Type)
-            return
-        end
-
-        add_new_report!(analyzer, caller, IoReport(caller, slottypes))
+    if fn == Core.Const((@__MODULE__).write) && 
+           io_type <: Stream 
+        write_ref[] = opt
+        add_new_report!(analyzer, caller, StreamReport(caller, slottypes))
     end
 end
 
 extract_type(::Type{T}) where {T} = T
 
+write_reports = Ref{Any}()
+read_reports = Ref{Any}()
+
+arg_types_ref = Ref{Any}()
+
 function handler_writes(@nospecialize(handler))
-    calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer)
-    reports = JET.get_reports(calls)
-    fn = Core.Const((@__MODULE__).write)
-    filter!(x -> x.slottypes[1] == fn, reports)
-    l = map(reports) do r
-        res_type = r.slottypes[3]
-        res_code = r.slottypes[4].val
-        (extract_type(res_type), res_code)
+    l = []
+
+    for stream_report in Bonsai.handler_stream_writes(handler)
+        _, io_type, arg_type = stream_report.slottypes
+        status_code = Bonsai.get_status_code(arg_type)
+
+        types = if arg_type <: Tuple
+            Tuple{Response, arg_type.types...}
+        else
+            Tuple{Response, arg_type}
+        end
+
+        arg_types_ref[] = arg_type
+        calls = JET.report_call(Bonsai.write, types, analyzer=DispatchAnalyzer)
+        reports = JET.get_reports(calls)
+        filter!(x ->  x isa  WriteReport, reports)
+        push!(l, map(x ->  (CC.widenconst(x.slottypes[3]), status_code) , reports)...)
     end
-    filter!(x -> x[1] != Any, l)
+
     unique!(l)
 end
 
+function handler_stream_writes(@nospecialize(handler))
+    calls = JET.report_call(handler, Tuple{Stream}, analyzer=StreamAnalyzer)
+    reports = JET.get_reports(calls)
+    return reports
+end
+
+extract_status_code(::Type{Status{T}}) where {T} = T
+
+get_status_code(l) = 200
+
+function get_status_code(l::Type{<:Tuple})
+    for i in l.types
+        if i <: Status # Etc Status{201} => 201
+            return extract_status_code(i)
+        end
+    end
+    return 200
+end
 
 function handler_reads(@nospecialize(handler))
     calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer)
     reports = JET.get_reports(calls)
-    fn = Core.Const((@__MODULE__).read)
-    filter!(x -> x.slottypes[1] == fn, reports)
-
-    l = map(reports) do r
+    
+    filter!(x ->  x isa  ReadReport, reports)
+    map(reports) do r
         res_type = r.slottypes[3]
         # extracts the type from Core.Const
         res_type = CC.widenconst(res_type)
         return res_type
-    end
-    unique!(l)
+    end |> unique!
 end
 
 handler_reads(handler::AbstractHandler) = handler_reads(handler.fn)

@@ -58,11 +58,14 @@ end
     ]
     req.method = "GET"
     app = App()
-    app.get("{x}") do stream
+    app.get("/{x}") do stream
     end
     @test Bonsai.read(req, Query(Limit)) isa Limit
     @test Bonsai.read(req, Headers(x_next=String)) isa NamedTuple
-    @test_skip Bonsai.read(req, Params(x=String))
+
+    match(app, req)
+    req.context
+    @test Bonsai.read(req, Params(x=String)) == (x = "pets", )
 end
 
 @testset "Bonsai.write" begin
@@ -85,7 +88,12 @@ end
     )
 
     function f(stream)
-        Bonsai.write(stream, Body("ok"))
+        Bonsai.write(stream, Body("err"), Bonsai.Status(500))
+    end
+
+
+    function g(stream)
+        Bonsai.write(stream, Body("ok"), Bonsai.Status(201))
     end
 
     function h(stream)
@@ -99,8 +107,11 @@ end
     # defining the mime type allows us to all write the correct
     # content-type header
     Bonsai.mime_type(::A1) = "application/json"
+    @test all(map(x -> x[2] == 201, Bonsai.handler_writes(g)))
 
-    @test_skip length(Bonsai.handler_writes(h)) == 4
+    h_writes = Bonsai.handler_writes(h)
+    @test (Body{String}, 500) in h_writes
+    @test (Body{A1}, 200) in h_writes
 end
 
 
@@ -126,10 +137,11 @@ end
         Bonsai.write(stream, Body(pets=l))
     end
 
-    # content_type + headers + body = 3 writes
-    @test_skip length(Bonsai.handler_writes(g)) == 3
-    @test_skip length(Bonsai.handler_reads(g)) == 1
+
+    @test Bonsai.handler_reads(g) == [Query{Limit}]
+    @test length(Bonsai.handler_writes(g)) == 3
 end
+
 
 @testset "AbstractPath" begin
 
@@ -137,21 +149,24 @@ end
         file = Path((@__DIR__, "data/c.json"))
         # oddly this break the type inference but the above doesn't
         # file = Path(@__DIR__) /  "data/c.json"
-        Bonsai.write(stream, file)
+        Bonsai.write(stream, Body(file))
     end
 
-    # content_type + path = 2
-    Bonsai.handler_writes(file_handler)
-    @test_skip length(Bonsai.handler_writes(file_handler)) == 2
+
+    req = Response()
+    file_handler(req)
+    @test !isempty(req.body )
+    @test length(Bonsai.handler_writes(file_handler)) == 2
 end
 
 
 @testset "handler_reads" begin
 
     function g(stream)
-        Bonsai.read(stream, Params(A))
+        Bonsai.read(stream, Params(id = Int))
     end
 
     l = handler_reads(g)
+    # is type Params  not Params{NamedTuple}
     @test_skip length(l) == 1
 end

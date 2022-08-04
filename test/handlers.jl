@@ -9,7 +9,7 @@ using JSON3
 
 	# writing
 	res = Response()
-	Bonsai.write(res, file)
+	Bonsai.write(res, Body(file))
 	k, v = res.headers[1]
 	@test k == "content-type" 
 	@test v == "application/json"

@@ -90,6 +90,8 @@ function parameter_type(t::Type{<:HttpParameter})
 end
 
 # maybe rename RouteParams as Params is so generic? 
+# this is the only parameter that doesn't contina all of the information
+# required to match from Bonsai.read(req, ::Params) 
 
 struct Params{T} <: HttpParameter
     t::Type{T}
