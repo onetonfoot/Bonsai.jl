@@ -63,10 +63,10 @@ end
 	get_pets, _ = match(app.paths, "GET", "/pets/1")
 	create_pets, _ = match(app.paths, "POST", "/pets")
 
-	@test_skip Bonsai.RequestBodyObject(
+	@test Bonsai.RequestBodyObject(
 		Bonsai.handler_reads(create_pets.fn)[1]
 	) isa Bonsai.RequestBodyObject
 
-	@test_skip OpenAPI(app) isa OpenAPI
+	@test OpenAPI(app) isa OpenAPI
 	# JSON3.write("tmp.json",  OpenAPI(app))
 end

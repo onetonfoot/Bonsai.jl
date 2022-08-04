@@ -23,7 +23,7 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
     # for debuging
     # code_inferred(h.fn, Tuple{Stream})
     # Bonsai.handler_writes(h.fn)
-    @test_skip length(Bonsai.handler_writes(h.fn)) == 4
+    @test length(Bonsai.handler_writes(h.fn)) == 4
 end
 
 @testset "handler_reads" begin
@@ -34,7 +34,7 @@ end
         Bonsai.read(stream, Body(A2))
     end
     h = match(app.paths, Params(), "GET", ["path"], 1)
-    @test_skip length(Bonsai.handler_reads(h.fn)) == 3
+    @test length(Bonsai.handler_reads(h.fn)) == 3
 end
 
 # using Bonsai, HTTP
