@@ -1,5 +1,6 @@
 using Bonsai, Test, StructTypes, HTTP, JSON3, HTTP.Messages
 using StructTypes: @Struct
+using Bonsai: parameter_type, headerize
 using HTTP: Request
 using URIs: URI
 
@@ -88,4 +89,17 @@ end
     # Base.match(app, req) should perform this for us
     req.context[:params] = Dict{Any, Any}(:id => "10")
     @test Bonsai.read(req, Params(id=Int)).id == 10
+end
+
+@testset "headerize" begin
+    @test headerize("Content-Type") == "content-type"
+end
+
+
+@testset "parameter_type" begin
+    body = Body(x=1, y=1.0)
+    @test parameter_type(typeof(body)) == body.t
+
+    params = Params(x=Int)
+    @test parameter_type(typeof(params)) == params.t
 end
