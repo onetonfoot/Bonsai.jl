@@ -115,7 +115,7 @@ Bonsai.headerize(:content_type)
 Like the rest just use a wrapper combined with a type. 
 
 ```julia
-app.get("/car/:id") do stream
+app.get("/car/{id}") do stream
     query = Bonsai.read(stream, Query(color = Union{Nothing, String}))
     params = Bonsai.read(stream, Params(id = Int))
 end

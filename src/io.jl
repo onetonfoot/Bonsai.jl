@@ -334,7 +334,6 @@ end
 function handler_reads(@nospecialize(handler))
     calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer)
     reports = JET.get_reports(calls)
-    
     filter!(x ->  x isa  ReadReport, reports)
     map(reports) do r
         res_type = r.slottypes[3]

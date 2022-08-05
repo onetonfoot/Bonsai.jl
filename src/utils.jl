@@ -15,18 +15,6 @@ macro async_logged(exs...)
     end
 end
 
-function kw_constructor_data_type(T; kwargs...)
-    k = []
-    v = []
-    for (x, y) in kwargs
-        @assert y isa DataType "Argument is not a DataType"
-        push!(k, x)
-        push!(v, y)
-    end
-    t = NamedTuple{tuple(k...),Tuple{v...}}
-    T(t)
-end
-
 function kw_constructor(T; kwargs...)
     k = []
     v = []
@@ -43,8 +31,12 @@ function kw_constructor(T; kwargs...)
     end
 
     if has_datatype
-        @assert all(map(x -> x isa DataType, v))
-        t = NamedTuple{tuple(k...),Tuple{v...}}
+        # this is currnt only be used with Query and Params
+        # e.g Params(id=Int) or Query(color=String, size=String)
+        # however in it's current form it breaks type inference
+        # with JET as it just returns Query not Query{T}
+        @assert all(map(x -> x isa DataType, v)) "All or none must be DataType's"
+        t = NamedTuple{tuple(k...), Tuple{v...}}
         return T(t, nothing)
     else
         nt = values(kwargs)

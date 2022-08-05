@@ -74,7 +74,7 @@ struct Query{T} <: HttpParameter
 end
 
 Query(t::DataType) = Query(t, nothing)
-Query(; kwargs...) = kw_constructor_data_type(Query; kwargs...)
+Query(; kwargs...) = kw_constructor(Query; kwargs...)
 
 struct Body{T} <: HttpParameter
     t::Type{T}
@@ -98,7 +98,7 @@ struct Params{T} <: HttpParameter
     val::Union{T,Nothing}
 end
 
-Params(; kwargs...) = kw_constructor_data_type(Params; kwargs...)
+Params(; kwargs...) = kw_constructor(Params; kwargs...)
 Params(t::DataType) = Params(t, nothing)
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/

@@ -27,3 +27,10 @@ StructTypes.StructType(::Type{XYZ}) = StructTypes.Struct()
 	@test Bonsai.read(convert_numbers!(ab2, AB), AB) isa AB
 	@test Bonsai.read(JSON3.write(ab), AB) isa AB
 end
+
+@testset "kw_constructor" begin
+    p = Bonsai.kw_constructor(Params; id=Int, color=String)
+	@test p.t == NamedTuple{(:id, :color), Tuple{Int64, String}}
+	@test isnothing(p.val) 
+    @test_throws Exception Bonsai.kw_constructor(Params; id=Int, color="blue")
+end

@@ -47,7 +47,6 @@ end
 @testset "Query" begin
     # constructors
     @test Query(x=String).val |> isnothing 
-    @test_throws Exception Query(x="x")
 
     # reading - requires HTTP master
     req = Request()

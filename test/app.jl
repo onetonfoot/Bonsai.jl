@@ -19,54 +19,18 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
         Bonsai.write(stream, Body(x=10))
         Bonsai.write(stream, Body(a=A2(10)))
     end
-    h = match(app.paths, Params(), "GET", ["path"], 1)
-    # for debuging
-    # code_inferred(h.fn, Tuple{Stream})
-    # Bonsai.handler_writes(h.fn)
+    h = match(app.paths, Dict(), "GET", ["path"], 1)
     @test length(Bonsai.handler_writes(h.fn)) == 4
 end
 
 @testset "handler_reads" begin
     app = Bonsai.App()
-    app.get("/path") do stream
+    app.get("/path/{id}") do stream
         Bonsai.read(stream, Headers(A2))
-        Bonsai.read(stream, Query(A2))
         Bonsai.read(stream, Body(A2))
+		Bonsai.read(stream, Query(color=String))
+        Bonsai.read(stream, Params(id=Int))
     end
-    h = match(app.paths, Params(), "GET", ["path"], 1)
-    @test length(Bonsai.handler_reads(h.fn)) == 3
+    h = match(app.paths, Dict(), "GET", ["path", "1"], 1)
+    @test length(Bonsai.handler_reads(h.fn)) == 4
 end
-
-# using Bonsai, HTTP
-
-# app = Bonsai.App()
-
-# app.get("/data") do stream
-#     @info "SERVER"
-#     Bonsai.write(stream, Body(rand(10^6)))
-# end
-
-# start(app, port=7864)
-
-# stop(app)
-
-# res = HTTP.get("http://localhost:7864/data")
-
-# try
-#     start(app, port=7864)
-#     sleep(1)
-#     #http://localhost:7864/data
-#     res = HTTP.get("http://localhost:7864/data")
-#     @info res
-# catch e
-#     @error e
-# finally
-#     stop(app)
-# end
-
-# how to get this to pass
-# app = Bonsai.App()
-
-# "some function documenation"
-# app.get("/test-docs") do stream
-# end
