@@ -4,7 +4,7 @@
 # module OpenAPIv3
 using StructTypes
 
-export OpenAPI
+export OpenAPI, docs!
 
 struct ExternalDocumentationObject
     description::String
@@ -292,7 +292,7 @@ end
 StructTypes.StructType(::Type{Components}) = StructTypes.Struct()
 
 Base.@kwdef mutable struct OpenAPI
-    openapi::String = "3.0" # semantic version number
+    openapi::String = "3.0.0" # semantic version number
     info::Union{Info,Nothing} = nothing
     servers::Array{ServerObject} = []
     paths::Dict{String,PathItemObject} = Dict()
@@ -384,6 +384,7 @@ OperationObject(h::Middleware) = OperationObject(h.fn)
 
 function OperationObject(handler)
     writes = handler_writes(handler)
+    filter!(x -> x isa Status, writes)
     responses = Dict{String,ResponseObject}()
     # for now we will ignore duplicate response codes
     # and assume everything is a json response 
@@ -469,4 +470,20 @@ function OpenAPI(app)
         paths=paths,
         info=Info()
     )
+end
+
+
+function docs!(app)
+    open_api = OpenAPI(app)
+    html = Path(joinpath(@__DIR__, "../open_api/dist/index.html"))
+
+    app.get("/docs/open-api.json") do stream
+        @info "json"
+        Bonsai.write(stream, Body(open_api))
+    end
+
+    app.get("/docs") do stream
+        @info "docs"
+        Bonsai.write(stream, Body(html))
+    end
 end

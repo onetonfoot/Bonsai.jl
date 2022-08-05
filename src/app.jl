@@ -33,6 +33,10 @@ end
 function (app::App)(stream)
     request::Request = stream.message
 
+    # Unsure why this is empty, I would have thought that HTTP
+    # would fill this field but seemingly not atm
+    request.url = URI(request.target)
+
     if !hasheader(stream, "Sec-WebSocket-Version", "13")
         request.body = Base.read(stream)
         closeread(stream)
