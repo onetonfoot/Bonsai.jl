@@ -85,8 +85,14 @@ Body(t::DataType) = Body(t, nothing)
 Body(;kwargs...) = kw_constructor(Body; kwargs...)
 Body(t) = Body(typeof(t), t)
 
-function parameter_type(t::Type{<:HttpParameter})
-    t.parameters[1]
+function parameter_type(t::Type{<:HttpParameter}) 
+    # This happens when type inference breaks and we get Params instead or Params{T}
+    # hence in this case we will return a empty named tuple
+    if t isa UnionAll
+        NamedTuple{(), Tuple{}}
+    else
+        t.parameters[1]
+    end
 end
 
 # maybe rename RouteParams as Params is so generic? 

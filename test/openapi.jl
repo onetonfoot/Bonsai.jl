@@ -46,22 +46,34 @@ end
 
 @testset "OpenAPI" begin
 
+
 	app = App()
 
 	"""
-	Adds a new pet to the store
+	Get pet by it's id
 	"""
-	app.post("/pets/") do stream
-		body = Bonsai.read(stream, Body(Id))
+	app.get("/pets/{id:\\d+}") do stream
+		params = Bonsai.read(
+			stream,
+			Params(id=Int)
+		)
+		pet = Pet1(params.id, "bob", "dog")
+		Bonsai.write(stream, Body(pet))
 	end
 
-	app.get("/pets/{id:\\d+}") do stream
-		pets = [ Pet1(body.id, "bob", "cat") for i in 1:10]
-		Bonsai.write(pets)
+	"""
+	Creates a new pet
+	"""
+	app.post("/pets/") do stream
+		body = Bonsai.read(stream, Body(Pet1))
 	end
 
 	get_pets, _ = match(app.paths, "GET", "/pets/1")
+	# Bonsai.handler_reads(get_pets.fn)
+	# Bonsai.handler_writes(get_pets.fn)
+
 	create_pets, _ = match(app.paths, "POST", "/pets")
+	# Bonsai.handler_reads(create_pets.fn)
 
 	@test Bonsai.RequestBodyObject(
 		Bonsai.handler_reads(create_pets.fn)[1]
