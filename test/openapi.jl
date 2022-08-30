@@ -10,7 +10,7 @@ using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject,
 # https://blog.stoplight.io/openapi-json-schema#:~:text=You%20can%20use%20JSON%20Schema,generate%20an%20entire%20mock%20server.
 
 @Struct struct Id
-	id::String
+	id::Int
 end
 
 @Struct struct Pet1
@@ -57,7 +57,9 @@ end
 	app.get("/pets/{id:\\d+}") do stream
 		params = Bonsai.read(
 			stream,
-			Params(id=Int)
+			Params(Id)
+			# This doesn't work with open api at the moment sadly
+			# Params(id=Int)
 		)
 		pet = Pet1(params.id, "bob", "dog")
 		Bonsai.write(stream, Body(pet))
@@ -71,11 +73,12 @@ end
 	end
 
 	get_pets, _ = match(app.paths, "GET", "/pets/1")
-	# Bonsai.handler_reads(get_pets.fn)
-	# Bonsai.handler_writes(get_pets.fn)
+	id_read = Bonsai.handler_reads(get_pets.fn)[1] 
+	@test id_read <: Params &&  !(id_read isa UnionAll)
+	@test (Body{Pet1}, 200) in Bonsai.handler_writes(get_pets.fn)
 
 	create_pets, _ = match(app.paths, "POST", "/pets")
-	# Bonsai.handler_reads(create_pets.fn)
+	@test Body{Pet1} in Bonsai.handler_reads(create_pets.fn)
 
 	@test Bonsai.RequestBodyObject(
 		Bonsai.handler_reads(create_pets.fn)[1]

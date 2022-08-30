@@ -4,7 +4,7 @@
 # module OpenAPIv3
 using StructTypes
 
-export OpenAPI, docs!
+export OpenAPI, open_api!
 
 struct ExternalDocumentationObject
     description::String
@@ -473,7 +473,7 @@ function OpenAPI(app)
 end
 
 
-function docs!(app)
+function open_api!(app)
     open_api = OpenAPI(app)
     html = Path(joinpath(@__DIR__, "../open_api/dist/index.html"))
 
