@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+	<script>
+
+		window.ws = new WebSocket("ws://localhost:9999/ws")
+		ws.addEventListener('message', function (event) {
+			Alpine.store("store").append("From server: " + event.data);
+		});
+
+		document.addEventListener('alpine:init', () => {
+			Alpine.store('store', {
+				s: '',
+				handleSubmit() {
+					console.log("S is:", this.s)
+					ws.send(this.s)
+					this.s = ''
+				},
+				append(s){
+					this.echo.push(s)
+				},
+				echo: []
+			})
+		})
+
+	</script>
+</head>
+
+<body x-data="$store.store">
+	<input class="" type="text" x-model="s" @keyup.enter="handleSubmit">
+	<template x-for="i in echo">
+		<div x-text="i"></div>
+	</template>
+</body>
+
+</html>

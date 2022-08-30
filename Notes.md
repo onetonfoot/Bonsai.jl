@@ -1,26 +1,19 @@
+# IO 
+
+Clean up JSON construction and error handling so the functions can also be used from 
+within websocket handlers with `Bonsai.read(msg, T)`
+
 # Handlers
 
 * How to extract path parameters? In a declarative way
 * How to structure handlers in a way that supports live reload?
 * Add `app.all`
 
-
-Path parameters
-
-```julia
-app.get("/:id") do stream
-      path_params()
-
-end
-```
-
-How to associate documentation with the handler in a intuative way?
+Add docs for summary documentation 
 
 ```julia
 "Some documentation"
-app.get("/:id") do stream
-
-end
+app.summary("/:id") 
 ```
 
 Maybe add a web socket method
@@ -31,7 +24,6 @@ app.ws("/ws") do ws
 end
 ```
 
-
 Need a easy way to get the handlers back maybe?
 
 ```julia
@@ -40,10 +32,9 @@ app.get("/the handler")
 
 Do we need to enforce at the call site that the route starts with a slash?
 
-
 # OpenAPI
 
-rename HTTPParameter to HttpIo or better use a interface so people can easily extend for there own types
+rename HTTPParameter to HttpIo. 
 
 ```julia
 
@@ -56,7 +47,7 @@ end
 * Need a way to correctly guess the content type of writes to generate open-api, perhaps provide a function that can be overrided. For example to support other stuff like DataFrames. `mime_type(::Type{T})`
 
 * Need to track writes of headers
-* Best to remove redoc and use swagger-ui, this will remove the NodsJS dep but will probably need to write a small react app
+* Best to remove redoc and use swagger-ui, this will remove the NodesJS dep but will probably need to write a small react app
 
 # Other Framework Handlers
 
@@ -122,3 +113,4 @@ struct InvalidParameter{T} <: Exception
     e::Exception
 end
 ```
+
