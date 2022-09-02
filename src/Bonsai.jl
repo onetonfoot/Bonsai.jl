@@ -93,6 +93,6 @@ include("openapi.jl")
 include("app.jl")
 include("web_socket.jl")
 include("server.jl")
-include("docs.jl")
+# include("docs.jl")
 
 end

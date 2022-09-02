@@ -15,9 +15,3 @@ function create_docs_html(app)
     s = Base.read(joinpath(@__DIR__, "html/swagger-ui.html"), String)
     return replace(s, "//=docs_url=//" => """ '$(app.docs).json' """)
 end
-
-# using Sockets
-# host = ip"0.0.0.0"
-# port = 8081
-# addr = Sockets.InetAddr(host, port)
-# "http://$(addr.host):$(addr.port)"
