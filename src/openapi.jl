@@ -442,14 +442,10 @@ function OpenAPI(app)
     for leaf in leaves
         (; path, method) = leaf
 
-        if path == app.docs
-            @warn "skiping $(path)"
-            continue
-        end
-
-        # @info "METHOD" method=method path=path
-        # @info path
-
+        # if path == app.docs
+        #     @warn "skiping $(path)"
+        #     continue
+        # end
 
         d = get(paths, path, Dict())
         o = OperationObject(leaf)

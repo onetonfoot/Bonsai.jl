@@ -19,7 +19,7 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
         Bonsai.write(stream, Body(x=10))
         Bonsai.write(stream, Body(a=A2(10)))
     end
-    h = match(app.paths, Dict(), "GET", ["path"], 1)
+    h, _ = app.get["/path"]
     @test length(Bonsai.handler_writes(h.fn)) == 4
 end
 
@@ -31,6 +31,6 @@ end
 		Bonsai.read(stream, Query(color=String))
         Bonsai.read(stream, Params(id=Int))
     end
-    h = match(app.paths, Dict(), "GET", ["path", "1"], 1)
+    h, _ = app.get["/path/{id}"]
     @test length(Bonsai.handler_reads(h.fn)) == 4
 end

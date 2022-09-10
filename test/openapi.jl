@@ -46,15 +46,24 @@ end
 	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
+d =  Dict()
+
+"asdasd"
+d[:y] = function (x)
+end
+
+# app.get["/pets/{id:\\d+}"] = function(stream)
+# end
+
 @testset "OpenAPI" begin
 
 
 	app = App()
 
-	"""
-	Get pet by it's id
-	"""
-	app.get("/pets/{id:\\d+}") do stream
+	# """
+	# Get pet by it's id
+	# """
+	app.get["/pets/{id:\\d+}"] = function(stream)
 		params = Bonsai.read(
 			stream,
 			Params(Id)
@@ -65,19 +74,20 @@ end
 		Bonsai.write(stream, Body(pet))
 	end
 
-	"""
-	Creates a new pet
-	"""
-	app.post("/pets/") do stream
+
+	# """
+	# Creates a new pet
+	# """
+	app.post["/pets/"] = function(stream)
 		body = Bonsai.read(stream, Body(Pet1))
 	end
 
-	get_pets, _ = match(app.paths, "GET", "/pets/1")
+	get_pets, _ = app.get["/pets/{id:\\d+}"]
 	id_read = Bonsai.handler_reads(get_pets.fn)[1] 
 	@test id_read <: Params &&  !(id_read isa UnionAll)
 	@test (Body{Pet1}, 200) in Bonsai.handler_writes(get_pets.fn)
 
-	create_pets, _ = match(app.paths, "POST", "/pets")
+	create_pets, _ = app.post["/pets/"]
 	@test Body{Pet1} in Bonsai.handler_reads(create_pets.fn)
 
 	@test Bonsai.RequestBodyObject(
@@ -85,5 +95,4 @@ end
 	) isa Bonsai.RequestBodyObject
 
 	@test OpenAPI(app) isa OpenAPI
-	# JSON3.write("tmp.json",  OpenAPI(app))
 end

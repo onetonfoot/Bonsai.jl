@@ -14,7 +14,7 @@ Base.@kwdef mutable struct App
     inet_addr::Union{InetAddr,Nothing} = nothing
     server::Union{TCPServer,Nothing} = nothing
 
-    # LittleDict is ordered dict that is fast to iterate over less than 50 elements
+    # LittleDict is ordered dict that is fast to iterate over for less than 50 elements
     middleware = LittleDict{Tuple{HttpMethod, String}, Array{Middleware}}() # 
 
     paths::Node = Node("*")
