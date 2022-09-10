@@ -75,8 +75,12 @@ function construct_error(T::DataType, d)
     end
 end
 
-# Generic read that throws nice errors, more specific version
-# for HTTP parameters defined in io.jl
+StructTypes.StructType(::Type{<:AbstractPath}) = StructTypes.StringType()
+
+# This doesn't seem to work because Path is a function not a data type ?
+# StructTypes.StructType(::Type{typeof(Path)}) = StructTypes.StringType()
+# StructTypes.StructType(::Type{Path}) = StructTypes.StringType()
+
 function read(d, T::DataType)
 
     if d isa Union{AbstractString, AbstractArray{UInt8}, IO}

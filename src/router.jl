@@ -351,17 +351,6 @@ function safe_which(fn, args)
     end
 end
 
-
-function wrap_handler(handler)
-    if !isnothing(safe_which(handler, Tuple{Any}))
-        return HttpHandler(handler)
-    elseif !isnothing(safe_which(handler, Tuple{Any, Any}))
-        return Middleware(handler)
-    else
-        error("Unable to infer correct handler type")
-    end
-end
-
 function split_route(s)
     if s == "/"
         ["/"]

@@ -26,8 +26,9 @@ Base.@kwdef mutable struct App
         :summary => Dict(),
     )
     middleware::Node = Node("*")
+    middleware_ = Dict() # (GET, <path>) => <handler>
+    path_ = Dict()
 end
-
 
 
 function (app::App)(stream)
@@ -70,7 +71,6 @@ function (app::App)(stream)
     end
 end
 
-
 function middleware(app::App)
     leaves = Leaf[]
     for n in PostOrderDFS(app.middleware)
@@ -91,45 +91,74 @@ function handlers(app::App)
     return leaves
 end
 
-function create_handler(app, method)
-
-
-    return function (fn, path)
-        handler = wrap_handler(fn)
-        node = handler isa Middleware ? app.middleware : app.paths
-        register!(
-            node,
-            method,
-            path,
-            handler
-        )
-        # We need to return this hanlder for the open api doc functionality
-        # to work
-        handler
-    end
+struct CreateHandler
+    app::App
+    method::HttpMethod
 end
+
+(create::CreateHandler)(path) = path
+
+function(create::CreateHandler)(fn, path) 
+
+    handler = if !isnothing(safe_which(fn, Tuple{Any}))
+        HttpHandler(fn)
+    elseif !isnothing(safe_which(fn, Tuple{Any, Any}))
+        Middleware(fn)
+    else
+        error("Unable to infer correct handler type")
+    end
+
+    if handler isa Middleware
+        create.app.path_[(create.method, path)] = handler
+    else
+        create.app.path_[(create.method, path)] = handler
+    end
+
+    node = handler isa Middleware ? create.app.middleware : create.app.paths
+    register!(
+        node,
+        create.method,
+        path,
+        handler
+    )
+    # We need to return this hanlder for the open api doc functionality
+    # to work
+    handler
+end
+
+function Base.getindex(create::CreateHandler, s::String)
+    # This should return (handler, middleware)
+    @info "$(create.method) $s"
+end
+
+#= Allows for an alternative syntax for setting handlers
+
+app.get["/"] = function(stream)
+
+end
+
+=#
+Base.setindex!(create::CreateHandler, fn, path::String) = create(fn, path)
 
 function Base.getproperty(app::App, s::Symbol)
     if s == :get
-        return create_handler(app, GET)
+        return CreateHandler(app, GET)
     elseif s == :post
-        return create_handler(app, POST)
+        return CreateHandler(app, POST)
     elseif s == :put
-        return create_handler(app, POST)
+        return CreateHandler(app, POST)
     elseif s == :trace
-        return create_handler(app, TRACE)
+        return CreateHandler(app, TRACE)
     elseif s == :delete
-        return create_handler(app, DELETE)
+        return CreateHandler(app, DELETE)
     elseif s == :options
-        return create_handler(app, OPTIONS)
+        return CreateHandler(app, OPTIONS)
     elseif s == :connect
-        return create_handler(app, CONNECT)
+        return CreateHandler(app, CONNECT)
     elseif s == :patch
-        return create_handler(app, PATCH)
-    elseif s == :summary
-        return (x) -> nothing
+        return CreateHandler(app, PATCH)
     elseif s == :all
-        return create_handler(app, ALL)
+        return CreateHandler(app, ALL)
     else
         return Base.getfield(app, s)
     end

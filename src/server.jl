@@ -1,4 +1,3 @@
-using Revise
 using Sockets
 using HTTP: setstatus, setheader, header, hasheader
 using HTTP.WebSockets: WebSocket, WebSocketError
@@ -15,6 +14,14 @@ export start, stop
 # then to shutdown close and forceclose. It would be nice
 # to follow these conventions aswell.
 
+# function start(
+#     app::App,
+#     addr::InetAddr,
+#     kwargs...
+#     )
+
+# end
+
 function start(
     app::App;
     host=ip"0.0.0.0",
@@ -23,14 +30,6 @@ function start(
 
     addr = Sockets.InetAddr(host, port)
 
-    function handler_function(stream::HTTP.Stream)
-        try
-            app(stream)
-        catch e
-            rethrow(e)
-        end
-    end
-
     app.inet_addr = addr
     app.cancel_token = CancelToken()
     server = Sockets.listen(addr)
@@ -38,7 +37,8 @@ function start(
     # Seems to be some changes to how this functions with HTTP 1.0
     # should probably revist this code once we don't support 0.9 anymore
     @async HTTP.serve(
-        handler_function,
+        # doesn't seem to make a difference
+        x -> Base.invokelatest(app, x),
         host, port; server=server, stream=true, kwargs...
     )
 
@@ -46,23 +46,53 @@ function start(
 
     @info "Started Server on $(host):$(port)"
 
-    wait(app)
-
+    # This is like Revise.entr but we control the event loop. This is
+    # necessary because we need to exit this loop cleanly when the user
+    # cancels the server, regardless of any revision event.
     try
+        while isopen(app.cancel_token)
+            wait(Revise.revision_event)
+
+            @info "Revision event"
+            # stop(app)
+            # start(app, host, port, kwargs...)
+
+            close(server)
+            sleep(0.1)
+            server = Sockets.listen(addr)
+            app.server = server
+
+            @async HTTP.serve(
+                app,
+                host, port; server=server, stream=true, kwargs...
+            )
+            # @info "Started"
+
+            yield()
+        end
+        @info "Exited revise loop"
+    catch e
+        if e isa InterruptException
+        else
+            @error e
+        end
+    finally
         stop(app)
-    catch 
-        
     end
+end
+
+function restart(app::App)
+
 end
 
 function stop(app::App)
     isnothing(app.server) && return
 
-    if isopen(app.server)
+    try
         close(app.cancel_token)
         close(app.server)
-        app.inet_addr = nothing
-        @info "Stopped Server"
+    catch
+        # app.inet_addr = nothing
     end
 end
 

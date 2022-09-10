@@ -24,7 +24,9 @@ app.ws("/ws") do ws
 end
 ```
 
-Need a easy way to get the handlers back maybe?
+Need a easy way to get the handlers back maybe? However should this return the handler or the middleware,
+perhaps a tuple of both (handler, middleware) or maybe the combined handler, this would be better for testing purposes.
+
 
 ```julia
 app.get("/the handler")
