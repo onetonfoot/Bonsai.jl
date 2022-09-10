@@ -28,15 +28,30 @@ struct Trace <: HttpMethod end
 struct Patch <: HttpMethod end
 struct All <: HttpMethod end
 
-Base.String(::HttpMethod) = "get"
-Base.String(::Post) = "post"
-Base.String(::Put) = "put"
-Base.String(::Delete) = "delete"
-Base.String(::Connect) = "connect"
-Base.String(::Options) = "option"
-Base.String(::Trace) = "trace"
-Base.String(::Patch) = "patch"
-Base.String(::All) = "*"
+function Base.convert(::Type{String}, method::HttpMethod)
+    if method isa Get
+        "get"
+    elseif method isa Post
+        "post"
+    elseif method isa Put
+        "put"
+    elseif method isa Delete
+        "delete"
+    elseif method isa Connect
+        "connect"
+    elseif method isa Trace
+        "trace"
+    elseif method isa Patch
+        "patch"
+    else
+        "*"
+    end
+end
+
+Base.print(io::IO, method::HttpMethod) = print(io, Base.convert(String, method))
+
+# Base.string(method::HttpMethod) = Base.convert(::Type{String}, method)
+# Base.String(method::HttpMethod) = Base.convert(::Type{String}, method)
 
 const GET = Get()
 const POST = Post()

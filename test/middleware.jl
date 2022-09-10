@@ -28,14 +28,3 @@ c = false
 	@test c && t
 	@test combine_middleware([])(true)
 end
-
-
-app = App()
-
-app.get("**") do stream, next
-end
-
-req = Request()
-req.method = "GET"
-req.target = "/"
-match(app, req)

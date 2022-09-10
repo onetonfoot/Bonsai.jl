@@ -3,6 +3,7 @@
 # https://swagger.io/specification/
 # module OpenAPIv3
 using StructTypes
+import HTTP.Handlers: Leaf
 
 export OpenAPI, open_api!
 

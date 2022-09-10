@@ -1,21 +1,25 @@
-using Bonsai: CancelToken, register!
+using Bonsai: CancelToken
 using AbstractTrees
 using Sockets: InetAddr, TCPServer
+using HTTP.Handlers: Leaf, Node, segment
+using OrderedCollections
 
 export App
 
-function path_params(stream)
-    stream.context[:params]
-end
-
 Base.@kwdef mutable struct App
+    # Why is this here again?
     id::Int = rand(Int)
-    docs::Union{String,Nothing} = nothing
+
     cancel_token::CancelToken = CancelToken()
     inet_addr::Union{InetAddr,Nothing} = nothing
     server::Union{TCPServer,Nothing} = nothing
+
+    # LittleDict is ordered dict that is fast to iterate over less than 50 elements
+    middleware = LittleDict{Tuple{HttpMethod, String}, Array{Middleware}}() # 
+
     paths::Node = Node("*")
-    paths_docs::Dict{Symbol, Dict{String, String}} = Dict(
+    path_ = Dict{Tuple{HttpMethod, String}, HttpHandler}()
+    paths_docs::Dict{Symbol,Dict{String,String}} = Dict(
         :get => Dict(),
         :post => Dict(),
         :put => Dict(),
@@ -25,11 +29,7 @@ Base.@kwdef mutable struct App
         :patch => Dict(),
         :summary => Dict(),
     )
-    middleware::Node = Node("*")
-    middleware_ = Dict() # (GET, <path>) => <handler>
-    path_ = Dict()
 end
-
 
 function (app::App)(stream)
     request::Request = stream.message
@@ -44,13 +44,7 @@ function (app::App)(stream)
     end
 
     try
-        handler, middleware::Array{Any} = match(app, stream)
-
-        if isnothing(middleware) || ismissing(middleware)
-            middleware = []
-        end
-
-
+        handler, middleware = match(app, stream)
         if ismissing(handler) || isnothing(handler)
             push!(middleware, (stream, next) -> throw(NoHandler(stream)))
         else
@@ -71,74 +65,41 @@ function (app::App)(stream)
     end
 end
 
-function middleware(app::App)
-    leaves = Leaf[]
-    for n in PostOrderDFS(app.middleware)
-        if !isempty(n.methods)
-            push!(leaves, n.methods...)
-        end
-    end
-    return leaves
-end
-
-function handlers(app::App)
-    leaves = Leaf[]
-    for n in PostOrderDFS(app.paths)
-        if !isempty(n.methods)
-            push!(leaves, n.methods...)
-        end
-    end
-    return leaves
-end
-
 struct CreateHandler
     app::App
     method::HttpMethod
 end
 
-(create::CreateHandler)(path) = path
 
-function(create::CreateHandler)(fn, path) 
+(create::CreateHandler)(fn, path) = create(HttpHandler(fn), path)
+(create::CreateHandler)(fn::Array, path) = create(Middleware.(fn), path)
 
-    handler = if !isnothing(safe_which(fn, Tuple{Any}))
-        HttpHandler(fn)
-    elseif !isnothing(safe_which(fn, Tuple{Any, Any}))
-        Middleware(fn)
-    else
-        error("Unable to infer correct handler type")
-    end
-
-    if handler isa Middleware
-        create.app.path_[(create.method, path)] = handler
-    else
-        create.app.path_[(create.method, path)] = handler
-    end
-
-    node = handler isa Middleware ? create.app.middleware : create.app.paths
-    register!(
-        node,
-        create.method,
-        path,
-        handler
-    )
-    # We need to return this hanlder for the open api doc functionality
-    # to work
-    handler
+function (create::CreateHandler)(handler::HttpHandler, path)
+    create.app.path_[(create.method, path)] = handler
+    segments = map(segment, split(path, '/'; keepempty=false))
+    insert!(create.app.paths, Leaf(string(create.method), Tuple{Int, String}[], path, handler), segments, 1)
+    # We need to return this handler for the open api doc functionality
+    return handler
 end
+
+(create::CreateHandler)(middleware::Array{Middleware}, path) = create.app.middleware[(create.method, path)] = middleware
+
+#= 
+app.get["/"] = function(stream)
+end
+app.get["**"] = [authentication, someother, middleware]
+app.get["/files/*"] = [gzip]
+=# 
+Base.setindex!(create::CreateHandler, fn, path::String) = create(HttpHandler(fn), path)
+Base.setindex!(create::CreateHandler, l::Array, path::String) = create(Middleware.(l), path)
 
 function Base.getindex(create::CreateHandler, s::String)
-    # This should return (handler, middleware)
-    @info "$(create.method) $s"
+    (
+        get(create.app.path_, (create.method, s), nothing),
+        get(create.app.middleware, (create.method, s), nothing)
+    )
 end
 
-#= Allows for an alternative syntax for setting handlers
-
-app.get["/"] = function(stream)
-
-end
-
-=#
-Base.setindex!(create::CreateHandler, fn, path::String) = create(fn, path)
 
 function Base.getproperty(app::App, s::Symbol)
     if s == :get

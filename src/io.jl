@@ -95,13 +95,9 @@ read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 read(req::Request, ::Body{T}) where {T} = read(req.body, T)
 
 function read(req::Request, ::Params{T}) where {T}
-    if hasfield(Request, :context)
-        d = req.context[:params]
-        convert_numbers!(d, T)
-        return read(d, T)
-    else
-        error("Params not supported on this version of HTTP")
-    end
+    d = req.context[:params]
+    convert_numbers!(d, T)
+    return read(d, T)
 end
 
 function read(req::Request, ::Query{T}) where {T}

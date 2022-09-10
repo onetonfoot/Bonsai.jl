@@ -3,6 +3,7 @@ using StructTypes: @Struct
 using Bonsai: parameter_type, headerize
 using HTTP: Request
 using URIs: URI
+using Bonsai: GET
 
 @Struct struct Payload
     x

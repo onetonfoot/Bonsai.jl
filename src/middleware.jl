@@ -32,7 +32,6 @@ function combine_middleware(middleware::Vector)
     fns = Function[stream->middleware[i](stream, identity)]
     for i in reverse(1:length(middleware)-1)
         fn = stream -> middleware[i](stream, fns[i+1])
-        # fn = stream -> middleware[i](stream, fns[i+1])
         pushfirst!(fns, fn)
     end
     return fns[1]
