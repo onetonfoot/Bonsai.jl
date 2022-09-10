@@ -475,12 +475,10 @@ function open_api!(app)
     html = Path(joinpath(@__DIR__, "../open_api/dist/index.html"))
 
     app.get("/docs/open-api.json") do stream
-        @info "json"
         Bonsai.write(stream, Body(open_api))
     end
 
     app.get("/docs") do stream
-        @info "docs"
         Bonsai.write(stream, Body(html))
     end
 end
