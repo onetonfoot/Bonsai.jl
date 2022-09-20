@@ -21,7 +21,7 @@ using Bonsai
 app = App()
 
 app.get["/"] = function(stream)
-    Bonsai.write(stream, Body("Hi"))
+    Bonsai.write( stream, Body("Hi"))
 end
 
 start(app)
@@ -31,28 +31,18 @@ start(app)
 # Handlers
 
 Each handler is a function with the signature `f(stream::HTTP.Stream)`.
-The handler can read and write from the stream using either `Bonsai.read` or `Bonsai.write`, and a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location. The data type being read / written should have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined or be a `AbstractDict` or `NamedTuple`.
+The handler can read and write from the stream using either `Bonsai.read` or `Bonsai.write`, and a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined.
 
 ## Body
 
 ```julia
-@Struct struct JsonPayload
-    x::Int
-    y::Float
-    z::String
-end
 
 app.get["/"] = function(stream)
-    payload = Bonsai.read(stream, Body(JsonPayload))
+    payload = Bonsai.read(stream, Body(x=Int, y=Float64, z=String))
+    # julia> typeof(payload)
+    # NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}
     @info payload
 end
-```
-
-If you don't want to define a `struct` for you payload, instead you can use a
-keyword constructor, this will read data into a named tuple.
-
-```julia
-payload = Bonsai.read(stream, Body(x=Int, y=Float, z=String))
 ```
 
 Writing data is similar. 
@@ -61,7 +51,7 @@ Writing data is similar.
 Bonsia.write(stream, Body(x=1, y=1.0, z="hi"))
 ```
 
-The write will try to set the correct content-type header for the data, however this can be changed if needed by over writting `mime_type`
+`Bonsai.write` will attempt to set the correct content-type header for the data, this can be changed by defining `mime_type`.
 
 ```julia
 Bonsai.mime_type(::MyType) = "text/plain"
@@ -71,24 +61,20 @@ The content type is defined for the following types already
 
 * `Union{NamedTuple, AbstractDict}` - application/json
 * `AbstractString` - text/plain
-* `AbstractPath` - Will attempt to set the correct content type based on the file extension.
+* [AbstractPath](https://github.com/rofinn/FilePaths.jl) - Based on the file extension.
 
+## Query and Path Parameters
 
-## Files
-
-Writing files supports `AbstractPaths` defined in [FilePaths](https://github.com/rofinn/FilePaths.jl). The content type will be set based on the file extension.
-
-```julia
-file =  Path("data/some-file.json")
-Bonsai.write(stream, Body(file))
-```
-
-A nice feature of this is we can easily use other `AbstractPath` implementations for example like that in [AWSS3](https://github.com/JuliaCloud/AWSS3.jl)
+Like the rest just use a wrapper combined with a type. 
 
 ```julia
-file = S3Path("s3://my.bucket/test1.txt") 
-Bonsai.write(stream, Body(file))
+app.get["/car/{id}"] = function(stream)
+    query = Bonsai.read(stream, Query(color = Union{Nothing, String}))
+    params = Bonsai.read(stream, Params(id = Int))
+end
 ```
+
+To handle optional types you can use `Union{Nothing, String}`. 
 
 ## Headers
 
@@ -111,18 +97,22 @@ Bonsai.headerize(:content_type)
 # "content-type"
 ```
 
-## Query and Path Parameters
 
-Like the rest just use a wrapper combined with a type. 
+## Files
+
+Writing files supports `AbstractPaths` defined in [FilePaths](https://github.com/rofinn/FilePaths.jl). The content type will be set based on the file extension.
 
 ```julia
-app.get["/car/{id}"] = function(stream)
-    query = Bonsai.read(stream, Query(color = Union{Nothing, String}))
-    params = Bonsai.read(stream, Params(id = Int))
-end
+file =  Path("data/some-file.json")
+Bonsai.write(stream, Body(file))
 ```
 
-To handle optional types you can use `Union{Nothing, String}`. 
+A nice feature of this is we can easily use other `AbstractPath` implementations for example like that in [AWSS3](https://github.com/JuliaCloud/AWSS3.jl)
+
+```julia
+file = S3Path("s3://my.bucket/test1.txt") 
+Bonsai.write(stream, Body(file))
+```
 
 ## Web sockets
 
