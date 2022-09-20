@@ -27,6 +27,14 @@ StructTypes.StructType(::Type{XYZ}) = StructTypes.Struct()
 	@test Bonsai.read(ab, AB) isa AB
 	@test Bonsai.read(convert_numbers!(ab2, AB), AB) isa AB
 	@test Bonsai.read(JSON3.write(ab), AB) isa AB
+
+	s = """{"data" : [1,2,3]}"""
+	t = typeof((data=Float64[],))
+	@test Bonsai.read(s, t) isa t
+
+	s = """[1,2,3]"""
+	t = Array{Float64}
+	@test Bonsai.read(s, t) isa t
 end
 
 @testset "kw_constructor" begin
@@ -34,14 +42,4 @@ end
 	@test p.t == NamedTuple{(:id, :color), Tuple{Int64, String}}
 	@test isnothing(p.val) 
     @test_throws Exception Bonsai.kw_constructor(Params; id=Int, color="blue")
-end
-
-@testset "read" begin
-	s = """{"data" : [1,2,3]}"""
-	t = typeof((data=Float64[],))
-	@test_nowarn Bonsai.read(s, t)
-
-	s = """[1,2,3]"""
-	t = Array{Float64}
-	@test_nowarn Bonsai.read(s, t)
 end
