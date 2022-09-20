@@ -1,7 +1,6 @@
 using HTTP.Messages: Response
 
 function cors(stream::Stream, next)
-
     headers = [
         "Access-Control-Allow-Origin" => "*",
         "Access-Control-Allow-Headers" => "*",

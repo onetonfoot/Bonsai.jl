@@ -28,3 +28,20 @@ c = false
 	@test c && t
 	@test combine_middleware([])(true)
 end
+
+@testset "multple_middleware" begin
+	l = [false, false]
+	app = App()
+
+	function fn1(stream, next)
+		l[1] = true
+	end
+
+	function fn2(stream, next)
+		l[2] = true
+	end
+
+	app.get["**"] = [fn1, fn2]
+
+	@test length(app.get["**"][2]) == 2
+end

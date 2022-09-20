@@ -100,7 +100,6 @@ function Base.getindex(create::CreateHandler, s::String)
     )
 end
 
-
 function Base.getproperty(app::App, s::Symbol)
     if s == :get
         return CreateHandler(app, GET)

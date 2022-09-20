@@ -20,7 +20,7 @@ using Bonsai
 
 app = App()
 
-app.get("/") do stream
+app.get["/"] = function(stream)
     Bonsai.write(stream, Body("Hi"))
 end
 
@@ -42,8 +42,9 @@ The handler can read and write from the stream using either `Bonsai.read` or `Bo
     z::String
 end
 
-app.get("/") do stream
+app.get["/"] = function(stream)
     payload = Bonsai.read(stream, Body(JsonPayload))
+    @info payload
 end
 ```
 
@@ -51,7 +52,7 @@ If you don't want to define a `struct` for you payload, instead you can use a
 keyword constructor, this will read data into a named tuple.
 
 ```julia
-payload = Bonsia.read(stream, Body(x=Int, y=Float, z=String))
+payload = Bonsai.read(stream, Body(x=Int, y=Float, z=String))
 ```
 
 Writing data is similar. 
@@ -92,7 +93,7 @@ Bonsai.write(stream, Body(file))
 ## Headers
 
 ```julia
-app.get("/") do stream
+app.get["/"] = function(stream)
     headers = Bonsai.read(stream, Headers(content_type=String))
     if headers.content_type == "application/json"
         # write some json
@@ -115,7 +116,7 @@ Bonsai.headerize(:content_type)
 Like the rest just use a wrapper combined with a type. 
 
 ```julia
-app.get("/car/{id}") do stream
+app.get["/car/{id}"] = function(stream)
     query = Bonsai.read(stream, Query(color = Union{Nothing, String}))
     params = Bonsai.read(stream, Params(id = Int))
 end
@@ -123,13 +124,12 @@ end
 
 To handle optional types you can use `Union{Nothing, String}`. 
 
-
 ## Web sockets
 
 A web sockets can be obtained using `ws_upgrade`, bellow is an example of a echo socket.
 
 ```julia
-app.get("/ws") do stream
+app.get["/ws"] = function(stream)
     ws_upgrade(stream) do ws
         for msg in ws
             @info msg
@@ -152,19 +152,27 @@ The following path types are allowed for matching:
 
 # Middleware 
 
-Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. The bellow the middleware logs the time taken for each request.
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. Middleware can be set on a route by using a array.
 
 ```julia
 app = App()
 
-app.get("**") do stream, next
+
+function time_taken(stream, next)
     x = now()
     next(stream)
     elapsed = now() - x
     @info "$(stream.message.target) took $elapsed" 
 end
 
-app.get("/") do stream
+function log_request(stream, next)
+    @info stream.message.target
+    next(stream)
+end
+
+app.get["**"] = [time_taken, log_request]
+
+app.get["/"] = function(stream)
 	Bonsai.write(s, Body("Hello"))
 end
 
