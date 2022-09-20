@@ -2,6 +2,7 @@ using Bonsai, Test, JSON3
 using Bonsai: construct_error, convert_numbers!
 using Base: @kwdef
 using StructTypes
+import Bonsai
 
 @kwdef struct AB
 	a::Int
@@ -33,4 +34,14 @@ end
 	@test p.t == NamedTuple{(:id, :color), Tuple{Int64, String}}
 	@test isnothing(p.val) 
     @test_throws Exception Bonsai.kw_constructor(Params; id=Int, color="blue")
+end
+
+@testset "read" begin
+	s = """{"data" : [1,2,3]}"""
+	t = typeof((data=Float64[],))
+	@test_nowarn Bonsai.read(s, t)
+
+	s = """[1,2,3]"""
+	t = Array{Float64}
+	@test_nowarn Bonsai.read(s, t)
 end

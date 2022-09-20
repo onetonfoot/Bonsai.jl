@@ -81,7 +81,8 @@ StructTypes.StructType(::Type{<:AbstractPath}) = StructTypes.StringType()
 # StructTypes.StructType(::Type{typeof(Path)}) = StructTypes.StringType()
 # StructTypes.StructType(::Type{Path}) = StructTypes.StringType()
 
-function read(d, T::DataType)
+# UnionAll catch stuff like Array{Float64}
+function read(d, T::Union{DataType, UnionAll})
 
     if d isa Union{AbstractString, AbstractArray{UInt8}, IO}
         d = JSON3.read(d)
