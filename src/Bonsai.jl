@@ -1,6 +1,6 @@
 module Bonsai
 
-using HTTP, JSON3, StructTypes, Dates, LRUCache, FilePaths
+using HTTP, JSON3, StructTypes, Dates, FilePaths
 import HTTP: Request, Response, Stream
 using Base.Meta: show_sexpr
 
