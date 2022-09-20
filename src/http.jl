@@ -13,7 +13,7 @@ include("dasherize.jl")
 
 # https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#information_responses
 HTTP.statustext(::Val{T}) where T =  HTTP.statustext(Int(T))
-HTTP.statustext(::Val{:default}) where T =  HTTP.statustext(200)
+HTTP.statustext(::Val{:default}) =  HTTP.statustext(200)
 
 abstract type HttpParameter end
 
