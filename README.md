@@ -21,10 +21,16 @@ using Bonsai
 app = App()
 
 app.get["/"] = function(stream)
-    Bonsai.write( stream, Body("Hi"))
+    query = Bonsai.read(
+        stream,
+        Query(name=Union{String, Nothing})
+    )
+    name = isnothing(query.name) ? "John Doe" : query.name  
+    name = "ok"
+    Bonsai.write( stream, Body("Hi, $name"))
 end
 
-start(app)
+start(app, port=9091)
 ```
 
 

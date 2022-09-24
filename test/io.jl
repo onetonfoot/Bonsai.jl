@@ -52,17 +52,17 @@ end
 @testset "Bonsai.read" begin
     req = Request()
     req.body = Vector{UInt8}(JSON3.write(Pet(1, "bob", "dog")))
-    # req.url = URI("http://locahost:4040/pets?limit=10&offset=5")
     req.target = "http://locahost:4040/pets?limit=10&offset=5"
+    req.url = URI("http://locahost:4040/pets?limit=10&offset=5")
     req.headers = [
         "X-Next" => "Some Value"
     ]
-    req.method = "get"
+    req.method = "GET"
     app = App()
     app.get["/{x}"] = function(stream)
     end
     # calling match on the request adds the parameters to it req.context
-    match(app, req)
+    Bonsai.gethandlers(app, req)
 
     @test Bonsai.read(req, Query(Limit)) isa Limit
     @test Bonsai.read(req, Headers(x_next=String)) isa NamedTuple

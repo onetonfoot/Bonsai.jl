@@ -30,22 +30,22 @@ struct All <: HttpMethod end
 
 function Base.convert(::Type{String}, method::HttpMethod)
     if method isa Get
-        "get"
+        "GET"
     elseif method isa Post
-        "post"
+        "POST"
     elseif method isa Put
-        "put"
+        "PUT"
     elseif method isa Delete
-        "delete"
+        "DELETE"
     elseif method isa Connect
-        "connect"
+        "CONNECT"
     elseif method isa Trace
-        "trace"
+        "TRACE"
     elseif method isa Patch
-        "patch"
+        "PATCH"
     else
         "*"
-    end
+    end 
 end
 
 Base.print(io::IO, method::HttpMethod) = print(io, Base.convert(String, method))

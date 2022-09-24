@@ -22,10 +22,9 @@ function kw_constructor(T; kwargs...)
 
     for (x, y) in kwargs
 
-        if y isa DataType
+        if y isa DataType || y isa Union
             has_datatype = true
         end
-
         push!(k, x)
         push!(v, y)
     end
@@ -35,7 +34,7 @@ function kw_constructor(T; kwargs...)
         # e.g Params(id=Int) or Query(color=String, size=String)
         # however in it's current form it breaks type inference
         # with JET as it just returns Query not Query{T}
-        @assert all(map(x -> x isa DataType, v)) "All or none must be DataType's"
+        @assert all(map(x -> x isa DataType || x isa Union, v)) "All or none must be DataType's"
         t = NamedTuple{tuple(k...), Tuple{v...}}
         return T(t, nothing)
     else
@@ -86,6 +85,12 @@ function read(d, T::Union{DataType, UnionAll})
 
     if d isa Union{AbstractString, AbstractArray{UInt8}, IO}
         d = JSON3.read(d)
+    elseif d isa Dict
+        # this convert it to a JSON3.Object which 
+        # StructTypes correctly handles Union{Nothing, String}
+        # with throwing a error if the key isn't set
+        # should only happen with Query and Params
+        d = JSON3.write(d) |> JSON3.read
     end
 
     try

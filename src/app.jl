@@ -34,6 +34,8 @@ end
 function (app::App)(stream)
     request::Request = stream.message
 
+    @info "Request" request.url request.target request.method
+
     # Unsure why this is empty, I would have thought that HTTP
     # would fill this field but seemingly not atm
     request.url = URI(request.target)
@@ -44,19 +46,23 @@ function (app::App)(stream)
     end
 
     try
-        handler, middleware = match(app, stream)
+        handler, middleware = gethandlers(app, request)
+
+        @info "match" handler middleware
+
         if ismissing(handler) || isnothing(handler)
-            push!(middleware, (stream, next) -> throw(NoHandler(stream)))
+            push!(middleware, Middleware((stream, next) -> throw(NoHandler(stream))))
         else
-            push!(middleware, (stream, next) -> handler(stream))
+            push!(middleware, Middleware((stream, next) -> handler(stream)))
         end
+
         combine_middleware(middleware)(stream)
 
     catch e
         if e isa NoHandler
             @warn e
         else
-            @error "error" type = typeof(e) e = e
+            @error "Unhandled Error" e = e
         end
     finally
         request.response.request = request

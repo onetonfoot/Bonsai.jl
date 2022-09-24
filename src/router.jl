@@ -39,20 +39,10 @@ function split_route(s)
     end
 end
 
-function match_middleware(app, req)
-    (url, method) = req
-
-end
-
 # Required that the key is a symbol for StructTypes.constructfrom to work
 const ParamsDict = Dict{Symbol, Any}
 
-function Base.match(app::App, req::Request)
-    url = URI(req.target)
-    req.url = url
-    segments = split(url.path, '/'; keepempty=false)
-    # handler, params = match(app.paths, req.method, segments, 1)
-    segments = split_route(url.path)
+function gethandlers(app::App, req::Request)
     handler, _, params = gethandler(app, req)
     if !isnothing(params)
         req.context[:params] = params
@@ -63,6 +53,8 @@ function Base.match(app::App, req::Request)
     return handler, middleware
 end
 
+# duplicated from here and redefinded first argument Router
+# https://github.com/JuliaWeb/HTTP.jl/blob/63a268e68933438e099726bc07b152d48b5385d7/src/Handlers.jl
 function gethandler(app::App, req::Request)
     url = URI(req.target)
     segments = split(url.path, '/'; keepempty=false)
@@ -85,7 +77,7 @@ function getmiddleware(app::App, req::Request)
     url = URI(req.target)
     segments = split(url.path, '/'; keepempty=false)
 
-    middleware = Middleware[]
+    middleware = AbstractHandler[]
 
     # with this implemntation the more specific middleware won't run first
     # we'll need to uses a ordered dict instead or an array

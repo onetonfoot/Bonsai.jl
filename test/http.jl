@@ -50,14 +50,18 @@ end
     # constructors
     @test Query(x=String).val |> isnothing 
 
+    q = Query(y=Union{String, Nothing})
+    @test q.t.types[1] == Union{String, Nothing}
+
     # reading - requires HTTP master
     req = Request()
+    req.target = "http://localhost?x=10"
     req.url = URI("http://localhost?x=10")
     @test Bonsai.read(req, Query(Payload)) isa Payload
     @test Bonsai.convert_numbers!(Dict{Symbol,Any}(:x => "10"), PayloadTyped)[:x] == 10
     @test Bonsai.read(req, Query(PayloadTyped)) isa PayloadTyped
+    @test Bonsai.read(req, Query(y=Union{String, Nothing})) == (y=nothing,)
 end
-
 
 @testset "Header" begin
 
