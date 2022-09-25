@@ -26,7 +26,6 @@ app.get["/"] = function(stream)
         Query(name=Union{String, Nothing})
     )
     name = isnothing(query.name) ? "John Doe" : query.name  
-    name = "ok"
     Bonsai.write( stream, Body("Hi, $name"))
 end
 
