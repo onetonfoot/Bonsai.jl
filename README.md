@@ -36,21 +36,23 @@ start(app, port=9091)
 # Handlers
 
 Each handler is a function with the signature `f(stream::HTTP.Stream)`.
-The handler can read and write from the stream using either `Bonsai.read` or `Bonsai.write`, and a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined.
+To read and write from the stream using `Bonsai.read` or `Bonsai.write` along with a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined.
 
 ## Body
+
+Reading JSON from a request
 
 ```julia
 
 app.get["/"] = function(stream)
     payload = Bonsai.read(stream, Body(x=Int, y=Float64, z=String))
-    # julia> typeof(payload)
+    # typeof(payload)
     # NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}
     @info payload
 end
 ```
 
-Writing data is similar. 
+Writing JSON as a response
 
 ```julia
 Bonsia.write(stream, Body(x=1, y=1.0, z="hi"))
@@ -70,16 +72,20 @@ The content type is defined for the following types already
 
 ## Query and Path Parameters
 
-Like the rest just use a wrapper combined with a type. 
+Following the same pattern as above
 
 ```julia
 app.get["/car/{id}"] = function(stream)
-    query = Bonsai.read(stream, Query(color = Union{Nothing, String}))
-    params = Bonsai.read(stream, Params(id = Int))
+    query, params = Bonsai.read(
+    	stream, 
+	# Union types with Nothing can be used to handle optional parameters
+	Query(color = Union{Nothing, String}),
+	Params(id = Int))
+    )
 end
 ```
 
-To handle optional types you can use `Union{Nothing, String}`. 
+Note to handle optional parameters you can use a union with nothing e.g `Union{Nothing, T}`. 
 
 ## Headers
 
