@@ -31,7 +31,7 @@ function kw_constructor(T; kwargs...)
 
     if has_datatype
         # this is currnt only be used with Query and Params
-        # e.g Params(id=Int) or Query(color=String, size=String)
+        # e.g Route(id=Int) or Query(color=String, size=String)
         # however in it's current form it breaks type inference
         # with JET as it just returns Query not Query{T}
         @assert all(map(x -> x isa DataType || x isa Union, v)) "All or none must be DataType's"

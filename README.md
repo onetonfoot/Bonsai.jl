@@ -36,7 +36,7 @@ start(app, port=9091)
 # Handlers
 
 Each handler is a function with the signature `f(stream::HTTP.Stream)`.
-To read and write from the stream using `Bonsai.read` or `Bonsai.write` along with a wrapper type (`Body`, `Query`, `Headers` or `Params`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined.
+You read and write from the stream using `Bonsai.read` or `Bonsai.write` along with a wrapper type (`Body`, `Query`, `Headers`, `Route` and `Status`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined. Both `read` and `write` support variadic arguments e.g `fn(stream, args...)`
 
 ## Body
 
@@ -70,17 +70,17 @@ The content type is defined for the following types already
 * `AbstractString` - text/plain
 * [AbstractPath](https://github.com/rofinn/FilePaths.jl) - Based on the file extension.
 
-## Query and Path Parameters
+## Query and Route Parameters
 
 Following the same pattern as above
 
 ```julia
 app.get["/car/{id}"] = function(stream)
-    query, params = Bonsai.read(
+    query, route = Bonsai.read(
     	stream, 
-	# Union types with Nothing can be used to handle optional parameters
-	Query(color = Union{Nothing, String}),
-	Params(id = Int))
+        # Union types with Nothing can be used to handle optional parameters
+        Query(color = Union{Nothing, String}),
+        Route(id = Int))
     )
 end
 ```
@@ -153,7 +153,8 @@ The following path types are allowed for matching:
 
 # Middleware 
 
-Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. Middleware can be set on a route by using a array.
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. 
+
 
 ```julia
 app = App()
@@ -171,7 +172,8 @@ function log_request(stream, next)
     next(stream)
 end
 
-app.get["**"] = [time_taken, log_request]
+# Multiple middelware can be set on a route by using a array.
+app.middleware.get["**"] = [time_taken, log_request]
 
 app.get["/"] = function(stream)
 	Bonsai.write(s, Body("Hello"))
@@ -180,7 +182,34 @@ end
 start(server)
 ```
 
-Middleware is called in the order it was added, with the matching handler (if any) called last.
+Middleware is called in the order it was added, with the matching handler (if any) called last. Unlike  handlers where only a single handler can match a route, with middleware multiple functions can match a route. For example authentication might look something like
+
+
+```julia
+
+app.middleware["**"] = log_request
+
+app.middleware["/protected/**"] = function(stream, next)
+    headers = Bonsai.read(
+        stream,
+        Header(x_password=String)
+    )
+
+    if headers.x_password != "secret_password"
+        return Bonsai.write(stream, Status(403), Body("Forbidden"))
+    else
+        next(stream)
+    end
+end
+
+app.middleware["/protected/"] = function(stream, next)
+    return Bonsai.write(stream, Body("Welcome to the club"))
+end
+
+```
+
+By default `app.middleware` will run on all request methods however you can specify a specific method with `app.middleware.get`
+
 
 # OpenAPI / Swagger
 
@@ -191,7 +220,7 @@ open_api = OpenApi(app)
 JSON3.write("open-api.json", open_api)
 ```
 
-[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec. This feature is currently very alpha and likely to break
+[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec.  This feature is currently very alpha and likely to break
 
 # Example
 

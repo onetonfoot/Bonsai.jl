@@ -38,7 +38,7 @@ StructTypes.StructType(::Type{XYZ}) = StructTypes.Struct()
 end
 
 @testset "kw_constructor" begin
-    p = Bonsai.kw_constructor(Params; id=Int, color=String)
+    p = Bonsai.kw_constructor(Route; id=Int, color=String)
 	@test p.t == NamedTuple{(:id, :color), Tuple{Int64, String}}
 	@test isnothing(p.val) 
     @test_throws Exception Bonsai.kw_constructor(Params; id=Int, color="blue")

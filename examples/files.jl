@@ -10,7 +10,7 @@ app.get["/"] = function(stream)
 end
 
 app.get["/files/{path:.*}"] = function(stream)
-    (path,) =  Bonsai.read(stream,  Params(path=AbstractPath))
+    (path,) =  Bonsai.read(stream,  Route(path=AbstractPath))
     file = Path(@__DIR__) / "data" / path
     Bonsai.write(stream, Body(file))
 end

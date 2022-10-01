@@ -6,7 +6,7 @@ import StructTypes: StructType, NoStructType
 import Base: |, ==
 import HTTP
 
-export Headers, Query, Body, Params, Status, MissingHeaders, MissingCookies,
+export Headers, Query, Body, Route, Status, MissingHeaders, MissingCookies,
     GET, POST, PUT, DELETE, OPTIONS, CONNECT, TRACE, PATCH, ALL
 
 include("dasherize.jl")
@@ -43,6 +43,8 @@ function Base.convert(::Type{String}, method::HttpMethod)
         "TRACE"
     elseif method isa Patch
         "PATCH"
+    elseif method isa Options
+        "options"
     else
         "*"
     end 
@@ -114,13 +116,13 @@ end
 # this is the only parameter that doesn't contina all of the information
 # required to match from Bonsai.read(req, ::Params) 
 
-struct Params{T} <: HttpParameter
+struct Route{T} <: HttpParameter
     t::Type{T}
     val::Union{T,Nothing}
 end
 
-Params(; kwargs...) = kw_constructor(Params; kwargs...)
-Params(t::DataType) = Params(t, nothing)
+Route(; kwargs...) = kw_constructor(Route; kwargs...)
+Route(t::DataType) = Route(t, nothing)
 
 # https://www.juliabloggers.com/the-emergent-features-of-julialang-part-ii-traits/
 

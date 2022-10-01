@@ -15,10 +15,10 @@ Base.@kwdef mutable struct App
     server::Union{TCPServer,Nothing} = nothing
 
     # LittleDict is ordered dict that is fast to iterate over for less than 50 elements
-    middleware = LittleDict{Tuple{HttpMethod, String}, Array{Middleware}}() # 
+    _middleware::LittleDict{Tuple{HttpMethod, String}, Array{Middleware}} = LittleDict() # 
 
     paths::Node = Node("*")
-    path_ = Dict{Tuple{HttpMethod, String}, HttpHandler}()
+    _paths = Dict{Tuple{HttpMethod, String}, HttpHandler}()
     paths_docs::Dict{Symbol,Dict{String,String}} = Dict(
         :get => Dict(),
         :post => Dict(),
@@ -81,14 +81,13 @@ end
 (create::CreateHandler)(fn::Array, path) = create(Middleware.(fn), path)
 
 function (create::CreateHandler)(handler::HttpHandler, path)
-    create.app.path_[(create.method, path)] = handler
+    create.app._paths[(create.method, path)] = handler
     segments = map(segment, split(path, '/'; keepempty=false))
     insert!(create.app.paths, Leaf(string(create.method), Tuple{Int, String}[], path, handler), segments, 1)
     # We need to return this handler for the open api doc functionality
     return handler
 end
 
-(create::CreateHandler)(middleware::Array{Middleware}, path) = create.app.middleware[(create.method, path)] = middleware
 
 #= 
 app.get["/"] = function(stream)
@@ -97,13 +96,43 @@ app.get["**"] = [authentication, someother, middleware]
 app.get["/files/*"] = [gzip]
 =# 
 Base.setindex!(create::CreateHandler, fn, path::String) = create(HttpHandler(fn), path)
-Base.setindex!(create::CreateHandler, l::Array, path::String) = create(Middleware.(l), path)
+Base.getindex(create::CreateHandler, s::String) = create.app._paths[(create.method, s)]
 
-function Base.getindex(create::CreateHandler, s::String)
-    (
-        get(create.app.path_, (create.method, s), nothing),
-        get(create.app.middleware, (create.method, s), nothing)
-    )
+struct CreateMiddleware
+    app::App
+    method::HttpMethod
+end
+
+function (create::CreateMiddleware)(middleware::Array{Middleware}, path) 
+    k = (create.method, path)
+    create.app._middleware[k] = middleware
+end
+
+Base.setindex!(create::CreateMiddleware, l::Array, path::String) = create(Middleware.(l), path)
+Base.getindex(create::CreateMiddleware, s::String) = create.app._middleware[(create.method, s)]
+
+function Base.getproperty(create::CreateMiddleware, s::Symbol)
+    # avoid recursive call to getproperty and hence a stackoverflow
+    app = getfield(create, :app)
+    if s == :get
+        return CreateMiddleware(app, GET)
+    elseif s == :post
+        return CreateMiddleware(app, POST)
+    elseif s == :put
+        return CreateMiddleware(app, POST)
+    elseif s == :trace
+        return CreateMiddleware(app, TRACE)
+    elseif s == :delete
+        return CreateMiddleware(app, DELETE)
+    elseif s == :options
+        return CreateMiddleware(app, OPTIONS)
+    elseif s == :connect
+        return CreateMiddleware(app, CONNECT)
+    elseif s == :patch
+        return CreateMiddleware(app, PATCH)
+    else
+        return Base.getfield(create, s)
+    end
 end
 
 function Base.getproperty(app::App, s::Symbol)
@@ -125,6 +154,8 @@ function Base.getproperty(app::App, s::Symbol)
         return CreateHandler(app, PATCH)
     elseif s == :all
         return CreateHandler(app, ALL)
+    elseif s == :middleware
+        return CreateMiddleware(app, ALL)
     else
         return Base.getfield(app, s)
     end

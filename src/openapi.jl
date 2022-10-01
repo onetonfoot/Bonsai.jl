@@ -323,7 +323,7 @@ function open_api_parameters(::Type{A}) where {A<:HttpParameter}
 
     in = if A <: Query
         "query"
-    elseif A <: Params
+    elseif A <: Route
         "path"
     elseif A <: Headers
         "header"

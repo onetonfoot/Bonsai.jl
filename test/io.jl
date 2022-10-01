@@ -6,7 +6,7 @@ using Bonsai
 using StructTypes: @Struct
 using StructTypes
 using HTTP.Messages: Request, Response
-using Bonsai: handler_writes, handler_reads, Params
+using Bonsai: handler_writes, handler_reads
 using Test
 using FilePaths: Path
 using FilePathsBase: /
@@ -66,7 +66,7 @@ end
 
     @test Bonsai.read(req, Query(Limit)) isa Limit
     @test Bonsai.read(req, Headers(x_next=String)) isa NamedTuple
-    @test Bonsai.read(req, Params(x=String)) == (x = "pets", )
+    @test Bonsai.read(req, Route(x=String)) == (x = "pets", )
 end
 
 @testset "Bonsai.write" begin
@@ -165,10 +165,10 @@ end
 @testset "handler_reads" begin
 
     function g(stream)
-        Bonsai.read(stream, Params(id = Int))
+        Bonsai.read(stream, Route(id = Int))
     end
 
     l = handler_reads(g)
-    # is type Params  not Params{NamedTuple}
+    # is type Params  not Route{NamedTuple}
     @test_skip length(l) == 1
 end

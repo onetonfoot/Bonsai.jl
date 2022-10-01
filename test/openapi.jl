@@ -66,9 +66,9 @@ end
 	app.get["/pets/{id:\\d+}"] = function(stream)
 		params = Bonsai.read(
 			stream,
-			Params(Id)
+			Route(Id)
 			# This doesn't work with open api at the moment sadly
-			# Params(id=Int)
+			# Route(id=Int)
 		)
 		pet = Pet1(params.id, "bob", "dog")
 		Bonsai.write(stream, Body(pet))
@@ -82,12 +82,12 @@ end
 		body = Bonsai.read(stream, Body(Pet1))
 	end
 
-	get_pets, _ = app.get["/pets/{id:\\d+}"]
+	get_pets = app.get["/pets/{id:\\d+}"]
 	id_read = Bonsai.handler_reads(get_pets.fn)[1] 
-	@test id_read <: Params &&  !(id_read isa UnionAll)
+	@test id_read <: Route &&  !(id_read isa UnionAll)
 	@test (Body{Pet1}, 200) in Bonsai.handler_writes(get_pets.fn)
 
-	create_pets, _ = app.post["/pets/"]
+	create_pets = app.post["/pets/"]
 	@test Body{Pet1} in Bonsai.handler_reads(create_pets.fn)
 
 	@test Bonsai.RequestBodyObject(

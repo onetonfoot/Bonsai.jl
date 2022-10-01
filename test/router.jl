@@ -1,6 +1,6 @@
 using Test
 using Bonsai
-using Bonsai: register!, Node, split_route, HttpHandler
+using Bonsai: register!, Node, HttpHandler
 using URIs
 using HTTP
 using HTTP: Request
@@ -8,21 +8,23 @@ using AbstractTrees
 
 using Bonsai: gethandler, getmiddleware
 
-
 @testset "getmiddleware" begin
-    req = Request()
-    req.method = "GET"
-
-    app = App()
-    app.get["/files/hello.txt"] = [(stream, next) -> 1]
-    app.get["/files/**"] = [(stream, next) -> 2, (stream, next) -> 3]
-    req.target = "/files/hello.txt"
-    @test map(fn -> fn(nothing, nothing), getmiddleware(app, req)) == [1,2,3]
-
-    req.target = "/files/1"
-
-    @test map(fn -> fn(nothing, nothing), getmiddleware(app, req)) == [2,3]
+	app = App()
+	# this doesn't match the index route is that 
+	app.middleware["**"] = [
+		function(stream, next) end
+	]
+	app.middleware.get["**"] = [
+		function(stream, next) end
+	]
+	req = Request()
+	req.method = "POST"
+	req.target = "/"
+	length(getmiddleware(app, req)) == 1
+	req.method = "GET"
+	length(getmiddleware(app, req)) == 2
 end
+
 
 @testset "gethandler" begin
     req = Request()

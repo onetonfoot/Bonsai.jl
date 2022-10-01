@@ -1,5 +1,4 @@
 using Bonsai
-using Bonsai: Params
 using CodeInfoTools
 using HTTP: Stream
 using Bonsai: handler_writes
@@ -12,6 +11,12 @@ end
 
 StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
 
+@testset "setindex! and getindex" begin
+    app = App()
+    @test_nowarn app.get["/path"] = function(stream) end
+    @test_nowarn app.get["/path"]
+end
+
 @testset "handler_writes" begin
     app = Bonsai.App()
     app.get("/path") do stream
@@ -19,7 +24,7 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
         Bonsai.write(stream, Body(x=10))
         Bonsai.write(stream, Body(a=A2(10)))
     end
-    h, _ = app.get["/path"]
+    h = app.get["/path"]
     @test length(Bonsai.handler_writes(h.fn)) == 4
 end
 
@@ -29,8 +34,8 @@ end
         Bonsai.read(stream, Headers(A2))
         Bonsai.read(stream, Body(A2))
 		Bonsai.read(stream, Query(color=String))
-        Bonsai.read(stream, Params(id=Int))
+        Bonsai.read(stream, Route(id=Int))
     end
-    h, _ = app.get["/path/{id}"]
+    h= app.get["/path/{id}"]
     @test length(Bonsai.handler_reads(h.fn)) == 4
 end

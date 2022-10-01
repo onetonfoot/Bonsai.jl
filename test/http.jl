@@ -89,11 +89,11 @@ end
     @test_throws Exception Bonsai.read(bad_req, Headers(A))
 end
 
-@testset "Params" begin
+@testset "Route" begin
     req = HTTP.Messages.Request()
     # Base.match(app, req) should perform this for us
     req.context[:params] = Dict{Any, Any}(:id => "10")
-    @test Bonsai.read(req, Params(id=Int)).id == 10
+    @test Bonsai.read(req, Route(id=Int)).id == 10
 end
 
 @testset "headerize" begin
@@ -105,6 +105,6 @@ end
     body = Body(x=1, y=1.0)
     @test parameter_type(typeof(body)) == body.t
 
-    params = Params(x=Int)
+    params = Route(x=Int)
     @test parameter_type(typeof(params)) == params.t
 end

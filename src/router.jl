@@ -30,15 +30,6 @@ function AbstractTrees.printnode(io, x)
      print(io, "Node($(x.segment))")
 end
 
-
-function split_route(s)
-    if s == "/"
-        ["/"]
-    else
-        split(s, '/'; keepempty=false)
-    end
-end
-
 # Required that the key is a symbol for StructTypes.constructfrom to work
 const ParamsDict = Dict{Symbol, Any}
 
@@ -53,11 +44,15 @@ function gethandlers(app::App, req::Request)
     return handler, middleware
 end
 
+function spliturl(s::AbstractString)
+    s == "/" ? ["/"] :  map(segment, split(s, "/", keepempty=false))
+end
+
 # duplicated from here and redefinded first argument Router
 # https://github.com/JuliaWeb/HTTP.jl/blob/63a268e68933438e099726bc07b152d48b5385d7/src/Handlers.jl
 function gethandler(app::App, req::Request)
     url = URI(req.target)
-    segments = split(url.path, '/'; keepempty=false)
+    segments = spliturl(url.path)
     leaf = match(app.paths, req.method, segments, 1)
     params = ParamsDict()
     if leaf isa Leaf
@@ -75,17 +70,14 @@ end
 
 function getmiddleware(app::App, req::Request)
     url = URI(req.target)
-    segments = split(url.path, '/'; keepempty=false)
+    segments = spliturl(url.path)
 
     middleware = AbstractHandler[]
 
-    # with this implemntation the more specific middleware won't run first
-    # we'll need to uses a ordered dict instead or an array
-    for ((method, path), fn) in app.middleware
+    for ((method, path), fn) in app._middleware
         node = Node("*")
         leaf = Leaf(string(method), Tuple{Int, String}[], path, fn)
-        insert!(node, leaf, map(segment, split(path, "/", keepempty=false)), 1)
-
+        insert!(node, leaf, spliturl(path) , 1)
         m = match(node, req.method, segments, 1)
 
         if isnothing(m)  || ismissing(m)

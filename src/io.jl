@@ -94,7 +94,7 @@ read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 read(req::Request, ::Body{T}) where {T} = read(req.body, T)
 
-function read(req::Request, ::Params{T}) where {T}
+function read(req::Request, ::Route{T}) where {T}
     d = req.context[:params]
     convert_numbers!(d, T)
     return read(d, T)

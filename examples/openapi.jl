@@ -62,7 +62,7 @@ end
 Look up a specific pet
 """
 app.get("/pets/{id}") do stream
-    id = Bonsai.read(stream, Params(Id))
+    id = Bonsai.read(stream, Route(Id))
     global pets
     if haskey(pets, id)
         pet::Pet = pets[id]

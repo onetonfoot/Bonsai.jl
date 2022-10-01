@@ -1,11 +1,28 @@
 using Bonsai
-using Bonsai: combine_middleware, Middleware
+using Bonsai: combine_middleware, Middleware, getmiddleware
 using URIs
 using Dates
 using HTTP: Request
 
 t = false
 c = false
+
+@testset "setindex! and getindex" begin
+	l = [false, false]
+	app = App()
+
+	function fn1(stream, next)
+		l[1] = true
+	end
+
+	function fn2(stream, next)
+		l[2] = true
+	end
+
+	app.middleware.get["**"] = [fn1, fn2]
+	@test length(app.middleware.get["**"]) == 2
+end
+
 
 @testset "combine_middleware" begin
 
@@ -27,21 +44,4 @@ c = false
 	fn(nothing)
 	@test c && t
 	@test combine_middleware([])(true)
-end
-
-@testset "multple_middleware" begin
-	l = [false, false]
-	app = App()
-
-	function fn1(stream, next)
-		l[1] = true
-	end
-
-	function fn2(stream, next)
-		l[2] = true
-	end
-
-	app.get["**"] = [fn1, fn2]
-
-	@test length(app.get["**"][2]) == 2
 end
