@@ -108,6 +108,7 @@ function (create::CreateMiddleware)(middleware::Array{Middleware}, path)
     create.app._middleware[k] = middleware
 end
 
+Base.setindex!(create::CreateMiddleware, fn, path::String) = create([Middleware(fn)], path)
 Base.setindex!(create::CreateMiddleware, l::Array, path::String) = create(Middleware.(l), path)
 Base.getindex(create::CreateMiddleware, s::String) = create.app._middleware[(create.method, s)]
 

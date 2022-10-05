@@ -9,8 +9,6 @@ import Bonsai
 	b::Float64 
 end
 
-# It would be good to also supports default values
-# https://github.com/JuliaData/StructTypes.jl/issues/53
 @kwdef struct XYZ
 	x::Int
 	y::Float64 = 1.0
