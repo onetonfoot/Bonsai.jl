@@ -173,7 +173,7 @@ function log_request(stream, next)
 end
 
 # Multiple middelware can be set on a route by using a array.
-app.middleware.get["**"] = [time_taken, log_request]
+app.middleware["**"] = [time_taken, log_request]
 
 app.get["/"] = function(stream)
 	Bonsai.write(s, Body("Hello"))
@@ -220,7 +220,7 @@ open_api = OpenApi(app)
 JSON3.write("open-api.json", open_api)
 ```
 
-[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec.  This feature is currently very alpha and likely to break
+[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec. This feature is currently very alpha and needs work before it's robust.
 
 # Example
 

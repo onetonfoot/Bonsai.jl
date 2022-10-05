@@ -21,6 +21,9 @@ c = false
 
 	app.middleware.get["**"] = [fn1, fn2]
 	@test length(app.middleware.get["**"]) == 2
+
+	app.middleware.get["**"] = fn1
+	@test length(app.middleware.get["**"]) == 1
 end
 
 
