@@ -5,7 +5,6 @@ using URIs
 using HTTP
 using HTTP: Request
 using AbstractTrees
-
 using Bonsai: gethandler, getmiddleware
 
 @testset "getmiddleware" begin
@@ -33,6 +32,8 @@ end
     app = App()
 
     app.get["/"] = (stream) -> "index"
+    @test gethandler(app, req)[2] == "/"
+	req.target = "/"
     @test gethandler(app, req)[2] == "/"
 
     req.target = "/files/1"

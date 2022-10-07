@@ -45,7 +45,7 @@ function gethandlers(app::App, req::Request)
 end
 
 function spliturl(s::AbstractString)
-    s == "/" ? ["/"] :  map(segment, split(s, "/", keepempty=false))
+    map(segment, split(s, "/", keepempty=false))
 end
 
 # duplicated from here and redefinded first argument Router
