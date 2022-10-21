@@ -1,0 +1,97 @@
+# Middleware 
+
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. 
+
+Middleware is called in the order it was added, with the matching handler (if any) called last. Unlike  handlers where only a single handler can match a route,.
+
+By default `app.middleware` will run on all request methods however you can specify a specific method with `app.middleware.get`
+
+Bellow are examples of common usecases for middleware
+
+# Logging
+
+Log each request method and url.
+
+```julia
+function log_request(stream, next)
+    @info "request" stream.message.method stream.message.url
+    next(stream)
+end
+
+# don't forget to register the middleware
+app.middleware["**"] = [log_request]
+```
+
+# Time
+
+The handler bellow logs the time taken to call the next handlers in the chain. 
+
+```julia
+function time_taken(stream, next)
+    x = now()
+    next(stream)
+    elapsed = now() - x
+    @info "$(stream.message.target) took $elapsed" 
+end
+
+# make sure the middleware is first so
+# we measure the time of all the  downstream handlers
+app.middleware["**"] = [time_taken, ...other_middleware]
+```
+
+# Authentication
+
+With middleware multiple functions can match a route. For example authentication might look something like
+
+```julia
+function authentication(stream, next)
+    headers = Bonsai.read(
+        stream,
+        Header(x_password=String)
+    )
+
+    if headers.x_password != "secret_password"
+        return Bonsai.write(stream, Status(403), Body("Forbidden"))
+    else
+        next(stream)
+    end
+end
+
+function protected_route(stream, next)
+    return Bonsai.write(stream, Body("Welcome to the club"))
+end
+
+app.middleware["/protected/**"] = [authentication]
+app.middleware["/protected/"] = protected_route
+```
+
+# CORS
+
+The bellow middleware will accept CORS request from any domain and HTTP method. You can restrict it to specific domains by changing the relevant header e.g `"Access-Control-Allow_Origin" => "https://my-website.com"`.  For more information on CORS see [https://cors-errors.info/](https://cors-errors.info/)
+
+```julia
+function cors(stream::Stream, next)
+    res = stream.message.response
+
+    if stream.message.method == "OPTIONS"
+		headers = [
+			"Access-Control-Allow-Origin" => "*",
+			"Access-Control-Allow-Headers" => "*",
+			"Access-Control-Allow-Methods" => "*",
+		]
+        for i in headers
+            HTTP.setheader(res, i)
+        end
+    else
+		headers = [
+			"Access-Control-Allow-Origin" => "*",
+		]
+        for i in headers
+            HTTP.setheader(res, i)
+        end
+        next(stream)
+    end
+end
+
+app.middleware["**"] = [authentication]
+```

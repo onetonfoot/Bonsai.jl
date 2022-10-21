@@ -1,0 +1,114 @@
+# Handlers
+
+Each handler is a function with the signature `f(stream::HTTP.Stream)`.
+You read and write from the http stream using `Bonsai.read` or `Bonsai.write` along with a wrapper type (`Body`, `Query`, `Headers`, `Route` and `Status`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined. Both `read` and `write` support variadic arguments e.g `fn(stream, args...)`
+
+# Routing
+
+Routing relies on the router from [HTTP.jl](https://juliaweb.github.io/HTTP.jl/stable/server/#HTTP.Router), as such the functionality is the same (see the copied doc stings bellow).
+
+The following path types are allowed for matching:
+
+* `/api/widgets` - exact match of static strings
+* `/api/*/owner` - single `*` to wildcard match any string for a single segment
+* `/api/widget/{id}` - Define a path variable `id` that matches any valued provided for this segment; path variables are available in the request context like `req.context[:params]["id"]`
+* `/api/widget/{id:[0-9]+}` - Define a path variable `id` that only matches integers for this segment
+* `/api/**`- double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
+
+# Status Codes
+
+The default status code is 200, however other [status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) can be returned by using `Status`
+
+```julia
+app.get["/"] = function(stream)
+	Bonsai.write(stream, Body(payload), Status(200))
+end
+```
+
+# Body
+
+Reading JSON from a request
+
+```julia
+
+app.get["/"] = function(stream)
+    payload = Bonsai.read(stream, Body(x=Int, y=Float64, z=String))
+    # typeof(payload)
+    # NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}
+    @info payload
+	Bonsai.write(stream, Body(payload))
+end
+```
+
+Writing JSON as a response
+
+```julia
+Bonsia.write(stream, Body(x=1, y=1.0, z="hi"))
+```
+
+`Bonsai.write` will attempt to set the correct content-type header for the data, this can be changed by defining `mime_type`.
+
+```julia
+Bonsai.mime_type(::MyType) = "text/plain"
+```
+
+The content type is defined for the following types already
+
+* `Union{NamedTuple, AbstractDict}` - application/json
+* `AbstractString` - text/plain
+* [AbstractPath](https://github.com/rofinn/FilePaths.jl) - Based on the file extension.
+
+# Query and Route Parameters
+
+Following the same pattern as above
+
+```julia
+app.get["/car/{id}"] = function(stream)
+    query, route = Bonsai.read(
+    	stream, 
+        # Union types with Nothing can be used to handle optional parameters
+        Query(color = Union{Nothing, String}),
+        Route(id = Int))
+    )
+end
+```
+
+Note to handle optional parameters you can use a union with nothing e.g `Union{Nothing, T}`. 
+
+# Headers
+
+```julia
+app.get["/"] = function(stream)
+    headers = Bonsai.read(stream, Headers(content_type=String))
+    if headers.content_type == "application/json"
+        # write some json
+    else
+        # do something else
+    end
+end
+```
+
+For `Headers` the keys will be transformed using `Bonsai.headerize` and 
+the matching is case insensitive.
+
+```julia
+Bonsai.headerize(:content_type)
+# "content-type"
+```
+
+
+# Files
+
+Writing files supports `AbstractPaths` defined in [FilePaths](https://github.com/rofinn/FilePaths.jl). The content type will be set based on the file extension.
+
+```julia
+file =  Path("data/some-file.json")
+Bonsai.write(stream, Body(file))
+```
+
+A nice feature of this is we can easily use other `AbstractPath` implementations for example like that in [AWSS3](https://github.com/JuliaCloud/AWSS3.jl)
+
+```julia
+file = S3Path("s3://my.bucket/test1.txt") 
+Bonsai.write(stream, Body(file))
+```

@@ -10,6 +10,10 @@ export start, stop
 # Much of the code is adapted from here
 # https://github.com/JuliaWeb/HTTP.jl/issues/587
 
+using Base.Threads: Atomic
+using Base: check_channel_state
+
+
 # HTTP use serve and (non-blocking) server! 
 # then to shutdown close and forceclose. It would be nice
 # to follow these conventions aswell.
@@ -21,6 +25,8 @@ export start, stop
 #     )
 
 # end
+
+# https://github.com/JuliaLang/julia/issues/36217
 
 function start(
     app::App;
@@ -50,12 +56,14 @@ function start(
     # necessary because we need to exit this loop cleanly when the user
     # cancels the server, regardless of any revision event.
     try
-        while isopen(app.cancel_token)
+        @async while isopen(app.cancel_token)
             wait(Revise.revision_event)
 
             @info "Revision event"
-            # stop(app)
-            # start(app, host, port, kwargs...)
+
+            if !isopen(app.cancel_token)
+                break
+            end
 
             close(server)
             sleep(0.1)
@@ -66,10 +74,11 @@ function start(
                 app,
                 host, port; server=server, stream=true, kwargs...
             )
-            # @info "Started"
 
-            yield()
         end
+
+        wait(app.cancel_token)
+
         @info "Exited revise loop"
     catch e
         if e isa InterruptException
@@ -78,6 +87,7 @@ function start(
         end
     finally
         stop(app)
+        notify(Revise.revision_event)
     end
 end
 

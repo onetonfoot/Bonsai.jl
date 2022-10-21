@@ -1,0 +1,46 @@
+# Examples
+
+Bellow are various self contained examples
+
+# Mustache
+
+We can overload `Bonsai.write` to do the correct thing for our templates.
+
+```julia
+using Bonsai, Mustache, Dates
+
+struct Template
+	content
+	variables
+end
+
+function Bonsai.write(
+	stream,
+	template::Template
+)
+	s = Mustache.render(template.content, template.variables)
+	Bonsai.write(s, 
+			Body(s),
+			Headers(content_type = "text/html; charset=UTF-8")
+	)
+end
+
+function index(stream)
+	template = Template(
+		mt"""
+		<!DOCTYPE html>
+		<html lang="en">
+		<body>
+			<h1>The time is {{time}}</h1>
+		</body>
+		</html>
+		""",
+		(time = now(), )
+	)
+	Bonsai.write(stream, template)
+end
+
+app = App()
+app.get["/"] = index
+start(app)
+```

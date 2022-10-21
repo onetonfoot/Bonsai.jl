@@ -1,0 +1,22 @@
+project:
+  type: website
+
+website:
+  title: "Bonsai.jl"
+  sidebar: 
+    search: true
+    contents: 
+      - "intro.qmd"
+      - "handlers.qmd"
+      - "middleware.qmd"
+      - "web_sockets.qmd"
+      - "examples.qmd"
+      - "open_api.qmd"
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+
+
+
