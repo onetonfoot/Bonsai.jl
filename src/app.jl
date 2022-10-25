@@ -8,8 +8,6 @@ export App
 
 Base.@kwdef mutable struct App
     # Why is this here again?
-    id::Int = rand(Int)
-
     cancel_token::CancelToken = CancelToken()
     inet_addr::Union{InetAddr,Nothing} = nothing
     server::Union{TCPServer,Nothing} = nothing

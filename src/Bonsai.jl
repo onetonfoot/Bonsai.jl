@@ -1,9 +1,11 @@
 module Bonsai
 
+# This is needed for hot reloading to work correctly
+__revise_mode__ = :eval
+using Revise
+
 using HTTP, JSON3, StructTypes, Dates, FilePaths
 import HTTP: Request, Response, Stream
-using Base.Meta: show_sexpr
-
 
 include("utils.jl")
 include("mime_types.jl")
