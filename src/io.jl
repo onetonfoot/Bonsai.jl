@@ -65,20 +65,11 @@ function write(res::Response, data::Body{T}) where T <: AbstractPath
     end
 end
 
-function write(stream::Response, data::T) where {T}
-    if StructTypes.StructType(T) != StructTypes.NoStructType()
-        write(stream, Body(T))
-        write(stream, Status(200))
-    elseif T isa Exception
-        write(stream, Body(string(data)))
-        write(stream, Status(500))
-    else
-        error("Unable in infer correct write location please wrap in Body or Headers")
+function write(stream::Stream, data...) 
+    for i in data  
+        write(stream.message.response, i)
     end
 end
-
-write(stream::Stream{<:Request}, data) = write(stream.message.response, data)
-write(stream::Stream{<:Request}, data...) = write(stream.message.response, data...)
 write(res::Response, ::Status{T}) where T =  res.status = Int(T)
 write(res::Response, ::Status{:default})  =  res.status = 200
 

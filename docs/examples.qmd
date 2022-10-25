@@ -1,13 +1,13 @@
 # Examples
 
-Bellow are various self contained examples
+Bellow are various examples and short snippets of code
 
 # Mustache
 
 We can overload `Bonsai.write` to do the correct thing for our templates.
 
 ```julia
-using Bonsai, Mustache, Dates
+using Bonsai, HTTP, Mustache, Dates
 
 struct Template
 	content
@@ -15,7 +15,7 @@ struct Template
 end
 
 function Bonsai.write(
-	stream,
+	stream::HTTP.Stream,
 	template::Template
 )
 	s = Mustache.render(template.content, template.variables)
@@ -25,22 +25,57 @@ function Bonsai.write(
 	)
 end
 
-function index(stream)
-	template = Template(
-		mt"""
-		<!DOCTYPE html>
-		<html lang="en">
-		<body>
-			<h1>The time is {{time}}</h1>
-		</body>
-		</html>
-		""",
-		(time = now(), )
-	)
-	Bonsai.write(stream, template)
+```
+
+# DataFrames
+
+Reading CSV's from a request body as a `DataFrame`.
+
+```julia
+using DataFrames, CSV
+
+function Bonsai.read(stream::HTTP.Stream, ::Body{DataFrame})
+    return CSV.read(stream.message.body, DataFrame)
 end
 
-app = App()
-app.get["/"] = index
-start(app)
+function handler(stream)
+	df = Bonsai.read(stream, Body(DataFrame))
+end
+```
+
+Writing a `DataFrame` as CSV's
+
+```julia
+using Bonsai, HTTP, DataFrames, CSV
+
+function Bonsai.write(stream::HTTP.Stream, df::DataFrame)
+	io = IOBuffer()
+	CSV.write(io, df)
+	data = String(take!(io))
+    Bonsai.write(
+        stream,
+        Body(data),
+		Headers(
+			content_type="text/csv",
+		)
+    )
+end
+```
+
+Writing a `DataFrame` as JSON
+
+```julia
+
+using Bonsai, HTTP, DataFrames, Tables
+
+function Bonsai.write(stream::HTTP.Stream, df::DataFrame)
+    Bonsai.write(
+        stream,
+        Body(Tables.rowtable(df)),
+        # Body(Tables.columntable(df)),
+		Headers(
+			content_type="application/json",
+		)
+    )
+end
 ```

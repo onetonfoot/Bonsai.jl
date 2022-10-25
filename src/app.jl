@@ -13,10 +13,10 @@ Base.@kwdef mutable struct App
     server::Union{TCPServer,Nothing} = nothing
 
     # LittleDict is ordered dict that is fast to iterate over for less than 50 elements
-    _middleware::LittleDict{Tuple{HttpMethod, String}, Array{Middleware}} = LittleDict() # 
+    _middleware::LittleDict{Tuple{HttpMethod,String},Array{Middleware}} = LittleDict() # 
 
     paths::Node = Node("*")
-    _paths = Dict{Tuple{HttpMethod, String}, HttpHandler}()
+    _paths = Dict{Tuple{HttpMethod,String},HttpHandler}()
     paths_docs::Dict{Symbol,Dict{String,String}} = Dict(
         :get => Dict(),
         :post => Dict(),
@@ -31,9 +31,6 @@ end
 
 function (app::App)(stream)
     request::Request = stream.message
-
-    @info "Request" request.url request.target request.method
-
     # Unsure why this is empty, I would have thought that HTTP
     # would fill this field but seemingly not atm
     request.url = URI(request.target)
@@ -45,8 +42,6 @@ function (app::App)(stream)
 
     try
         handler, middleware = gethandlers(app, request)
-
-        @info "match" handler middleware
 
         if ismissing(handler) || isnothing(handler)
             push!(middleware, Middleware((stream, next) -> throw(NoHandler(stream))))
@@ -67,6 +62,7 @@ function (app::App)(stream)
         startwrite(stream)
         Base.write(stream, request.response.body)
     end
+
 end
 
 struct CreateHandler
@@ -81,7 +77,7 @@ end
 function (create::CreateHandler)(handler::HttpHandler, path)
     create.app._paths[(create.method, path)] = handler
     segments = map(segment, split(path, '/'; keepempty=false))
-    insert!(create.app.paths, Leaf(string(create.method), Tuple{Int, String}[], path, handler), segments, 1)
+    insert!(create.app.paths, Leaf(string(create.method), Tuple{Int,String}[], path, handler), segments, 1)
     # We need to return this handler for the open api doc functionality
     return handler
 end
@@ -92,7 +88,7 @@ app.get["/"] = function(stream)
 end
 app.get["**"] = [authentication, someother, middleware]
 app.get["/files/*"] = [gzip]
-=# 
+=#
 Base.setindex!(create::CreateHandler, fn, path::String) = create(HttpHandler(fn), path)
 Base.getindex(create::CreateHandler, s::String) = create.app._paths[(create.method, s)]
 
@@ -101,7 +97,7 @@ struct CreateMiddleware
     method::HttpMethod
 end
 
-function (create::CreateMiddleware)(middleware::Array{Middleware}, path) 
+function (create::CreateMiddleware)(middleware::Array{Middleware}, path)
     k = (create.method, path)
     create.app._middleware[k] = middleware
 end

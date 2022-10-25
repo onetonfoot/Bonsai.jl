@@ -1,12 +1,7 @@
 # Middleware 
 
-Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list. 
-
-Middleware is called in the order it was added, with the matching handler (if any) called last. Unlike  handlers where only a single handler can match a route,.
-
-By default `app.middleware` will run on all request methods however you can specify a specific method with `app.middleware.get`
-
-Bellow are examples of common usecases for middleware
+Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list.  It's called in the order it was added, with the matching handler (if any) called last. 
+By default `app.middleware` will run on all request methods however you can specify a specific method with `app.middleware.get` Bellow are examples of common usecases for middleware
 
 # Logging
 
@@ -41,7 +36,7 @@ app.middleware["**"] = [time_taken, ...other_middleware]
 
 # Authentication
 
-With middleware multiple functions can match a route. For example authentication might look something like
+For example authentication might look something like this
 
 ```julia
 function authentication(stream, next)
@@ -61,9 +56,16 @@ function protected_route(stream, next)
     return Bonsai.write(stream, Body("Welcome to the club"))
 end
 
+function unproteced_route(stream, next)
+    return Bonsai.write(stream, Body("Welcome to the club"))
+end
+
 app.middleware["/protected/**"] = [authentication]
-app.middleware["/protected/"] = protected_route
+app.get["/protected/"] = protected_route
+app.get["/"] = unproteced_route
 ```
+
+TODO: proper example using JWTs.
 
 # CORS
 
@@ -95,3 +97,5 @@ end
 
 app.middleware["**"] = [authentication]
 ```
+
+Note you probably don't want to use a wildcard `*` for your origin but rather something more specific.
