@@ -17,7 +17,8 @@ Base.@kwdef mutable struct App
 
     paths::Node = Node("*")
     _paths = Dict{Tuple{HttpMethod,String},HttpHandler}()
-    paths_docs::Dict{Symbol,Dict{String,String}} = Dict(
+    # should probably change the type sig so _paths and path_docs match
+    paths_docs::Dict{Symbol,Dict{String,Union{String, Nothing}}} = Dict(
         :get => Dict(),
         :post => Dict(),
         :put => Dict(),
@@ -76,6 +77,12 @@ end
 
 function (create::CreateHandler)(handler::HttpHandler, path)
     create.app._paths[(create.method, path)] = handler
+
+    # add doc strings
+    docs = doc_str(handler.fn)
+    key = Symbol(lowercase(string(create.method)))
+    create.app.paths_docs[key][path] = docs
+
     segments = map(segment, split(path, '/'; keepempty=false))
     insert!(create.app.paths, Leaf(string(create.method), Tuple{Int,String}[], path, handler), segments, 1)
     # We need to return this handler for the open api doc functionality

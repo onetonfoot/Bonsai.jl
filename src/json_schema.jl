@@ -51,22 +51,27 @@ array_type(::Type{<:Array{T}}) where {T} = T
 json_schema(::Type{Headers{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
 json_schema(::Type{Body{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
 
+# Might it would be better to define a trait for this
+function doc_str(fn)
 
+    if fn isa Type
+        fn = extract_type(fn)
+    end
 
-# maybe it would be better to define a trait for this
-function doc_str(t::Type{T}) where {T}
-    # Docs.getdocs could be usefull here
-
-    return nothing
-
-    md = Docs.doc(T)
+    md = Docs.doc(fn)
     s = repr(md)
+
+
+    # @info "docs" fn typeof(fn) s
+
+
     if startswith(s, "No documentation found.")
         return nothing
     else
         return s
     end
 end
+
 
 function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
 
@@ -81,7 +86,8 @@ function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
     # http://json-schema.org/understanding-json-schema/reference/object.html
     if sT in object_types
         d[:type] = "object"
-        d[:description] = doc_str(T)
+        # This isn't needed in swagger so leave out
+        # d[:description] = doc_str(T)
         if !(sT == DictType())
             properties = Dict{String,Any}()
             StructTypes.foreachfield(T) do i, field, field_type

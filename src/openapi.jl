@@ -358,6 +358,7 @@ function RequestBodyObject(::Type{Body{T}}) where {T}
         content=Dict(
             "application/json" => media_type
         ),
+        description = doc_str(T),
         required=true,
     )
 end
@@ -442,11 +443,6 @@ function OpenAPI(app)
     for leaf in leaves
         (; path, method) = leaf
 
-        # if path == app.docs
-        #     @warn "skiping $(path)"
-        #     continue
-        # end
-
         d = get(paths, path, Dict())
         o = OperationObject(leaf)
 
@@ -474,11 +470,11 @@ function open_api!(app)
     open_api = OpenAPI(app)
     html = Path(joinpath(@__DIR__, "../open_api/dist/index.html"))
 
-    app.get("/docs/open-api.json") do stream
+    app.get["/docs/open-api.json"] = function(stream)
         Bonsai.write(stream, Body(open_api))
     end
 
-    app.get("/docs") do stream
+    app.get["/docs"] = function(stream)
         Bonsai.write(stream, Body(html))
     end
 end
