@@ -1,10 +1,31 @@
 # OpenAPI 
 
-An open api spec can be generated for a `App` which can be used with tools like [Swagger UI](https://swagger.io/tools/swagger-ui/), to generate documentation.
+An open api spec can be generated for your `App`, [JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec. This feature is currently still alpha and needs some more work before it's robust.
 
 ```julia
 open_api = OpenApi(app)
 JSON3.write("open-api.json", open_api)
 ```
 
-[JET](https://github.com/aviatesk/JET.jl) is used to analyze the code and detects all of the `Bonsai.read` and `Bonsai.write` calls, this information is then used to create the spec. This feature is currently very alpha and needs work before it's robust.
+# Docs
+
+To add a web page for you documentation you can call
+
+```
+openapi!(app)
+```
+
+This will add to endpoints:
+
+* `docs/` - A web page containing documentation for for API built using [SwaagerUI](https://swagger.io/tools/swagger-ui/)
+* `docs/open-api.json` - The open API specifcation
+
+
+# Client Generation
+
+You can generate clients from a number of tools from open specs, for example to generate a typescript client you coult run
+
+
+```
+npx openapi-typescript-codegen --input open-api.json --output client
+```
