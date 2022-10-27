@@ -1,5 +1,7 @@
 # Development
 
+For live reload
+
 ```
 quarto preview
 ```
@@ -17,6 +19,10 @@ VsCode Settings
 }
 ```
 
+To deploy
 
+```
+quarto publish
+```
 
 

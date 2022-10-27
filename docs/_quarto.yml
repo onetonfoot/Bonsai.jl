@@ -1,15 +1,22 @@
+
+# https://quarto.org/docs/websites/website-navigation.html#side-navigation
 project:
   type: website
 
 website:
+
   title: "Bonsai.jl"
+  description: Bonsai.jl Documentation
+  repo-url: https://github.com/onetonfoot/Bonsai.jl
+  repo-branch: master
+  repo-actions: [issue]
+
   sidebar: 
     search: true
     contents: 
-      - "intro.qmd"
+      - "index.qmd"
       - "handlers.qmd"
       - "middleware.qmd"
-      - "web_sockets.qmd"
       - "examples.qmd"
       - "open_api.qmd"
 format:

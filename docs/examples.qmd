@@ -1,6 +1,21 @@
 # Examples
 
-Bellow are various examples and short snippets of code
+Bellow are various examples and short snippets of code. 
+
+## Web Sockets
+
+A web sockets can be obtained using `ws_upgrade`, bellow is an example of a echo socket.
+
+```julia
+app.get["/ws"] = function(stream)
+    ws_upgrade(stream) do ws
+        for msg in ws
+            @info msg
+            send(ws, msg)
+        end
+    end
+end
+```
 
 # Mustache
 
@@ -24,7 +39,6 @@ function Bonsai.write(
 			Headers(content_type = "text/html; charset=UTF-8")
 	)
 end
-
 ```
 
 # DataFrames

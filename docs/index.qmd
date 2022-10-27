@@ -1,0 +1,39 @@
+# Intro
+
+The following code snippet gets at the essence of the framework
+
+```julia
+using Bonsai
+
+const app = App()
+
+# our index handler
+function index(stream::HTTP.Stream)
+    query = Bonsai.read( stream, Query(name=Union{String, Nothing}))
+    name = isnothing(query.name) ? "John Doe" : query.name  
+    Bonsai.write(stream, Body("Hi, $name"))
+end
+
+# register handler
+app.get["/"] = index
+
+start(app, port=9091)
+```
+
+The package provides abstraction so we can treat the `HTTP.Stream` like IO, declaratively reading and writing from it using types to specify what data we input and output.
+
+# Features
+
+Some features include:
+
+* Live Reloading
+* WebSockets
+* Tight intergration with [StructTypes](https://github.com/JuliaData/StructTypes.jl)
+* Flexiable Middleware
+* OpenAPI Support
+
+If you prefer learning thought reading code checkout the [examples](examples.qmd) or for a more detailed breakdown read the [handlers](handlers.qmd) section.
+
+# About
+
+Bonsai aims to be minimalistic and not impose a specific structure on the developer, the API is inspired by [FastAPI](https://fastapi.tiangolo.com/), [Fibre](https://github.com/gofiber/fiber) and [Express](https://expressjs.com/). 

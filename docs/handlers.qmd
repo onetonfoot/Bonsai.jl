@@ -125,3 +125,4 @@ A nice feature of this is we can easily use other `AbstractPath` implementations
 file = S3Path("s3://my.bucket/test1.txt") 
 Bonsai.write(stream, Body(file))
 ```
+
