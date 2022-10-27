@@ -281,7 +281,6 @@ function handler_writes(@nospecialize(handler))
 
     for stream_report in Bonsai.handler_stream_writes(handler)
         _, io_type, arg_type = stream_report.slottypes
-        status_code = Bonsai.get_status_code(arg_type)
 
         types = if arg_type <: Tuple
             Tuple{Response, arg_type.types...}
@@ -293,10 +292,18 @@ function handler_writes(@nospecialize(handler))
         calls = JET.report_call(Bonsai.write, types, analyzer=DispatchAnalyzer)
         reports = JET.get_reports(calls)
         filter!(x ->  x isa  WriteReport, reports)
-        push!(l, map(x ->  (CC.widenconst(x.slottypes[3]), status_code) , reports)...)
+        push!(l, map(x ->  CC.widenconst(x.slottypes[3]), reports)...)
+    end
+
+    has_status_code = any(map(x -> x <: Status, l))
+
+    if !has_status_code
+        push!(l, Status{200})
     end
 
     unique!(l)
+    # so that the first write is always a status code
+    reverse(l)
 end
 
 function handler_stream_writes(@nospecialize(handler))

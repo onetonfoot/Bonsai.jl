@@ -381,22 +381,60 @@ function ResponseObject(t::DataType)
     )
 end
 
+function groupby_status_code(l)
+    d = Dict()
+    code = first(l)
+    for i in l 
+        if i <: Status
+            code = i
+            continue
+        end
+        writes = get(d, code, [])
+        push!(writes, i)
+        d[code] = writes
+    end
+    return d
+end
+
 OperationObject(h::HttpHandler) = OperationObject(h.fn)
 OperationObject(h::Middleware) = OperationObject(h.fn)
 
 function OperationObject(handler)
-    writes = handler_writes(handler)
-    filter!(x -> x isa Status, writes)
+    writes = handler_writes(handler) |> groupby_status_code
+
+    # filter!(x -> x isa Status, writes)
     responses = Dict{String,ResponseObject}()
+
+
     # for now we will ignore duplicate response codes
     # and assume everything is a json response 
-    for (res_type, res_code) in writes
-        k = string(Int(res_code))
-        responses[k] = ResponseObject(
-            content=Dict(
-                "application/json" => MediaTypeObject(res_type)
+
+    if !isempty(writes) 
+        res_code = first(writes)
+        for (res_code, res_types) in writes
+            k = extract_status_code(res_code)
+
+
+            content = Dict()
+            headers = Dict()
+
+            for res_type in res_types
+                if res_type <: Body
+                    k = mime_type(res_type)
+                    content[k] = MediaTypeObject(res_type)
+                elseif res_type <: Headers
+                    #= 
+                    TODO: support headsers in OpenAPI
+                    need to define  json_schema for Headers
+                    =#
+                end
+            end
+
+            responses[k] = ResponseObject(
+                content=content,
+                headers=nothing
             )
-        )
+        end
     end
 
     params = ParameterObject[]

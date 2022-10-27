@@ -1,4 +1,4 @@
-using JET, InteractiveUtils # to use analysis entry points
+using JET, InteractiveUtils 
 using CodeInfoTools
 using HTTP: Stream
 using JSON3
@@ -6,7 +6,7 @@ using Bonsai
 using StructTypes: @Struct
 using StructTypes
 using HTTP.Messages: Request, Response
-using Bonsai: handler_writes, handler_reads
+using Bonsai: handler_writes, handler_reads, groupby_status_code
 using Test
 using FilePaths: Path
 using FilePathsBase: /
@@ -33,6 +33,10 @@ end
 @Struct struct Limit
     limit::Int
     offset::Union{Int, Missing}
+end
+
+@Struct struct AnId
+    id::Int
 end
 
 @testset "DataMissingKey" begin
@@ -88,10 +92,6 @@ end
         Bonsai.Status(201),
     )
 
-    function f(stream)
-        Bonsai.write(stream, Body("err"), Bonsai.Status(500))
-    end
-
 
     function g(stream)
         Bonsai.write(stream, Body("ok"), Bonsai.Status(201))
@@ -99,20 +99,22 @@ end
 
     function h(stream)
         if rand() > 0.5
-            Bonsai.write(stream, Body(A1(1)))
+            Bonsai.write(stream, Body(A1(1)), Bonsai.Status(200))
         else
-            f(stream)
+            Bonsai.write(stream, Body("err"), Bonsai.Status(500))
         end
     end
 
     # defining the mime type allows us to all write the correct
     # content-type header
     Bonsai.mime_type(::A1) = "application/json"
-    @test all(map(x -> x[2] == 201, Bonsai.handler_writes(g)))
+    g_writes = Bonsai.handler_writes(g)
+    g_status = filter(x -> x <: Bonsai.Status, g_writes)
+    @test length(g_status) == 1
+    @test g_status[1] == Bonsai.Status{201}
 
-    h_writes = Bonsai.handler_writes(h)
-    @test (Body{String}, 500) in h_writes
-    @test (Body{A1}, 200) in h_writes
+    h_writes = Bonsai.handler_writes(h) |> groupby_status_code
+    @test length(h_writes) == 2
 end
 
 
@@ -138,10 +140,8 @@ end
         Bonsai.write(stream, Body(pets=l))
     end
 
-
-
     @test Bonsai.handler_reads(g) == [Query{Limit}]
-    @test length(Bonsai.handler_writes(g)) == 3
+    @test length(Bonsai.handler_writes(g)) == 4
 end
 
 
@@ -158,7 +158,7 @@ end
     req = Response()
     file_handler(req)
     @test !isempty(req.body )
-    @test length(Bonsai.handler_writes(file_handler)) == 2
+    @test length(Bonsai.handler_writes(file_handler)) == 3
 end
 
 
@@ -169,6 +169,13 @@ end
     end
 
     l = handler_reads(g)
-    # is type Params  not Route{NamedTuple}
+    # is type Route not Route{NamedTuple}
     @test_skip length(l) == 1
+
+    function g2(stream)
+        Bonsai.read(stream, Route(AnId))
+    end
+
+    l = handler_reads(g2)
+    @test l[1] == Route{AnId}
 end

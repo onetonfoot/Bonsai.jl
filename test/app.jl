@@ -25,7 +25,7 @@ end
         Bonsai.write(stream, Body(a=A2(10)))
     end
     h = app.get["/path"]
-    @test length(Bonsai.handler_writes(h.fn)) == 4
+    @test length(Bonsai.handler_writes(h.fn)) == 5
 end
 
 @testset "handler_reads" begin
