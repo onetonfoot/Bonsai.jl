@@ -14,18 +14,18 @@
     "text": "Bellow are various examples and short snippets of code.\n\n\nA web sockets can be obtained using ws_upgrade, bellow is an example of a echo socket.\napp.get[\"/ws\"] = function(stream)\n    ws_upgrade(stream) do ws\n        for msg in ws\n            @info msg\n            send(ws, msg)\n        end\n    end\nend"
   },
   {
-    "objectID": "intro.html",
-    "href": "intro.html",
-    "title": "Bonsai.jl",
-    "section": "",
-    "text": "Intro\nusing Bonsai\n\nconst app = App()\n\n# our index handler\nfunction index(stream::HTTP.Stream)\n    query = Bonsai.read( stream, Query(name=Union{String, Nothing}))\n    name = isnothing(query.name) ? \"John Doe\" : query.name  \n    Bonsai.write(stream, Body(\"Hi, $name\"))\nend\n\n# register handler\napp.get[\"/\"] = index\n\nstart(app, port=9091)\nThis package provides abstraction so we can treat the HTTP.Stream like IO, declaratively reading and writing from it using types to specify what data we input and output.\nSome features include:\n\nLive Reloading\nWebSockets\nTight intergration with StructTypes\nFlexiable Middleware\nOpenAPI Support\n\nIf you prefer learning thought reading code checkout the examples or for a more detailed breakdown read the handlers section.\nBonsai aims to be minimalistic and not impose a specific structure on the developer, the API is inspired by FastAPI, Fibre and Express"
-  },
-  {
     "objectID": "open_api.html",
     "href": "open_api.html",
     "title": "Bonsai.jl",
     "section": "",
     "text": "Open API Generation\nAn open api spec can be generated for your App, JET is used to analyze the code and detects all of the Bonsai.read and Bonsai.write calls, this information is then used to create the spec. This feature is currently still alpha and needs some more work before it’s robust.\nopen_api = OpenApi(app)\nJSON3.write(\"open-api.json\", open_api)\nTo add a web page for you documentation you can call\nopenapi!(app)\nThis will add to endpoints:\n\ndocs/ - A web page containing documentation for for API built using SwaggerUI\ndocs/open-api.json - The open API specifcation\n\n\n\nClient Generation\nYou can generate clients from a number of tools from open specs, for example to generate a typescript client you coult run\nnpx openapi-typescript-codegen --input open-api.json --output client"
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Bonsai.jl",
+    "section": "",
+    "text": "Intro\nThe following code snippet gets at the essence of the framework\nusing Bonsai\n\nconst app = App()\n\n# our index handler\nfunction index(stream::HTTP.Stream)\n    query = Bonsai.read( stream, Query(name=Union{String, Nothing}))\n    name = isnothing(query.name) ? \"John Doe\" : query.name  \n    Bonsai.write(stream, Body(\"Hi, $name\"))\nend\n\n# register handler\napp.get[\"/\"] = index\n\nstart(app, port=9091)\nThe package provides abstraction so we can treat the HTTP.Stream like IO, declaratively reading and writing from it using types to specify what data we input and output.\n\n\nFeatures\nSome features include:\n\nLive Reloading\nWebSockets\nTight intergration with StructTypes\nFlexiable Middleware\nOpenAPI Support\n\nIf you prefer learning thought reading code checkout the examples or for a more detailed breakdown read the handlers section.\n\n\nAbout\nBonsai aims to be minimalistic and not impose a specific structure on the developer, the API is inspired by FastAPI, Fibre and Express."
   },
   {
     "objectID": "handlers.html",
