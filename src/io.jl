@@ -76,6 +76,10 @@ write(res::Response, ::Status{:default})  =  res.status = 200
 # This function could be the entry point for the static analysis writes
 # allow us to group together headers and status codes etc
 function write(res::Response, args...) 
+    # ensures that status codes are always written last
+    # this is needed so that group by status code works
+    # correctly for 
+    args = sort([args...], by = x -> x isa Status)
     for i in args
         write(res, i)
     end
@@ -338,4 +342,3 @@ function handler_reads(@nospecialize(handler))
 end
 
 handler_reads(handler::AbstractHandler) = handler_reads(handler.fn)
-

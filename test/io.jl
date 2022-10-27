@@ -63,8 +63,8 @@ end
     ]
     req.method = "GET"
     app = App()
-    app.get["/{x}"] = function(stream)
-    end
+    app.get["/{x}"] = function(stream) end
+
     # calling match on the request adds the parameters to it req.context
     Bonsai.gethandlers(app, req)
 
@@ -84,6 +84,13 @@ end
     @test !isempty(res.headers)
 
     res = Response()
+
+    @test_nowarn Bonsai.write(
+        res,
+        Body("ok"),
+        # FilePaths also exportsd this
+        Bonsai.Status(201),
+    )
 
     @test_nowarn Bonsai.write(
         res,
