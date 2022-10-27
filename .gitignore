@@ -1,0 +1,6 @@
+.ipynb_checkpoints
+notebook.ipynb
+.vscode
+requests.http
+node_modules
+tmp.json
