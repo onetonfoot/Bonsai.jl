@@ -446,8 +446,7 @@ function OperationObject(handler)
     requestBody = nothing
 
     for p in handler_reads(handler)
-        # @debug "parameters" p=p
-        if p <: Body
+        if p <: Body && Body isa DataType
             requestBody = RequestBodyObject(p)
         else
             push!(params, open_api_parameters(p)...)
