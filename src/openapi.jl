@@ -419,12 +419,16 @@ function OperationObject(handler)
             headers = Dict()
 
             for res_type in res_types
+                # ensure we are full type like Body{String} and not Body
+                if res_type isa UnionAll
+                    continue
+                end
+
                 # we can't know the mime type until we read the file :/
                 # https://stackoverflow.com/questions/1176022/unknown-file-type-mime
                 if res_type <: Body{<:AbstractPath}
                     continue
-                # ensure we are full type like Body{String} and not Body
-                elseif res_type <: Body && res_type isa DataType
+                elseif res_type <: Body 
                     k = mime_type(res_type)
                     content[k] = MediaTypeObject(res_type)
                 elseif res_type <: Headers
@@ -446,9 +450,14 @@ function OperationObject(handler)
     requestBody = nothing
 
     for p in handler_reads(handler)
-        if p <: Body && Body isa DataType
+
+        if p isa UnionAll
+            continue
+        end
+
+        if p <: Body
             requestBody = RequestBodyObject(p)
-        else
+        else p <: Union{Query, Route, Headers}
             push!(params, open_api_parameters(p)...)
         end
     end

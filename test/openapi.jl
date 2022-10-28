@@ -39,6 +39,7 @@ end
 	@test length(open_api_parameters(Query{Offset})) == 2
 	@test_throws Exception open_api_parameters(Tuple{})
 	@test_throws Exception open_api_parameters(Body{Offset})
+	@test_throws Exception open_api_parameters(Body)
 end
 
 @testset "Body" begin
