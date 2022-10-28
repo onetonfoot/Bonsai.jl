@@ -419,7 +419,11 @@ function OperationObject(handler)
             headers = Dict()
 
             for res_type in res_types
-                if res_type <: Body
+                if res_type <: Body{<:AbstractPath}
+                    # we can't know the mime type until we read the file :/
+                    # https://stackoverflow.com/questions/1176022/unknown-file-type-mime
+                    continue
+                elseif res_type <: Body
                     k = mime_type(res_type)
                     content[k] = MediaTypeObject(res_type)
                 elseif res_type <: Headers

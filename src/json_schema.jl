@@ -61,10 +61,6 @@ function doc_str(fn)
     md = Docs.doc(fn)
     s = repr(md)
 
-
-    # @info "docs" fn typeof(fn) s
-
-
     if startswith(s, "No documentation found.")
         return nothing
     else

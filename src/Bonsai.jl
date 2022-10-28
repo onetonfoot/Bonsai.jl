@@ -8,8 +8,8 @@ using HTTP, JSON3, StructTypes, Dates, FilePaths
 import HTTP: Request, Response, Stream
 
 include("utils.jl")
-include("mime_types.jl")
 include("http.jl")
+include("mime_types.jl")
 include("exceptions.jl")
 include("json_schema.jl")
 include("handlers.jl")

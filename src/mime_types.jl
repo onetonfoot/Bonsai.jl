@@ -1,6 +1,8 @@
 using StructTypes
 using FilePaths: AbstractPath
 
+export mime_type
+
 const MIME_TYPES = Dict(
     "acc" => "audio/acc",
     "abw" => "application/x-abiword",
@@ -80,17 +82,19 @@ function mime_type(p::AbstractPath)
     get(MIME_TYPES, ext, "text/plain")
 end
 
-function mime_type(t::DataType)
-   if StructTypes.StructType(t) != StructTypes.NoStructType()
-        return "application/json"
-   elseif t <: NamedTuple
-        return "application/json"
-   elseif t <: AbstractString
-        return "text/plain"
-   else 
-        return nothing
-   end
+function mime_type(t::Union{DataType, UnionAll})
+     dict_types = [ 
+          StructTypes.UnorderedStruct(), StructTypes.OrderedStruct(), StructTypes.DictType()
+     ]
+     if t <: Union{NamedTuple, AbstractDict}
+          return "application/json"
+     elseif t <: AbstractString
+          return "text/plain"
+     elseif StructTypes.StructType(t) in dict_types
+          return "application/json"
+     else 
+          return "text/plain"
+     end
 end
 
-# This is needed to allow type inference in io.jl
-mime_type(::Any) = nothing
+mime_type(::Type{Body{T}}) where T = mime_type(T)

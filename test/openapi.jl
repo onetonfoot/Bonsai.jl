@@ -3,7 +3,7 @@ using Test
 using StructTypes: @Struct
 using Bonsai: open_api_parameters, ParameterObject,
 	ResponseObject,  RequestBodyObject, 
-	handler_writes, HttpParameter, handler_reads
+	handler_writes, HttpParameter, handler_reads, mime_type
 using CodeInfoTools: code_inferred
 using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject, OpenAPI
 # https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
@@ -81,3 +81,13 @@ end
 
 	@test OpenAPI(app) isa OpenAPI
 end	
+
+# test globals don't break it
+
+# const V1 = "0.2.2"
+
+# function version(stream)
+#     Bonsai.write(stream, Body(V1))
+# end
+
+# OperationObject(version) isa  Oper
