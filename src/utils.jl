@@ -94,7 +94,7 @@ function read(d, T::Union{DataType, UnionAll})
     end
 
     try
-        StructTypes.constructfrom(T, d)
+        return StructTypes.constructfrom(T, d)
     catch e
         maybe_e = construct_error(T, d)
         if isnothing(e)

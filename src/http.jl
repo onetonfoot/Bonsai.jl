@@ -98,7 +98,7 @@ struct Body{T} <: HttpParameter
     val::Union{T,Nothing}
 end
 
-Body(t::DataType) = Body(t, nothing)
+Body(t::Union{UnionAll, DataType}) = Body(t, nothing)
 Body(;kwargs...) = kw_constructor(Body; kwargs...)
 Body(t) = Body(typeof(t), t)
 

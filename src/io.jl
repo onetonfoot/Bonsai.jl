@@ -86,6 +86,7 @@ function write(res::Response, args...)
 end
 
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
+# what does this case handle again :/  mayeb connection ppols?
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 read(req::Request, ::Body{T}) where {T} = read(req.body, T)
 

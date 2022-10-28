@@ -24,6 +24,9 @@ end
     @test b.val == "ok"
     @test b.t == String
 
+    # handlers UnionAll types
+    @test Body(Dict) isa Body{Dict}
+
     b = Body(error="test", message="kwconstructor")
     @test b.t == NamedTuple{(:error, :message), Tuple{String, String}}
     @test b.val  == (error ="test", message="kwconstructor")
