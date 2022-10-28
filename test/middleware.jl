@@ -1,5 +1,5 @@
 using Bonsai
-using Bonsai: combine_middleware, Middleware, getmiddleware
+using Bonsai: combine_middleware, Middleware, getmiddleware, CreateMiddleware
 using URIs
 using Dates
 using HTTP: Request
@@ -19,11 +19,14 @@ c = false
 		l[2] = true
 	end
 
+	@test app.middleware isa CreateMiddleware
+
 	app.middleware.get["**"] = [fn1, fn2]
 	@test length(app.middleware.get["**"]) == 2
 
 	app.middleware.get["**"] = fn1
 	@test length(app.middleware.get["**"]) == 1
+
 end
 
 
