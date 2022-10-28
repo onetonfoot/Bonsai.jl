@@ -412,7 +412,7 @@ function OperationObject(handler)
     if !isempty(writes) 
         res_code = first(writes)
         for (res_code, res_types) in writes
-            k = extract_status_code(res_code)
+            k = string(extract_status_code(res_code))
 
 
             content = Dict()
