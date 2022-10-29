@@ -412,8 +412,7 @@ function OperationObject(handler)
     if !isempty(writes) 
         res_code = first(writes)
         for (res_code, res_types) in writes
-            k = string(extract_status_code(res_code))
-
+            status_code = string(extract_status_code(res_code))
 
             content = Dict()
             headers = Dict()
@@ -429,8 +428,8 @@ function OperationObject(handler)
                 if res_type <: Body{<:AbstractPath}
                     continue
                 elseif res_type <: Body 
-                    k = mime_type(res_type)
-                    content[k] = MediaTypeObject(res_type)
+                    content_type = mime_type(res_type)
+                    content[content_type] = MediaTypeObject(res_type)
                 elseif res_type <: Headers
                     #= 
                     TODO: support headsers in OpenAPI
@@ -439,7 +438,7 @@ function OperationObject(handler)
                 end
             end
 
-            responses[k] = ResponseObject(
+            responses[status_code] = ResponseObject(
                 content=content,
                 headers=nothing
             )
