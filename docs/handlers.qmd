@@ -1,11 +1,11 @@
 # Handlers
 
 Each handler is a function with the signature `f(stream::HTTP.Stream)`.
-You read and write from the http stream using `Bonsai.read` or `Bonsai.write` along with a wrapper type (`Body`, `Query`, `Headers`, `Route` and `Status`) to specify the location. The data type being read / written should be a `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined. Both `read` and `write` support variadic arguments e.g `fn(stream, args...)`
+You read and write from the HTTP stream using `Bonsai.read` or `Bonsai.write` along with a wrapper type (`Body`, `Query`, `Headers`, `Route` and `Status`) to specify the location. The data type being read/written should be an `AbstractDict`, `NamedTuple` or have a [StructType](https://juliadata.github.io/StructTypes.jl/stable/) defined. Both `read` and `write` support variadic arguments e.g `fn(stream, args...)`
 
 # Body
 
-Bellow is an example of reading reading JSON from a request, and then writing it back as a response
+Below is an example of reading JSON from a request, and then writing it back as a response
 
 ```julia
 
@@ -17,7 +17,7 @@ app.get["/"] = function(stream)
 end
 ```
 
-`Bonsai.write` will attempt to set the correct content-type header for the data, however this can be changed by defining `mime_type`.
+`Bonsai.write` will attempt to set the correct content-type header for the data, however, this can be changed by defining `mime_type`.
 
 ```julia
 Bonsai.mime_type(::MyType) = "text/plain"
@@ -42,13 +42,13 @@ end
 
 # Routing
 
-Routing relies on the router from [HTTP.jl](https://juliaweb.github.io/HTTP.jl/stable/server/#HTTP.Router), as such the functionality is the same (see the copied doc stings bellow).
+Routing relies on the router from [HTTP.jl](https://juliaweb.github.io/HTTP.jl/stable/server/#HTTP.Router), as such the functionality is the same (see the copied doc stings below).
 
 The following path types are allowed for matching:
 
 * `/api/widgets` - exact match of static strings
 * `/api/*/owner` - single `*` to wildcard match any string for a single segment
-* `/api/widget/{id}` - Define a path variable `id` that matches any valued provided for this segment; path variables are available in the request context like `req.context[:params]["id"]`
+* `/api/widget/{id}` - Define a path variable `id` that matches any value provided for this segment; path variables are available in the request context like `req.context[:params]["id"]`
 * `/api/widget/{id:[0-9]+}` - Define a path variable `id` that only matches integers for this segment
 * `/api/**`- double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
 
@@ -65,7 +65,7 @@ The `Route` constructor takes the parameter name and the type, multiple keyword 
 
 # Query 
 
-Following the a similar pattern as the others query parameters can be matched by using `Query` type.
+Following a similar pattern as the others, query parameters can be matched by using `Query` type.
 
 ```julia
 app.get["/car/"] = function(stream)
@@ -80,7 +80,7 @@ Note to handle optional parameters you can use a union with nothing e.g `Union{N
 
 # Headers
 
-Use `Headers` to read and write specific headers. For example a handler that can return either CSV or JSON data might look like.
+Use `Headers` to read and write specific headers. For example, a handler that can return JSON or a CSV depending on the content type header.
 
 ```julia
 app.get["/"] = function(stream)
@@ -96,14 +96,12 @@ app.get["/"] = function(stream)
             stream, 
             Body(csv_data),
             Headers(content_type="text/csv")
-
         )
     end
 end
 ```
 
-For `Headers` the keys will be transformed using `Bonsai.headerize` and 
-the matching is case insensitive.
+For `Headers` the keys will be transformed using `Bonsai.headerize` and the matching is case-insensitive.
 
 ```julia
 Bonsai.headerize(:content_type)

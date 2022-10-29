@@ -25,7 +25,7 @@ end
 # run()
 ```
 
-The package provides abstraction so we use the `HTTP.Stream` IO type to declaratively reading and writing data by specifying our inputs and outputs as types. Calls to `Bonsai.read` will extract data from the HTTP Request and likewise those to `Bonsai.write` will construct a HTTP response. 
+The package provides abstraction so we use the `HTTP.Stream` IO type to declaratively read and write data by specifying our inputs and outputs as types. Calls to `Bonsai.read` will extract data from the HTTP Request and likewise those to `Bonsai.write` will construct an HTTP response. 
 
 # Features
 
@@ -33,12 +33,11 @@ Some features include:
 
 * Live Reloading (using [Revise](https://timholy.github.io/Revise.jl/stable/))
 * WebSockets
-* Tight intergration with [StructTypes](https://github.com/JuliaData/StructTypes.jl)
-* Flexiable Middleware
+* Tight integration with [StructTypes](https://github.com/JuliaData/StructTypes.jl)
+* Flexible Middleware
 * Automatic OpenAPI Generetation using [JET](https://github.com/aviatesk/JET.jl)
 
-For a more detailed breakdown read the [handlers](handlers.qmd) section or
-if you prefer dive in checkout the [examples](examples.qmd).
+For a more detailed breakdown read the [handlers](handlers.qmd) section or if you prefer to dive in check out the [examples](examples.qmd).
 
 # About
 

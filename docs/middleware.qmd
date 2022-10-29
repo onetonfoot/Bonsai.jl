@@ -1,11 +1,11 @@
 # Middleware 
 
 Middleware is a function of the form `f(stream::HTTP.Stream, next)`, where `next` is the following handler/middleware in the list.  It's called in the order it was added, with the matching handler (if any) called last. 
-By default `app.middleware` will run on all request methods however you can specify a specific method with `app.middleware.get` Bellow are examples of common usecases for middleware
+By default `app.middleware` will run on all request methods however you can specify a specific method with `app.middleware.get` Bellow are examples of common use cases for middleware
 
 # Logging
 
-Log each request method and url.
+Log each request method and URL.
 
 ```julia
 function log_request(stream, next)
@@ -19,7 +19,7 @@ app.middleware["**"] = [log_request]
 
 # Time
 
-The handler bellow logs the time taken to call the next handlers in the chain. 
+The handler below logs the time taken to call the next handlers in the chain. 
 
 ```julia
 function time_taken(stream, next)
@@ -36,7 +36,7 @@ app.middleware["**"] = [time_taken, ...other_middleware]
 
 # Authentication
 
-For example authentication might look something like this
+For example, authentication might look something like this
 
 ```julia
 function authentication(stream, next)
@@ -65,11 +65,11 @@ app.get["/protected/"] = protected_route
 app.get["/"] = unproteced_route
 ```
 
-TODO: proper example using JWTs.
+TODO: a proper example using JWTs.
 
 # CORS
 
-The bellow middleware will accept CORS request from any domain and HTTP method. You can restrict it to specific domains by changing the relevant header e.g `"Access-Control-Allow_Origin" => "https://my-website.com"`.  For more information on CORS see [https://cors-errors.info/](https://cors-errors.info/)
+The below middleware will accept CORS requests from any domain and HTTP method. You can restrict it to specific domains by changing the relevant header e.g `"Access-Control-Allow_Origin" => "https://my-website.com"`.  For more information on CORS see [https://cors-errors.info/](https://cors-errors.info/)
 
 ```julia
 function cors(stream::Stream, next)
