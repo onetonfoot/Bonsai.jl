@@ -433,7 +433,6 @@ function OperationObject(handler)
                     content_type = mime_type(res_type)
                     content[content_type] = MediaTypeObject(res_type)
                     description = doc_str(res_type)
-                    @info "T" res_type description
                 elseif res_type <: Headers
                     #= 
                     TODO: support headsers in OpenAPI
