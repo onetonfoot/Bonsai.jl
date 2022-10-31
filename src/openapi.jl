@@ -417,6 +417,8 @@ function OperationObject(handler)
             content = Dict()
             headers = Dict()
 
+            description = nothing
+
             for res_type in res_types
                 # ensure we are full type like Body{String} and not Body
                 if res_type isa UnionAll
@@ -430,6 +432,7 @@ function OperationObject(handler)
                 elseif res_type <: Body 
                     content_type = mime_type(res_type)
                     content[content_type] = MediaTypeObject(res_type)
+                    description=doc_str(res_type)
                 elseif res_type <: Headers
                     #= 
                     TODO: support headsers in OpenAPI
@@ -440,7 +443,10 @@ function OperationObject(handler)
 
             responses[status_code] = ResponseObject(
                 content=content,
-                headers=nothing
+                headers=nothing,
+                # technically you could have multple content-types for a single status code
+                # so this may not always be the correct description but close enough
+                description=description
             )
         end
     end
