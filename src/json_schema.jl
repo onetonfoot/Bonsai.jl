@@ -70,6 +70,11 @@ end
 
 doc_str(::Type{<:Body{T}}) where T = doc_str(T)
 
+# TODO:  how to correctly handle doc strings for container types? 
+# for now return nothing
+doc_str(::Type{<:AbstractArray}) where T = nothing
+doc_str(::Type{<:AbstractDict}) where T = nothing
+doc_str(::Type{<:NamedTuple}) where T = nothing
 
 function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
 

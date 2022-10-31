@@ -50,6 +50,11 @@ end
 	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
+@testset "doc_str" begin
+	@test !isnothing(doc_str(Body{Pet1}))
+	@test isnothing(doc_str(Array{Pet1}))
+end
+
 @testset "OpenAPI" begin
 
 	app = App()
