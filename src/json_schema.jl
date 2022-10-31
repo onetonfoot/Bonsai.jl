@@ -68,6 +68,8 @@ function doc_str(fn)
     end
 end
 
+doc_str(::Type{<:Body{T}}) where T = doc_str(T)
+
 
 function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
 

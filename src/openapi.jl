@@ -432,7 +432,8 @@ function OperationObject(handler)
                 elseif res_type <: Body 
                     content_type = mime_type(res_type)
                     content[content_type] = MediaTypeObject(res_type)
-                    description=doc_str(res_type)
+                    description = doc_str(res_type)
+                    @info "T" res_type description
                 elseif res_type <: Headers
                     #= 
                     TODO: support headsers in OpenAPI
@@ -446,6 +447,7 @@ function OperationObject(handler)
                 headers=nothing,
                 # technically you could have multple content-types for a single status code
                 # so this may not always be the correct description but close enough
+                # perhaps path_desc(Val(path), Status{200}) -> String could work?
                 description=description
             )
         end

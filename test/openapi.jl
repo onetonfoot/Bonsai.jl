@@ -3,7 +3,7 @@ using Test
 using StructTypes: @Struct
 using Bonsai: open_api_parameters, ParameterObject,
 	ResponseObject,  RequestBodyObject, 
-	handler_writes, HttpParameter, handler_reads, mime_type
+	handler_writes, HttpParameter, handler_reads, mime_type, doc_str
 using CodeInfoTools: code_inferred
 using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject, OpenAPI
 # https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
@@ -13,11 +13,14 @@ using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject,
 	id::Int
 end
 
-@Struct struct Pet1
+"a pet desc"
+struct Pet1
 	id::Int64
 	name::String
 	tag::String
 end
+
+@Struct
 
 @Struct struct Limit1
 	limit::Int
@@ -80,8 +83,17 @@ end
 		Bonsai.handler_reads(create_pets.fn)[1]
 	) isa Bonsai.RequestBodyObject
 
-	@test OpenAPI(app) isa OpenAPI
+	api = OpenAPI(app)
+
+	@test api isa OpenAPI
+
+    o = api.paths["/pets/{id:\\d+}"]
+	@test haskey(o.get.responses, "200")
+	@test !isnothing(doc_str(Body{Pet1}))
+	@test !isnothing(o.get.responses["200"].description)
 end	
+
+
 
 # test globals don't break it
 
