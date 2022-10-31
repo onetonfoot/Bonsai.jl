@@ -21,18 +21,21 @@ function start(
     port=8081,
     kwargs...)
 
+
+    # https://github.com/JuliaLang/julia/issues/46635
+
     errormonitor(
         # can't use thread @spawn otherwise this
         # breaks revise
         @async while isopen(app.cancel_token)
             addr = Sockets.InetAddr(host, port)
-            server = Sockets.listen(addr)
-            app.server = server
+            tcp_server = Sockets.listen(addr)
+            app.server = tcp_server
 
-            @async HTTP.serve(
+            http_server = HTTP.serve!(
                 # doesn't seem to make a difference
                 app,
-                host, port; server=server, stream=true, kwargs...
+                host, port; server=tcp_server, stream=true, kwargs...
             )
 
             wait(Revise.revision_event)
@@ -43,12 +46,12 @@ function start(
                 break
             end
 
-            close(server)
+            close(http_server)
             sleep(0.1)
         end
     )
     
-    @info "Started Server on $(host):$(port)"
+    @info "Server running $(host):$(port), press Ctrl+C to stop"
 
     try
         wait(app.cancel_token)
@@ -67,10 +70,14 @@ function stop(app::App)
     try
         close(app.cancel_token)
     catch
+    finally
+        app.cancel_token = CancelToken()
     end
 
     try
         close(app.server)
     catch
+    finally
+        app.server = nothing
     end
 end
