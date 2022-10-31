@@ -46,7 +46,7 @@ function start(
                 break
             end
 
-            close(http_server)
+            close(tcp_server)
             sleep(0.1)
         end
     )
