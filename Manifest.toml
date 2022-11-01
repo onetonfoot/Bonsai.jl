@@ -2,7 +2,7 @@
 
 julia_version = "1.8.2"
 manifest_format = "2.0"
-project_hash = "41daddc5c749042cf5a2fa9380f20788d02730de"
+project_hash = "9b346b5223f2b9d188438234a0806e6c609856e4"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "03e0550477d86222521d254b741d470ba17ea0b5"
@@ -86,12 +86,6 @@ version = "0.9.1"
 deps = ["ArgTools", "FileWatching", "LibCURL", "NetworkOptions"]
 uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.6.0"
-
-[[deps.ExprManipulation]]
-deps = ["Test"]
-git-tree-sha1 = "42f361ad56ec67ed577431e62dcd73ba4bf4b9b3"
-uuid = "49bccec5-5f8e-4a37-813c-bb803a7e462a"
-version = "0.1.1"
 
 [[deps.FilePaths]]
 deps = ["FilePathsBase", "MacroTools", "Reexport", "Requires"]

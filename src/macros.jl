@@ -5,7 +5,6 @@ macro data(expr)
     expr isa Expr && expr.head === :struct || error("Invalid usage of @kwdef")
     expr = expr::Expr
 	name = expr.args[2]
-	@info name
 	esc(quote 
 		Base.@kwdef($expr)
 		StructTypes.StructType(::Type{$name}) = StructTypes.Struct()

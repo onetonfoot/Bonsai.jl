@@ -22,6 +22,5 @@ include("app.jl")
 include("router.jl")
 include("web_socket.jl")
 include("server.jl")
-# include("docs.jl")
 
 end
