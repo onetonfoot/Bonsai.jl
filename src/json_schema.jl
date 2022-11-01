@@ -52,7 +52,13 @@ json_schema(::Type{Headers{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T,
 json_schema(::Type{Body{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
 
 # Might it would be better to define a trait for this
-function doc_str(fn)
+
+description(t) = nothing
+description(::Type{<:Body{T}}) where T = description(T)
+description(::Type{<:Query{T}}) where T = description(T)
+description(::Type{<:Headers{T}}) where T = description(T)
+
+function docstr(fn)
 
     if fn isa Type
         fn = extract_type(fn)
@@ -68,13 +74,9 @@ function doc_str(fn)
     end
 end
 
-doc_str(::Type{<:Body{T}}) where T = doc_str(T)
-
-# TODO:  how to correctly handle doc strings for container types? 
-# for now return nothing
-doc_str(::Type{<:AbstractArray}) where T = nothing
-doc_str(::Type{<:AbstractDict}) where T = nothing
-doc_str(::Type{<:NamedTuple}) where T = nothing
+docstr(::Type{<:Body{T}}) where T = docstr(T)
+docstr(::Type{<:Query{T}}) where T = docstr(T)
+docstr(::Type{<:Headers{T}}) where T = docstr(T)
 
 function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
 
@@ -114,7 +116,7 @@ function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
         end
     elseif sT in primative_types
         if T <: Enum
-            d[:description] = doc_str(T)
+            d[:description] = description(T)
             d[:enum] = Base.Enums.namemap(T) |> values |> collect .|> String
         else
             d[:type] = json_type(T)

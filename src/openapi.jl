@@ -361,7 +361,7 @@ function RequestBodyObject(::Type{Body{T}}) where {T}
         content=Dict(
             "application/json" => media_type
         ),
-        description = doc_str(T),
+        description = description(T),
         required=true,
     )
 end
@@ -420,7 +420,7 @@ function OperationObject(handler)
             content = Dict()
             headers = Dict()
 
-            description = nothing
+            desc = nothing
 
             for res_type in res_types
                 # ensure we are full type like Body{String} and not Body
@@ -435,7 +435,7 @@ function OperationObject(handler)
                 elseif res_type <: Body 
                     content_type = mime_type(res_type)
                     content[content_type] = MediaTypeObject(res_type)
-                    description = doc_str(res_type)
+                    desc = description(res_type)
                 elseif res_type <: Headers
                     #= 
                     TODO: support headsers in OpenAPI
@@ -450,7 +450,7 @@ function OperationObject(handler)
                 # technically you could have multple content-types for a single status code
                 # so this may not always be the correct description but close enough
                 # perhaps path_desc(Val(path), Status{200}) -> String could work?
-                description=description
+                description=desc
             )
         end
     end
@@ -483,11 +483,6 @@ function OperationObject(leaf::Leaf)
     o.operationId = leaf.path
     return o
 end
-
-# function PathItemObject(leaves::Array{Leaf})
-#     PathItemObject(;d...)
-# end
-
 
 function OpenAPI(app)
 

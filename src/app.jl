@@ -79,7 +79,10 @@ function (create::CreateHandler)(handler::HttpHandler, path)
     create.app._paths[(create.method, path)] = handler
 
     # add doc strings
-    docs = doc_str(handler.fn)
+    docs = description(handler.fn)
+    if isnothing(docs)
+        docs = docstr(handler.fn)
+    end
     key = Symbol(lowercase(string(create.method)))
     create.app.paths_docs[key][path] = docs
 

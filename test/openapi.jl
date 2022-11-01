@@ -3,7 +3,7 @@ using Test
 using StructTypes: @Struct
 using Bonsai: open_api_parameters, ParameterObject,
 	ResponseObject,  RequestBodyObject, 
-	handler_writes, HttpParameter, handler_reads, mime_type, doc_str
+	handler_writes, HttpParameter, handler_reads, mime_type, docstr, description
 using CodeInfoTools: code_inferred
 using Bonsai: PathItemObject, MediaTypeObject, ParameterObject, OperationObject, OpenAPI
 # https://raw.githubusercontent.com/OAI/OpenAPI-Specification/main/examples/v3.0/petstore.json
@@ -20,7 +20,9 @@ struct Pet1
 	tag::String
 end
 
-@Struct
+Bonsai.description(t::Type{Pet1}) = docstr(t)
+
+@Struct Pet1
 
 @Struct struct Limit1
 	limit::Int
@@ -50,9 +52,8 @@ end
 	@test RequestBodyObject(typeof(b1)) isa RequestBodyObject
 end
 
-@testset "doc_str" begin
-	@test !isnothing(doc_str(Body{Pet1}))
-	@test isnothing(doc_str(Array{Pet1}))
+@testset "docstr" begin
+	@test !isnothing(docstr(Body{Pet1}))
 end
 
 @testset "OpenAPI" begin
@@ -94,7 +95,8 @@ end
 
     o = api.paths["/pets/{id:\\d+}"]
 	@test haskey(o.get.responses, "200")
-	@test !isnothing(doc_str(Body{Pet1}))
+	@test !isnothing(description(Body{Pet1}))
+	@test !isnothing(docstr(Body{Pet1}))
 	@test !isnothing(o.get.responses["200"].description)
 end	
 
