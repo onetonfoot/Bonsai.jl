@@ -3,6 +3,9 @@
 # https://swagger.io/specification/
 # module OpenAPIv3
 using StructTypes
+using OrderedCollections: OrderedDict
+using DataStructures: SortedDict
+
 import HTTP.Handlers: Leaf
 
 export OpenAPI, open_api!
@@ -296,7 +299,7 @@ Base.@kwdef mutable struct OpenAPI
     openapi::String = "3.0.0" # semantic version number
     info::Union{Info,Nothing} = nothing
     servers::Array{ServerObject} = []
-    paths::Dict{String,PathItemObject} = Dict()
+    paths::SortedDict{String,PathItemObject} = SortedDict()
     components::Union{Components,Nothing} = nothing
     security::Array{SecurityRequirementObject} = []
     tags::Array{TagObject} = []
