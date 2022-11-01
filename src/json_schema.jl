@@ -44,8 +44,9 @@ json_type(::Type{Nothing}) = "null"
 json_type(::Type{Missing}) = "null"
 json_type(::Type{String}) = "string"
 json_type(::Type{<:Enum}) = "string"
+json_type(::Type{<:Dates.AbstractDateTime}) = "date"
 json_type(::Type{<:Date}) = "date"
-json_type(::Type{<:DateTime}) = "date"
+
 
 array_type(::Type{<:Vector{T}}) where {T} = T
 array_type(::Type{<:Array{T}}) where {T} = T
