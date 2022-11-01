@@ -15,8 +15,6 @@ const array_types = [ArrayType()]
 const object_types = [OrderedStruct(), UnorderedStruct(), Mutable(), DictType()]
 const primative_types = [StringType(), NumberType(), BoolType(), NullType()]
 
-
-
 function union_types(t)
     l = []
     if t.a isa Union
@@ -44,9 +42,8 @@ json_type(::Type{Nothing}) = "null"
 json_type(::Type{Missing}) = "null"
 json_type(::Type{String}) = "string"
 json_type(::Type{<:Enum}) = "string"
-json_type(::Type{<:Dates.AbstractDateTime}) = "date"
+json_type(::Type{<:Dates.AbstractDateTime}) = "date-time"
 json_type(::Type{<:Date}) = "date"
-
 
 array_type(::Type{<:Vector{T}}) where {T} = T
 array_type(::Type{<:Array{T}}) where {T} = T

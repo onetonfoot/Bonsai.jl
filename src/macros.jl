@@ -1,4 +1,5 @@
 using StructTypes
+using CompositeStructs
 
 macro data(expr)
     expr = macroexpand(__module__, expr) # to expand @static
@@ -7,7 +8,7 @@ macro data(expr)
 	mutable = expr.args[1]
 	name = expr.args[2]
 	esc(quote 
-		Base.@kwdef($expr)
+		Bonsai.@composite(Base.@kwdef($expr))
 		if $mutable
 			StructTypes.StructType(::Type{$name}) = StructTypes.Mutable()
 		else
