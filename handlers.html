@@ -196,6 +196,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   <li><a href="#query" id="toc-query" class="nav-link" data-scroll-target="#query">Query</a></li>
   <li><a href="#headers" id="toc-headers" class="nav-link" data-scroll-target="#headers">Headers</a></li>
   <li><a href="#files" id="toc-files" class="nav-link" data-scroll-target="#files">Files</a></li>
+  <li><a href="#json" id="toc-json" class="nav-link" data-scroll-target="#json">JSON</a></li>
   </ul>
 <div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/onetonfoot/Bonsai.jl/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
     </div>
@@ -211,15 +212,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <section id="body" class="level1">
 <h1>Body</h1>
 <p>Below is an example of reading JSON from a request, and then writing it back as a response</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    payload <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Body</span>(x<span class="op">=</span><span class="dt">Int</span>, y<span class="op">=</span><span class="dt">Float64</span>, z<span class="op">=</span><span class="dt">String</span>))</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># typeof(payload)</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(payload))</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">get_index</span>(stream)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    payload <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Body</span>(x<span class="op">=</span><span class="dt">Int</span>, y<span class="op">=</span><span class="dt">Float64</span>, z<span class="op">=</span><span class="dt">String</span>))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># typeof(payload)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(payload))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p><code>Bonsai.write</code> will attempt to set the correct content-type header for the data, however, this can be changed by defining <code>mime_type</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">mime_type</span>(<span class="op">::</span><span class="dt">MyType</span>) <span class="op">=</span> <span class="st">"text/plain"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">mime_type</span>(<span class="op">::</span><span class="dt">Type{MyType}</span>) <span class="op">=</span> <span class="st">"text/plain"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The content type is defined for the following types already</p>
 <ul>
 <li><code>Union{NamedTuple, AbstractDict}</code> - application/json</li>
@@ -230,7 +230,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <section id="status-codes" class="level1">
 <h1>Status Codes</h1>
 <p>The default status code is 200, however other <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status">status codes</a> can be returned by using <code>Status</code></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>app.post[<span class="st">"/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
+<div class="sourceCode" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">post_index</span>(stream)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">#...first part of handler</span></span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(<span class="st">"Created"</span>), <span class="fu">Status</span>(<span class="fl">201</span>))</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -246,54 +246,100 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><code>/api/widget/{id:[0-9]+}</code> - Define a path variable <code>id</code> that only matches integers for this segment</li>
 <li><code>/api/**</code>- double wildcard matches any number of trailing segments in the request path; must be the last segment in the path</li>
 </ul>
-<p>You can extract the route parmeters using the <code>Route</code> type, which will return a named tuple.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/{id}"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    (;id) <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Route</span>(id<span class="op">=</span><span class="dt">String</span>))</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>The <code>Route</code> constructor takes the parameter name and the type, multiple keyword arguments are supported.</p>
+<p>To register a route use the <code>dot</code> syntax to specify the HTTP Method and then dictionary indexing for the requested route. e.g</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>app.post[<span class="st">"/pet/{id}"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You can extract the route parameters using the <code>Route</code> type, which will return a named tuple.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">get_by_id</span>(stream)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    (;id) <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Route</span>(id<span class="op">=</span><span class="dt">String</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/{id}"</span>] <span class="op">=</span> get_by_id</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The <code>Route</code> constructor takes the parameter name and the type. Multiple keyword arguments are supported</p>
 </section>
 <section id="query" class="level1">
 <h1>Query</h1>
 <p>Following a similar pattern as the others, query parameters can be matched by using <code>Query</code> type.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/car/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    (;color) <span class="op">=</span> Bonsai.<span class="fu">read</span>(</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        stream, </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">Query</span>(color <span class="op">=</span> <span class="dt">Union</span>{<span class="dt">Nothing</span>, <span class="dt">String</span>}),</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">get_car</span>(stream)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    (;color) <span class="op">=</span> Bonsai.<span class="fu">read</span>(</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        stream, </span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="co">#/&lt;some route&gt;?color=blue</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">Query</span>(color <span class="op">=</span> <span class="dt">Union</span>{<span class="dt">Nothing</span>, <span class="dt">String</span>}),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>Note to handle optional parameters you can use a union with nothing e.g <code>Union{Nothing, T}</code>.</p>
 </section>
 <section id="headers" class="level1">
 <h1>Headers</h1>
 <p>Use <code>Headers</code> to read and write specific headers. For example, a handler that can return JSON or a CSV depending on the content type header.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    headers <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="dt">String</span>))</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> headers.content_type <span class="op">==</span> <span class="st">"application/json"</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        Bonsai.<span class="fu">write</span>(</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>            stream, </span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Body</span>(json_data),</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="st">"application/json"</span>)</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        Bonsai.<span class="fu">write</span>(</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            stream, </span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Body</span>(csv_data),</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="st">"text/csv"</span>)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">index</span>(stream)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    headers <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="dt">String</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> headers.content_type <span class="op">==</span> <span class="st">"application/json"</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        Bonsai.<span class="fu">write</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>            stream, </span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Body</span>(json_data),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="st">"application/json"</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>        Bonsai.<span class="fu">write</span>(</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>            stream, </span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Body</span>(csv_data),</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="st">"text/csv"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>For <code>Headers</code> the keys will be transformed using <code>Bonsai.headerize</code> and the matching is case-insensitive.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">headerize</span>(<span class="op">:</span>content_type)</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># "content-type"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">headerize</span>(<span class="op">:</span>content_type)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># "content-type"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
 <section id="files" class="level1">
 <h1>Files</h1>
 <p>Writing files supports <code>AbstractPaths</code> defined in <a href="https://github.com/rofinn/FilePaths.jl">FilePaths</a>. The content type will be set based on the file extension.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>file <span class="op">=</span>  <span class="fu">Path</span>(<span class="st">"data/some-file.json"</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(file))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>A nice feature of this is we can easily use other <code>AbstractPath</code> implementations for example like that in <a href="https://github.com/JuliaCloud/AWSS3.jl">AWSS3</a></p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>file <span class="op">=</span> <span class="fu">S3Path</span>(<span class="st">"s3://my.bucket/test1.txt"</span>) </span>
+<div class="sourceCode" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>file <span class="op">=</span>  <span class="fu">Path</span>(<span class="st">"data/some-file.json"</span>)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(file))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>A nice feature of this is we can easily use other <code>AbstractPath</code> implementations for example like that in <a href="https://github.com/JuliaCloud/AWSS3.jl">AWSS3</a></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>file <span class="op">=</span> <span class="fu">S3Path</span>(<span class="st">"s3://my.bucket/test1.txt"</span>) </span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(file))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="json" class="level1">
+<h1>JSON</h1>
+<p>Because working with JSON is so common there is a <code>@data</code> macro that can help you define structs for it. This macro supports <code>Base.@kwdef</code> and <a href="https://github.com/marius311/CompositeStructs.jl"><span class="citation" data-cites="composite">@composite</span></a>, for example.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Dates</span>, <span class="bu">UUIDs</span>, <span class="bu">Bonsai</span>, <span class="bu">StructTypes</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Bonsai</span>: @data</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="pp">@data</span> <span class="kw">struct</span> BaseModel</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    id<span class="op">::</span><span class="dt">UUID </span><span class="op">=</span> <span class="fu">uuid4</span>()</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    created<span class="op">::</span><span class="dt">Date </span><span class="op">=</span> <span class="fu">now</span>()</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    updated<span class="op">::</span><span class="dt">Date </span><span class="op">=</span> <span class="fu">now</span>()</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="st">Markdown documentation included in OpenAPI description</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="st">* name - first and last name</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a><span class="pp">@data</span> <span class="kw">struct</span> Person</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>    BaseModel<span class="op">...</span></span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>    name<span class="op">::</span><span class="dt">String</span></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>This expands to roughly the following source code</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Base</span>.<span class="pp">@kwdef</span> <span class="kw">struct</span> Person</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Note splatted fields from BaseModel </span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    id<span class="op">::</span><span class="dt">UUID </span><span class="op">=</span> <span class="fu">uuid4</span>()</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    created<span class="op">::</span><span class="dt">Date </span><span class="op">=</span> <span class="fu">now</span>()</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    updated<span class="op">::</span><span class="dt">Date </span><span class="op">=</span> <span class="fu">now</span>()</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    name<span class="op">::</span><span class="dt">String </span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Allows struct to be correctly read from JSON</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>StructTypes.<span class="fu">StructType</span>(<span class="op">::</span><span class="dt">Type{Person}</span>) <span class="op">=</span> StructTypes.<span class="fu">Struct</span>()</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Set the correct description to be used in OpenAPI docs</span></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">description</span>(t<span class="op">::</span><span class="dt">Type{Person}</span>) <span class="op">=</span> Bonsai.<span class="fu">docstr</span>(t)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>To help with generating boilerplate you can use <code>JSON3.generatedtypes</code>.</p>
 
 
 </section>
