@@ -201,20 +201,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <section id="open-api-generation" class="level1">
 <h1>Open API Generation</h1>
-<p>An open api spec can be generated for your <code>App</code>, <a href="https://github.com/aviatesk/JET.jl">JET</a> is used to analyze the code and detects all of the <code>Bonsai.read</code> and <code>Bonsai.write</code> calls, this information is then used to create the spec. This feature is currently still alpha and needs some more work before it’s robust.</p>
+<p>An open API spec can be generated for your <code>App</code>, <a href="https://github.com/aviatesk/JET.jl">JET</a> is used to analyze the code and detects all of the <code>Bonsai.read</code> and <code>Bonsai.write</code> calls, this information is then used to create the spec. This feature is currently still alpha and needs some more work before it’s robust.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>open_api <span class="op">=</span> <span class="fu">OpenApi</span>(app)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>JSON3.<span class="fu">write</span>(<span class="st">"open-api.json"</span>, open_api)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>To add a web page for you documentation you can call</p>
+<p>To add a web page for your documentation you can call</p>
 <pre><code>openapi!(app)</code></pre>
-<p>This will add to endpoints:</p>
+<p>This will add the endpoints:</p>
 <ul>
-<li><code>docs/</code> - A web page containing documentation for for API built using <a href="https://swagger.io/tools/swagger-ui/">SwaggerUI</a></li>
+<li><code>docs/</code> - A web page containing documentation for API built using <a href="https://swagger.io/tools/swagger-ui/">SwaggerUI</a></li>
 <li><code>docs/open-api.json</code> - The open API specifcation</li>
 </ul>
 </section>
 <section id="client-generation" class="level1">
 <h1>Client Generation</h1>
-<p>You can generate clients from a number of tools from open specs, for example to generate a typescript client you coult run</p>
+<p>You can generate clients using a number of tools from open specs, for example, to generate a typescript client you could run</p>
 <pre><code>npx openapi-typescript-codegen --input open-api.json --output client</code></pre>
 
 

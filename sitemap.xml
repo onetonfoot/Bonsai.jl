@@ -2,22 +2,26 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://onetonfoot.github.io/Bonsai.jl/middleware.html</loc>
-    <lastmod>2022-10-27T02:37:43.763Z</lastmod>
+    <lastmod>2022-11-02T00:34:06.643Z</lastmod>
   </url>
   <url>
     <loc>https://onetonfoot.github.io/Bonsai.jl/examples.html</loc>
-    <lastmod>2022-10-27T02:37:44.051Z</lastmod>
+    <lastmod>2022-11-02T00:34:06.927Z</lastmod>
+  </url>
+  <url>
+    <loc>https://onetonfoot.github.io/Bonsai.jl/macros.html</loc>
+    <lastmod>2022-11-02T00:34:07.151Z</lastmod>
   </url>
   <url>
     <loc>https://onetonfoot.github.io/Bonsai.jl/open_api.html</loc>
-    <lastmod>2022-10-27T02:37:44.499Z</lastmod>
+    <lastmod>2022-11-02T00:34:07.579Z</lastmod>
   </url>
   <url>
     <loc>https://onetonfoot.github.io/Bonsai.jl/index.html</loc>
-    <lastmod>2022-10-27T02:37:44.735Z</lastmod>
+    <lastmod>2022-11-02T00:34:07.835Z</lastmod>
   </url>
   <url>
     <loc>https://onetonfoot.github.io/Bonsai.jl/handlers.html</loc>
-    <lastmod>2022-10-27T02:37:45.039Z</lastmod>
+    <lastmod>2022-11-02T00:34:08.135Z</lastmod>
   </url>
 </urlset>

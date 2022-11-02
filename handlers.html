@@ -206,11 +206,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <section id="handlers" class="level1">
 <h1>Handlers</h1>
-<p>Each handler is a function with the signature <code>f(stream::HTTP.Stream)</code>. You read and write from the http stream using <code>Bonsai.read</code> or <code>Bonsai.write</code> along with a wrapper type (<code>Body</code>, <code>Query</code>, <code>Headers</code>, <code>Route</code> and <code>Status</code>) to specify the location. The data type being read / written should be a <code>AbstractDict</code>, <code>NamedTuple</code> or have a <a href="https://juliadata.github.io/StructTypes.jl/stable/">StructType</a> defined. Both <code>read</code> and <code>write</code> support variadic arguments e.g <code>fn(stream, args...)</code></p>
+<p>Each handler is a function with the signature <code>f(stream::HTTP.Stream)</code>. You read and write from the HTTP stream using <code>Bonsai.read</code> or <code>Bonsai.write</code> along with a wrapper type (<code>Body</code>, <code>Query</code>, <code>Headers</code>, <code>Route</code> and <code>Status</code>) to specify the location. The data type being read/written should be an <code>AbstractDict</code>, <code>NamedTuple</code> or have a <a href="https://juliadata.github.io/StructTypes.jl/stable/">StructType</a> defined. Both <code>read</code> and <code>write</code> support variadic arguments e.g <code>fn(stream, args...)</code></p>
 </section>
 <section id="body" class="level1">
 <h1>Body</h1>
-<p>Bellow is an example of reading reading JSON from a request, and then writing it back as a response</p>
+<p>Below is an example of reading JSON from a request, and then writing it back as a response</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    payload <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Body</span>(x<span class="op">=</span><span class="dt">Int</span>, y<span class="op">=</span><span class="dt">Float64</span>, z<span class="op">=</span><span class="dt">String</span>))</span>
@@ -218,7 +218,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(payload))</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p><code>Bonsai.write</code> will attempt to set the correct content-type header for the data, however this can be changed by defining <code>mime_type</code>.</p>
+<p><code>Bonsai.write</code> will attempt to set the correct content-type header for the data, however, this can be changed by defining <code>mime_type</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">mime_type</span>(<span class="op">::</span><span class="dt">MyType</span>) <span class="op">=</span> <span class="st">"text/plain"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>The content type is defined for the following types already</p>
 <ul>
@@ -237,12 +237,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </section>
 <section id="routing" class="level1">
 <h1>Routing</h1>
-<p>Routing relies on the router from <a href="https://juliaweb.github.io/HTTP.jl/stable/server/#HTTP.Router">HTTP.jl</a>, as such the functionality is the same (see the copied doc stings bellow).</p>
+<p>Routing relies on the router from <a href="https://juliaweb.github.io/HTTP.jl/stable/server/#HTTP.Router">HTTP.jl</a>, as such the functionality is the same (see the copied doc stings below).</p>
 <p>The following path types are allowed for matching:</p>
 <ul>
 <li><code>/api/widgets</code> - exact match of static strings</li>
 <li><code>/api/*/owner</code> - single <code>*</code> to wildcard match any string for a single segment</li>
-<li><code>/api/widget/{id}</code> - Define a path variable <code>id</code> that matches any valued provided for this segment; path variables are available in the request context like <code>req.context[:params]["id"]</code></li>
+<li><code>/api/widget/{id}</code> - Define a path variable <code>id</code> that matches any value provided for this segment; path variables are available in the request context like <code>req.context[:params]["id"]</code></li>
 <li><code>/api/widget/{id:[0-9]+}</code> - Define a path variable <code>id</code> that only matches integers for this segment</li>
 <li><code>/api/**</code>- double wildcard matches any number of trailing segments in the request path; must be the last segment in the path</li>
 </ul>
@@ -254,7 +254,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </section>
 <section id="query" class="level1">
 <h1>Query</h1>
-<p>Following the a similar pattern as the others query parameters can be matched by using <code>Query</code> type.</p>
+<p>Following a similar pattern as the others, query parameters can be matched by using <code>Query</code> type.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/car/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    (;color) <span class="op">=</span> Bonsai.<span class="fu">read</span>(</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        stream, </span>
@@ -265,7 +265,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </section>
 <section id="headers" class="level1">
 <h1>Headers</h1>
-<p>Use <code>Headers</code> to read and write specific headers. For example a handler that can return either CSV or JSON data might look like.</p>
+<p>Use <code>Headers</code> to read and write specific headers. For example, a handler that can return JSON or a CSV depending on the content type header.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/"</span>] <span class="op">=</span> <span class="kw">function</span>(stream)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    headers <span class="op">=</span> Bonsai.<span class="fu">read</span>(stream, <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="dt">String</span>))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> headers.content_type <span class="op">==</span> <span class="st">"application/json"</span></span>
@@ -279,11 +279,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            stream, </span>
 <span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Body</span>(csv_data),</span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            <span class="fu">Headers</span>(content_type<span class="op">=</span><span class="st">"text/csv"</span>)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>For <code>Headers</code> the keys will be transformed using <code>Bonsai.headerize</code> and the matching is case insensitive.</p>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>For <code>Headers</code> the keys will be transformed using <code>Bonsai.headerize</code> and the matching is case-insensitive.</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>Bonsai.<span class="fu">headerize</span>(<span class="op">:</span>content_type)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># "content-type"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>

@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Bonsai.jl</title>
+<title>Bonsai.jl – macros</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -157,7 +157,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./index.html" class="sidebar-item-text sidebar-link active">Intro</a>
+  <a href="./index.html" class="sidebar-item-text sidebar-link">Intro</a>
   </div>
 </li>
         <li class="sidebar-item">
@@ -189,9 +189,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#intro" id="toc-intro" class="nav-link active" data-scroll-target="#intro">Intro</a></li>
-  <li><a href="#features" id="toc-features" class="nav-link" data-scroll-target="#features">Features</a></li>
-  <li><a href="#about" id="toc-about" class="nav-link" data-scroll-target="#about">About</a></li>
+  <li><a href="#json" id="toc-json" class="nav-link active" data-scroll-target="#json">JSON</a></li>
   </ul>
 <div class="toc-actions"><div><i class="bi bi-github"></i></div><div class="action-links"><p><a href="https://github.com/onetonfoot/Bonsai.jl/issues/new" class="toc-action">Report an issue</a></p></div></div></nav>
     </div>
@@ -200,46 +198,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
-<section id="intro" class="level1">
-<h1>Intro</h1>
-<p>The following code snippet gets at the essence of the framework</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Bonsai</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> app <span class="op">=</span> <span class="fu">App</span>()</span>
+<section id="json" class="level1">
+<h1>JSON</h1>
+<p>Because working with JSON is so</p>
+<p>This macro supports <code>Base.@kwdef</code> and <code>@composite</code></p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">using</span> <span class="bu">Bonsai</span>: @data</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">index</span>(stream<span class="op">::</span><span class="dt">HTTP.Stream</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    query <span class="op">=</span> Bonsai.<span class="fu">read</span>( stream, <span class="fu">Query</span>(name<span class="op">=</span><span class="dt">Union</span>{<span class="dt">String</span>, <span class="dt">Nothing</span>}))</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> <span class="fu">isnothing</span>(query.name) ? <span class="st">"John Doe"</span> <span class="op">:</span> query.name  </span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    Bonsai.<span class="fu">write</span>(stream, <span class="fu">Body</span>(<span class="st">"Hi, </span><span class="sc">$</span>name<span class="st">"</span>))</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">setup_routes</span>(app)</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    app.get[<span class="st">"/"</span>] <span class="op">=</span> index</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">run</span>()</span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setup_routers</span>(app)</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">start</span>(app, port<span class="op">=</span><span class="fl">9091</span>)</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># run()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>The package provides abstraction so we use the <code>HTTP.Stream</code> IO type to declaratively read and write data by specifying our inputs and outputs as types. Calls to <code>Bonsai.read</code> will extract data from the HTTP Request and likewise those to <code>Bonsai.write</code> will construct an HTTP response.</p>
-</section>
-<section id="features" class="level1">
-<h1>Features</h1>
-<p>Some features include:</p>
-<ul>
-<li>Live Reloading (using <a href="https://timholy.github.io/Revise.jl/stable/">Revise</a>)</li>
-<li>WebSockets</li>
-<li>Tight integration with <a href="https://github.com/JuliaData/StructTypes.jl">StructTypes</a></li>
-<li>Flexible Middleware</li>
-<li>Automatic OpenAPI Generetation using <a href="https://github.com/aviatesk/JET.jl">JET</a></li>
-</ul>
-<p>For a more detailed breakdown read the <a href="./handlers.html">handlers</a> section or if you prefer to dive in check out the <a href="./examples.html">examples</a>.</p>
-</section>
-<section id="about" class="level1">
-<h1>About</h1>
-<p>Bonsai aims to be minimalistic and not impose a specific structure on the developer, the API is inspired by <a href="https://fastapi.tiangolo.com/">FastAPI</a>, <a href="https://github.com/gofiber/fiber">Fibre</a> and <a href="https://expressjs.com/">Express</a>.</p>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="pp">@data</span> <span class="kw">struct</span> </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 
 
 </section>

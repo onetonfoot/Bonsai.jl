@@ -204,11 +204,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <section id="middleware" class="level1">
 <h1>Middleware</h1>
-<p>Middleware is a function of the form <code>f(stream::HTTP.Stream, next)</code>, where <code>next</code> is the following handler/middleware in the list. It’s called in the order it was added, with the matching handler (if any) called last. By default <code>app.middleware</code> will run on all request methods however you can specify a specific method with <code>app.middleware.get</code> Bellow are examples of common usecases for middleware</p>
+<p>Middleware is a function of the form <code>f(stream::HTTP.Stream, next)</code>, where <code>next</code> is the following handler/middleware in the list. It’s called in the order it was added, with the matching handler (if any) called last. By default <code>app.middleware</code> will run on all request methods however you can specify a specific method with <code>app.middleware.get</code> Bellow are examples of common use cases for middleware</p>
 </section>
 <section id="logging" class="level1">
 <h1>Logging</h1>
-<p>Log each request method and url.</p>
+<p>Log each request method and URL.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">log_request</span>(stream, next)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="pp">@info</span> <span class="st">"request"</span> stream.message.method stream.message.url</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">next</span>(stream)</span>
@@ -219,7 +219,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </section>
 <section id="time" class="level1">
 <h1>Time</h1>
-<p>The handler bellow logs the time taken to call the next handlers in the chain.</p>
+<p>The handler below logs the time taken to call the next handlers in the chain.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">time_taken</span>(stream, next)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> <span class="fu">now</span>()</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">next</span>(stream)</span>
@@ -233,7 +233,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </section>
 <section id="authentication" class="level1">
 <h1>Authentication</h1>
-<p>For example authentication might look something like this</p>
+<p>For example, authentication might look something like this</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">authentication</span>(stream, next)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    headers <span class="op">=</span> Bonsai.<span class="fu">read</span>(</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>        stream,</span>
@@ -258,11 +258,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>app.middleware[<span class="st">"/protected/**"</span>] <span class="op">=</span> [authentication]</span>
 <span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/protected/"</span>] <span class="op">=</span> protected_route</span>
 <span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>app.get[<span class="st">"/"</span>] <span class="op">=</span> unproteced_route</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<p>TODO: proper example using JWTs.</p>
+<p>TODO: a proper example using JWTs.</p>
 </section>
 <section id="cors" class="level1">
 <h1>CORS</h1>
-<p>The bellow middleware will accept CORS request from any domain and HTTP method. You can restrict it to specific domains by changing the relevant header e.g <code>"Access-Control-Allow_Origin" =&gt; "https://my-website.com"</code>. For more information on CORS see <a href="https://cors-errors.info/">https://cors-errors.info/</a></p>
+<p>The below middleware will accept CORS requests from any domain and HTTP method. You can restrict it to specific domains by changing the relevant header e.g <code>"Access-Control-Allow_Origin" =&gt; "https://my-website.com"</code>. For more information on CORS see <a href="https://cors-errors.info/">https://cors-errors.info/</a></p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">cors</span>(stream<span class="op">::</span><span class="dt">Stream</span>, next)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    res <span class="op">=</span> stream.message.response</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
