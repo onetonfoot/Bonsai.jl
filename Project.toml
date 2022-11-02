@@ -1,7 +1,7 @@
 name = "Bonsai"
 uuid = "30a8ad1e-2947-4f5c-9f0c-168e614e8e53"
 authors = ["Dominic Morgan <dominic.mark.morgan@gmail.com>"]
-version = "0.5.2"
+version = "0.5.3"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
