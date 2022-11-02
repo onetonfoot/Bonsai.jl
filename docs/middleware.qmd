@@ -60,9 +60,11 @@ function unproteced_route(stream, next)
     return Bonsai.write(stream, Body("Welcome to the club"))
 end
 
-app.middleware["/protected/**"] = [authentication]
-app.get["/protected/"] = protected_route
-app.get["/"] = unproteced_route
+function register_middleware!(app)
+    app.middleware["/protected/**"] = [authentication]
+    app.get["/protected/"] = protected_route
+    app.get["/"] = unproteced_route
+end
 ```
 
 TODO: a proper example using JWTs.
@@ -95,7 +97,10 @@ function cors(stream::Stream, next)
     end
 end
 
-app.middleware["**"] = [authentication]
+function register_middleware!(app)
+    # runs on all routes
+    app.middleware["**"] = [authentication]
+end
 ```
 
 Note you probably don't want to use a wildcard `*` for your origin but rather something more specific.

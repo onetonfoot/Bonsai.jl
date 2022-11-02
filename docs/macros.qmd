@@ -1,0 +1,44 @@
+# JSON 
+
+Because working with JSON is so common there is a `@data` macro that can help you define structs. This macro supports `Base.@kwdef` and [@composite](https://github.com/marius311/CompositeStructs.jl), for example.
+
+
+```julia
+using Dates, UUIDs, Bonsai, StructTypes
+using Bonsai: @data
+
+@data struct BaseModel
+	id::UUID = uuid4()
+	created::Date = now()
+	updated::Date = now()
+end
+
+
+"""
+Markdown documentation included in OpenAPI description
+
+* name - first and last name
+"""
+@data struct Person
+	BaseModel...
+	name::String
+end
+```
+
+This expands to roughly the following source code
+
+```julia
+
+Base.@kwdef struct Person
+	# Note splatted fields from BaseModel 
+	id::UUID = uuid4()
+	created::Date = now()
+	updated::Date = now()
+	name::String 
+end
+
+# Allows struct to be correctly read from JSON
+StructTypes.StructType(::Type{Person}) = StructTypes.Struct()
+# Set the correct description to be used in OpenAPI docs
+Bonsai.description(t::Type{Person}) = Bonsai.docstr(t)
+```

@@ -1,3 +1,7 @@
+# Notes
+
+Some rought notes on things todo so I don't forget my train of thought
+
 # IO 
 
 Clean up JSON construction and error handling so the functions can also be used from 
@@ -6,10 +10,19 @@ within websocket handlers with `Bonsai.read(msg, T)`
 # Handlers
 
 * Add `app.ws`
+* Make `app["/"]` add to all routes? 
 * Maybe rename HTTPParameter to HttpIo?
 
-# OpenAPI
+# Type Generation
 
+Split JSONSchmea stuff into seperate package and provide some form of type generation. 
+For both julia structs and perhaps typescript or other languages
+
+# Files
+
+Implement caching, it should work correctly with any AbstractPath type
+
+# OpenAPI
 
 ```julia
 
@@ -23,7 +36,9 @@ end
 
 # Other Framework Handlers
 
-FastAPI
+How other frame works syntax for handlers looks like
+
+## FastAPI
 
 ```python
 from fastapi import FastAPI
@@ -35,7 +50,7 @@ async def read_item(item_id: int):
 
 ```
 
-Fibre
+## Fibre
 
 ```go
 package main
@@ -54,7 +69,7 @@ func main() {
 
 ```
 
-Genie
+## Genie
 
 ```julia
 
@@ -63,7 +78,7 @@ route("/", method = POST) do
 end
 ```
 
-Express
+## Express
 
 ```js
 app.post('/', (req, res) => {
@@ -71,8 +86,7 @@ app.post('/', (req, res) => {
 })
 ```
 
-
-Oxygen
+## Oxygen
 
 
 ```julia

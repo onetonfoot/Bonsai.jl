@@ -13,12 +13,12 @@ function index(stream::HTTP.Stream)
     Bonsai.write(stream, Body("Hi, $name"))
 end
 
-function setup_routes(app)
+function register_handlers!(app)
     app.get["/"] = index
 end
 
 function run()
-    setup_routers(app)
+    register_handlers!(app)
     start(app, port=9091)
 end
 

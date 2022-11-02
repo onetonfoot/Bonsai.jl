@@ -8,8 +8,7 @@ You read and write from the HTTP stream using `Bonsai.read` or `Bonsai.write` al
 Below is an example of reading JSON from a request, and then writing it back as a response
 
 ```julia
-
-app.get["/"] = function(stream)
+function get_index(stream)
     payload = Bonsai.read(stream, Body(x=Int, y=Float64, z=String))
     # typeof(payload)
     # NamedTuple{(:x, :y, :z), Tuple{Int64, Float64, String}}
@@ -20,7 +19,7 @@ end
 `Bonsai.write` will attempt to set the correct content-type header for the data, however, this can be changed by defining `mime_type`.
 
 ```julia
-Bonsai.mime_type(::MyType) = "text/plain"
+Bonsai.mime_type(::Type{MyType}) = "text/plain"
 ```
 
 The content type is defined for the following types already
@@ -34,7 +33,7 @@ The content type is defined for the following types already
 The default status code is 200, however other [status codes](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status) can be returned by using `Status`
 
 ```julia
-app.post["/"] = function(stream)
+function post_index(stream)
     #...first part of handler
 	Bonsai.write(stream, Body("Created"), Status(201))
 end
@@ -53,24 +52,35 @@ The following path types are allowed for matching:
 * `/api/**`- double wildcard matches any number of trailing segments in the request path; must be the last segment in the path
 
 
-You can extract the route parmeters using the `Route` type, which will return a named tuple. 
+To register a route use the  `dot` syntax to specify the HTTP Method and then dictionary indexing for the requested route. e.g
 
 ```julia
-app.get["/{id}"] = function(stream)
-	(;id) = Bonsai.read(stream, Route(id=String))
-end
+app.post["/pet/{id}"]
 ```
 
-The `Route` constructor takes the parameter name and the type, multiple keyword arguments are supported.
+You can extract the route parameters using the `Route` type, which will return a named tuple. 
+
+```julia
+
+function get_by_id(stream)
+	(;id) = Bonsai.read(stream, Route(id=String))
+end
+
+app.get["/{id}"] = get_by_id
+```
+
+The `Route` constructor takes the parameter name and the type. Multiple keyword arguments are supported
 
 # Query 
 
 Following a similar pattern as the others, query parameters can be matched by using `Query` type.
 
 ```julia
-app.get["/car/"] = function(stream)
+
+function get_car(stream)
     (;color) = Bonsai.read(
     	stream, 
+        #/<some route>?color=blue
         Query(color = Union{Nothing, String}),
     )
 end
@@ -83,7 +93,8 @@ Note to handle optional parameters you can use a union with nothing e.g `Union{N
 Use `Headers` to read and write specific headers. For example, a handler that can return JSON or a CSV depending on the content type header.
 
 ```julia
-app.get["/"] = function(stream)
+
+function index(stream)
     headers = Bonsai.read(stream, Headers(content_type=String))
     if headers.content_type == "application/json"
         Bonsai.write(
@@ -124,3 +135,49 @@ file = S3Path("s3://my.bucket/test1.txt")
 Bonsai.write(stream, Body(file))
 ```
 
+# JSON 
+
+Because working with JSON is so common there is a `@data` macro that can help you define structs for it. This macro supports `Base.@kwdef` and [@composite](https://github.com/marius311/CompositeStructs.jl), for example.
+
+
+```julia
+using Dates, UUIDs, Bonsai, StructTypes
+using Bonsai: @data
+
+@data struct BaseModel
+	id::UUID = uuid4()
+	created::Date = now()
+	updated::Date = now()
+end
+
+
+"""
+Markdown documentation included in OpenAPI description
+
+* name - first and last name
+"""
+@data struct Person
+	BaseModel...
+	name::String
+end
+```
+
+This expands to roughly the following source code
+
+```julia
+
+Base.@kwdef struct Person
+	# Note splatted fields from BaseModel 
+	id::UUID = uuid4()
+	created::Date = now()
+	updated::Date = now()
+	name::String 
+end
+
+# Allows struct to be correctly read from JSON
+StructTypes.StructType(::Type{Person}) = StructTypes.Struct()
+# Set the correct description to be used in OpenAPI docs
+Bonsai.description(t::Type{Person}) = Bonsai.docstr(t)
+```
+
+To help with generating boilerplate you can use `JSON3.generatedtypes`.
