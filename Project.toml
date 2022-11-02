@@ -30,6 +30,7 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 [compat]
 AbstractTrees = "^0.3"
 CodeInfoTools = "0.3"
+DataStructures = "0.18"
 FilePaths = "0.8"
 FilePathsBase = "0.9"
 HTTP = "1"
