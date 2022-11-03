@@ -84,7 +84,6 @@ macro composite(ex)
                 push!(constructor_args, :($child_instance.$f))
             end
         elseif _field_name(x) != nothing
-			@info x
             push!(explicit_parent_fields, x)
             push!(constructor_args, _field_name(x))
             push!(parent_body′, _field_decl(x))

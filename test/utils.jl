@@ -30,7 +30,6 @@ end
 	s = """[1,2,3]"""
 	t = Array{Float64}
 	@test Bonsai.read(s, t) isa t
-	@test_nowarn Bonsai.read("{\"x\":1,\"z\":\"n\"}", XYZ)
 end
 
 @testset "kw_constructor" begin
