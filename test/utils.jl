@@ -1,22 +1,19 @@
 using Bonsai, Test, JSON3
 using Bonsai: construct_error, convert_numbers!
-using Base: @kwdef
+using Bonsai: @data
 using StructTypes
 import Bonsai
 
-@kwdef struct AB
+@data struct AB
 	a::Int
 	b::Float64 
 end
 
-@kwdef struct XYZ
+@data mutable struct XYZ
 	x::Int
 	y::Float64 = 1.0
 	z::String
 end
-
-StructTypes.StructType(::Type{AB}) = StructTypes.Struct()
-StructTypes.StructType(::Type{XYZ}) = StructTypes.Struct()
 
 @testset "read" begin
 	ab =  (a = 10, b = 2.0)
@@ -33,6 +30,7 @@ StructTypes.StructType(::Type{XYZ}) = StructTypes.Struct()
 	s = """[1,2,3]"""
 	t = Array{Float64}
 	@test Bonsai.read(s, t) isa t
+	@test_nowarn Bonsai.read("{\"x\":1,\"z\":\"n\"}", XYZ)
 end
 
 @testset "kw_constructor" begin

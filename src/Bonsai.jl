@@ -7,6 +7,7 @@ using Revise
 using HTTP, JSON3, StructTypes, Dates, FilePaths, SnoopPrecompile
 import HTTP: Request, Response, Stream
 
+include("compose.jl")
 include("utils.jl")
 include("http.jl")
 include("mime_types.jl")

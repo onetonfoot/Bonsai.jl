@@ -1,15 +1,11 @@
-using StructTypes
-using CompositeStructs
+using StructTypes, ExproniconLite
 
 macro data(expr)
-    expr = macroexpand(__module__, expr) # to expand @static
-    expr isa Expr && expr.head === :struct || error("Invalid usage of @kwdef")
-    expr = expr::Expr
-	mutable = expr.args[1]
-	name = expr.args[2]
+	s = JLKwStruct(expr)
+	name = s.name
 	esc(quote 
 		Bonsai.@composite(Base.@kwdef($expr))
-		if $mutable
+		if $(s.ismutable)
 			StructTypes.StructType(::Type{$name}) = StructTypes.Mutable()
 		else
 			StructTypes.StructType(::Type{$name}) = StructTypes.Struct()
