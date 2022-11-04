@@ -56,6 +56,25 @@ end
 	@test !isnothing(docstr(Body{Pet1}))
 end
 
+
+function fn(a, b...)
+	@info typeof(b)
+end
+
+fn(1, 1)
+
+
+@testset "handler_reads" begin
+	function handler(stream)
+		 Bonsai.read(
+			stream,
+			Body(Pet1),
+			Query(Limit1)
+		)
+	end
+	@test Bonsai.handler_reads(handler) == [  Body{Pet1}, Query{Limit1}]
+end
+
 @testset "OpenAPI" begin
 
 	app = App()

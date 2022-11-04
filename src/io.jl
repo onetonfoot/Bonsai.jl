@@ -85,6 +85,16 @@ function write(res::Response, args...)
     end
 end
 
+# splatting breaks JET interfence so instead this stupid hack should suffice for now
+read(stream, a, b) = (read(stream,a),  read(stream,b))
+read(stream, a, b, c) = (read(stream,a),  read(stream,b), read(stream, c))
+read(stream, a, b, c, d) = (read(stream,a),  read(stream,b), read(stream, c), read(stream, d))
+read(stream, a, b, c, d, e) = (read(stream,a),  read(stream,b), read(stream, c), read(stream, d), read(stream, c))
+
+# function read(stream, a,  b, c...) 
+#     (read(stream,a),  read(stream,b), [read])
+# end
+
 read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
 # what does this case handle again :/  mayeb connection ppols?
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
