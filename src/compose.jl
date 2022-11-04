@@ -7,12 +7,15 @@ using MacroTools
 export @composite
 
 function get_default(ex)
-	matches = @capture(ex, field_ :: T_ = value_) || @capture(ex, field_ = value_) 
+	matches = @capture(ex, field_ :: T_ = value_) || 
+              @capture(ex, field_ = value_)  ||
+              @capture(ex, field_ :: T{V} = value_)
+
 	if !matches 
-		NamedTuple()
-	else
-		namedtuple(field)(value)
-	end
+		return :(NamedTuple())
+    end
+
+    :(($field=$value,))
 end
 
 # given an expression like :(Complex{T}) and a module in which the
@@ -99,14 +102,17 @@ macro composite(ex)
 	# 	show_sexpr(expr)
 	# end
 
-	fields = merge(map(get_default, explicit_parent_fields)...)
-    default_expr = Expr(:vect, splatted_types...)
+    fields = if length(explicit_parent_fields) > 1
+        Expr(
+            :call,
+            :merge,
+            map(get_default, explicit_parent_fields)...
+        ) 
+    else
+        get_default(explicit_parent_fields[1])
+    end
 
-    # expr = macroexpand(__module__, ex) # to expand @static
-    # expr isa Expr && expr.head === :struct || error("Invalid usage of @kwdef")
-    # expr = expr::Expr
-	# mutable = expr.args[1]
-	# name = expr.args[2]
+    default_expr = Expr(:vect, splatted_types...)
 
     if !iskwdef
         esc(structdef)
