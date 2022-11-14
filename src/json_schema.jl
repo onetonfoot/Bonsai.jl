@@ -45,11 +45,13 @@ json_type(::Type{<:Enum}) = "string"
 json_type(::Type{<:Dates.AbstractDateTime}) = "date-time"
 json_type(::Type{<:Date}) = "date"
 
+json_schema(::Type{Headers{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
+json_schema(::Type{Body{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
+
 array_type(::Type{<:Vector{T}}) where {T} = T
 array_type(::Type{<:Array{T}}) where {T} = T
 
-json_schema(::Type{Headers{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
-json_schema(::Type{Body{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
+is_required(T::Type) = Nothing <: T
 
 # Might it would be better to define a trait for this
 
@@ -93,14 +95,23 @@ function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
         d[:type] = "object"
         # This isn't needed in swagger so leave out
         # d[:description] = doc_str(T)
+
+        required = String[]
         if !(sT == DictType())
             properties = Dict{String,Any}()
             StructTypes.foreachfield(T) do i, field, field_type
                 field_schema = json_schema(field_type)
                 push!(properties, string(field) => field_schema)
+
+                if is_required(field_type)
+                    push!(required, string(field))
+                end
+
             end
             d[:properties] = properties
+            d[:required] = isempty(required) ? nothing : required
         end
+
         # http://json-schema.org/understanding-json-schema/reference/array.html
     elseif sT in array_types
         d[:type] = "array"
