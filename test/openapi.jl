@@ -56,14 +56,6 @@ end
 	@test !isnothing(docstr(Body{Pet1}))
 end
 
-
-function fn(a, b...)
-	@info typeof(b)
-end
-
-fn(1, 1)
-
-
 @testset "handler_reads" begin
 	function handler(stream)
 		 Bonsai.read(
