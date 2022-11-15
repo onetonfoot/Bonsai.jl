@@ -51,7 +51,7 @@ json_schema(::Type{Body{T}}, d=Dict{Symbol,Any}()) where {T} = json_schema(T, d)
 array_type(::Type{<:Vector{T}}) where {T} = T
 array_type(::Type{<:Array{T}}) where {T} = T
 
-is_required(T::Type) = Nothing <: T
+is_required(T::Type) =  !(Nothing <: T  || Missing <: T) 
 
 # Might it would be better to define a trait for this
 
@@ -98,11 +98,11 @@ function json_schema(::Type{T}, d=Dict{Symbol,Any}()) where {T}
 
         required = String[]
         if !(sT == DictType())
+
             properties = Dict{String,Any}()
             StructTypes.foreachfield(T) do i, field, field_type
                 field_schema = json_schema(field_type)
                 push!(properties, string(field) => field_schema)
-
                 if is_required(field_type)
                     push!(required, string(field))
                 end
