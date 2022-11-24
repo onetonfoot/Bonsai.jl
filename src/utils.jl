@@ -54,7 +54,22 @@ function convert_numbers!(data::AbstractDict, T)
 end
 
 function construct_error(T::DataType, d)
+
+    if StructTypes.StructType(d) in Set([ 
+        StructTypes.ArrayType(),
+        StructTypes.StringType(),
+        StructTypes.BoolType(),
+        StructTypes.NullType(),
+        StructTypes.NumberType(),
+    ])
+        # TODO: how to better handle these types
+        return nothing
+    end
+
+
     struct_keys = collect(fieldnames(T))
+
+
     data_keys = collect(keys(d))
     ks = Symbol[]
 
