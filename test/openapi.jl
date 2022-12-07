@@ -111,8 +111,6 @@ end
 	@test !isnothing(o.get.responses["200"].description)
 end	
 
-
-
 # test globals don't break it
 
 # const V1 = "0.2.2"

@@ -3,7 +3,7 @@
 The following code snippet gets at the essence of the framework
 
 ```julia
-using Bonsai
+using Bonsai, HTTP
 
 const app = App()
 
@@ -22,7 +22,7 @@ function run()
     start(app, port=9091)
 end
 
-# run()
+run()
 ```
 
 The package provides abstraction so we use the `HTTP.Stream` IO type to declaratively read and write data by specifying our inputs and outputs as types. Calls to `Bonsai.read` will extract data from the HTTP Request and likewise those to `Bonsai.write` will construct an HTTP response. 

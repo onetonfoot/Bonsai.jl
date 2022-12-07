@@ -9,7 +9,7 @@ JSON3.write("open-api.json", open_api)
 
 To add a web page for your documentation you can call
 
-```
+```julia
 openapi!(app)
 ```
 
@@ -21,8 +21,9 @@ This will add the endpoints:
 
 # Client Generation
 
-You can generate clients using a number of tools from open specs, for example, to generate a typescript client you could run
+You can generate clients using a number of tools from open-api specs, for example, to generate a typescript client you could run
 
 ```
 npx openapi-typescript-codegen --input open-api.json --output client
 ```
+
