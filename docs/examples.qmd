@@ -7,7 +7,7 @@ Bellow are various examples and short snippets of code.
 A web sockets can be obtained using `ws_upgrade`, bellow is an example of a echo socket.
 
 ```julia
-app.get["/ws"] = function(stream)
+function ws_handler(stream)
     ws_upgrade(stream) do ws
         for msg in ws
             @info msg
@@ -15,6 +15,8 @@ app.get["/ws"] = function(stream)
         end
     end
 end
+
+app.get["/ws"] = ws_handler
 ```
 
 # Mustache

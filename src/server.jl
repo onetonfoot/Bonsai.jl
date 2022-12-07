@@ -51,7 +51,7 @@ function start(
         end
     )
     
-    @info "Server running $(host):$(port), press Ctrl+C to stop"
+    @info "Server running $(host):$(port), hold Ctrl+C to stop"
 
     try
         wait(app.cancel_token)
