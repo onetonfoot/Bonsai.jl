@@ -1,7 +1,7 @@
 name = "Bonsai"
 uuid = "30a8ad1e-2947-4f5c-9f0c-168e614e8e53"
 authors = ["Dominic Morgan <dominic.mark.morgan@gmail.com>"]
-version = "0.5.4"
+version = "0.6.0"
 
 [deps]
 AbstractTrees = "1520ce14-60c1-5f80-bbc7-55ef81b5835c"
@@ -39,7 +39,7 @@ FilePaths = "0.8"
 PkgVersion = "0.3"
 FilePathsBase = "0.9"
 HTTP = "1"
-JET = "0.6"
+JET = "0.7"
 JSON3 = "1.9"
 MacroTools = "0.5.10"
 NamedTupleTools = "0.14"

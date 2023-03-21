@@ -361,7 +361,7 @@ function RequestBodyObject(::Type{Body{T}}) where {T}
         content=Dict(
             "application/json" => media_type
         ),
-        description = description(T),
+        description=description(T),
         required=true,
     )
 end
@@ -384,20 +384,6 @@ function ResponseObject(t::DataType)
     )
 end
 
-function groupby_status_code(l)
-    d = Dict()
-    code = first(l)
-    for i in l 
-        if i <: Status
-            code = i
-            continue
-        end
-        writes = get(d, code, [])
-        push!(writes, i)
-        d[code] = writes
-    end
-    return d
-end
 
 OperationObject(h::HttpHandler) = OperationObject(h.fn)
 OperationObject(h::Middleware) = OperationObject(h.fn)
@@ -412,7 +398,7 @@ function OperationObject(handler)
     # for now we will ignore duplicate response codes
     # and assume everything is a json response 
 
-    if !isempty(writes) 
+    if !isempty(writes)
         res_code = first(writes)
         for (res_code, res_types) in writes
             status_code = string(extract_status_code(res_code))
@@ -432,7 +418,7 @@ function OperationObject(handler)
                 # https://stackoverflow.com/questions/1176022/unknown-file-type-mime
                 if res_type <: Body{<:AbstractPath}
                     continue
-                elseif res_type <: Body 
+                elseif res_type <: Body
                     content_type = mime_type(res_type)
                     content[content_type] = MediaTypeObject(res_type)
                     desc = description(res_type)
@@ -466,7 +452,8 @@ function OperationObject(handler)
 
         if p <: Body
             requestBody = RequestBodyObject(p)
-        else p <: Union{Query, Route, Headers}
+        else
+            p <: Union{Query,Route,Headers}
             push!(params, open_api_parameters(p)...)
         end
     end
@@ -478,7 +465,7 @@ function OperationObject(handler)
     )
 end
 
-function OperationObject(leaf::Leaf) 
+function OperationObject(leaf::Leaf)
     o = OperationObject(leaf.handler)
     o.operationId = leaf.path
     return o
@@ -486,7 +473,7 @@ end
 
 function OpenAPI(app)
 
-    paths = Dict{String, Dict{Symbol, Any}}()
+    paths = Dict{String,Dict{Symbol,Any}}()
 
     leaves = []
     for n in PostOrderDFS(app.paths)
@@ -525,11 +512,11 @@ function open_api!(app)
     open_api = OpenAPI(app)
     html = Path(joinpath(@__DIR__, "../open_api/dist/index.html"))
 
-    app.get["/docs/open-api.json"] = function(stream)
+    app.get["/docs/open-api.json"] = function (stream)
         Bonsai.write(stream, Body(open_api))
     end
 
-    app.get["/docs"] = function(stream)
+    app.get["/docs"] = function (stream)
         Bonsai.write(stream, Body(html))
     end
 end

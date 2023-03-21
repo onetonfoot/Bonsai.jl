@@ -1,4 +1,3 @@
-using JET.JETInterface
 using Base.Core
 using StructTypes
 import JET:
@@ -6,10 +5,9 @@ import JET:
     @invoke,
     isexpr
 
-using HTTP: Stream
+using HTTP: Stream, Response, Request
 using FilePathsBase: AbstractPath
 import Parsers
-
 
 # current implementation is hacked together from the JET examples without much
 # understanding of how JET really works. Nevertheless it does the job, at a later
@@ -23,11 +21,7 @@ import Parsers
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
 
-const CC = Core.Compiler
-
-
-const default_status = Status(:default)
-
+# const default_status = Status(:default)
 
 function write(res::Response, headers::Headers{T}) where {T}
     val = headers.val
@@ -56,7 +50,7 @@ function write(res::Response, data::Body{T}) where {T}
     end
 end
 
-function write(res::Response, data::Body{T}) where T <: AbstractPath
+function write(res::Response, data::Body{T}) where {T<:AbstractPath}
     body = Base.read(data.val)
     res.body = body
     m = mime_type(data.val)
@@ -65,31 +59,31 @@ function write(res::Response, data::Body{T}) where T <: AbstractPath
     end
 end
 
-function write(stream::Stream, data...) 
-    for i in data  
+function write(stream::Stream, data...)
+    for i in data
         write(stream.message.response, i)
     end
 end
-write(res::Response, ::Status{T}) where T =  res.status = Int(T)
-write(res::Response, ::Status{:default})  =  res.status = 200
+write(res::Response, ::Status{T}) where {T} = res.status = Int(T)
+write(res::Response, ::Status{:default}) = res.status = 200
 
 # This function could be the entry point for the static analysis writes
 # allow us to group together headers and status codes etc
-function write(res::Response, args...) 
+function write(res::Response, args...)
     # ensures that status codes are always written last
     # this is needed so that group by status code works
     # correctly for 
-    args = sort([args...], by = x -> x isa Status)
+    args = sort([args...], by=x -> x isa Status)
     for i in args
         write(res, i)
     end
 end
 
 # splatting breaks JET interfence so instead this stupid hack should suffice for now
-read(stream, a, b) = (read(stream,a),  read(stream,b))
-read(stream, a, b, c) = (read(stream,a),  read(stream,b), read(stream, c))
-read(stream, a, b, c, d) = (read(stream,a),  read(stream,b), read(stream, c), read(stream, d))
-read(stream, a, b, c, d, e) = (read(stream,a),  read(stream,b), read(stream, c), read(stream, d), read(stream, c))
+read(stream, a, b) = (read(stream, a), read(stream, b))
+read(stream, a, b, c) = (read(stream, a), read(stream, b), read(stream, c))
+read(stream, a, b, c, d) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d))
+read(stream, a, b, c, d, e) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d), read(stream, c))
 
 # function read(stream, a,  b, c...) 
 #     (read(stream,a),  read(stream,b), [read])
@@ -126,230 +120,3 @@ function read(req::Request, ::Headers{T}) where {T}
     convert_numbers!(d, T)
     read(d, T)
 end
-
-
-#######
-# JET #
-#######
-
-struct DispatchAnalyzer{T} <: AbstractAnalyzer
-    state::AnalyzerState
-    opts::BitVector
-    frame_filter::T
-    __cache_key::UInt
-end
-
-function DispatchAnalyzer(;
-    ## a predicate, which takes `CC.InfernceState` and returns whether we want to analyze the call or not
-    frame_filter=x::Core.MethodInstance -> true,
-    jetconfigs...)
-    state = AnalyzerState(; jetconfigs...)
-    ## we want to run different analysis with a different filter, so include its hash into the cache key
-    cache_key = state.param_key
-    cache_key = hash(frame_filter, cache_key)
-    return DispatchAnalyzer(state, BitVector(), frame_filter, cache_key)
-end
-
-## AbstractAnalyzer API requirements
-JETInterface.AnalyzerState(analyzer::DispatchAnalyzer) = analyzer.state
-JETInterface.AbstractAnalyzer(analyzer::DispatchAnalyzer, state::AnalyzerState) = DispatchAnalyzer(state, analyzer.opts, analyzer.frame_filter, analyzer.__cache_key)
-JETInterface.ReportPass(analyzer::DispatchAnalyzer) = DispatchAnalysisPass()
-JETInterface.get_cache_key(analyzer::DispatchAnalyzer) = analyzer.__cache_key
-
-struct DispatchAnalysisPass <: ReportPass end
-## ignore all reports defined by JET, since we'll just define our own reports
-(::DispatchAnalysisPass)(T::Type{<:InferenceErrorReport}, @nospecialize(_...)) = return
-
-
-function CC.finish!(analyzer::DispatchAnalyzer, frame::Core.Compiler.InferenceState)
-
-    caller = frame.result
-
-    ## get the source before running `finish!` to keep the reference to `OptimizationState`
-    src = caller.src
-    ## run `finish!(::AbstractAnalyzer, ::CC.InferenceState)` first to convert the optimized `IRCode` into optimized `CodeInfo`
-    ret = @invoke CC.finish!(analyzer::AbstractAnalyzer, frame::CC.InferenceState)
-
-    if analyzer.frame_filter(frame.linfo)
-        ReportPass(analyzer)(WriteReport, analyzer, caller, src)
-    end
-
-    return ret
-end
-
-
-struct StreamAnalyzer{T} <: AbstractAnalyzer
-    state::AnalyzerState
-    opts::BitVector
-    frame_filter::T
-    __cache_key::UInt
-end
-
-function StreamAnalyzer(;
-    ## a predicate, which takes `CC.InfernceState` and returns whether we want to analyze the call or not
-    frame_filter=x::Core.MethodInstance -> true,
-    jetconfigs...)
-    state = AnalyzerState(; jetconfigs...)
-    ## we want to run different analysis with a different filter, so include its hash into the cache key
-    cache_key = state.param_key
-    cache_key = hash(frame_filter, cache_key)
-    return StreamAnalyzer(state, BitVector(), frame_filter, cache_key)
-end
-
-## AbstractAnalyzer API requirements
-JETInterface.AnalyzerState(analyzer::StreamAnalyzer) = analyzer.state
-JETInterface.AbstractAnalyzer(analyzer::StreamAnalyzer, state::AnalyzerState) = StreamAnalyzer(state, analyzer.opts, analyzer.frame_filter, analyzer.__cache_key)
-JETInterface.ReportPass(analyzer::StreamAnalyzer) = StreamAnalysisPass()
-JETInterface.get_cache_key(analyzer::StreamAnalyzer) = analyzer.__cache_key
-
-struct StreamAnalysisPass <: ReportPass end
-## ignore all reports defined by JET, since we'll just define our own reports
-(::StreamAnalysisPass)(T::Type{<:InferenceErrorReport}, @nospecialize(_...)) = return
-
-frame_ref = Ref{Any}()
-
-
-function CC.finish!(analyzer::StreamAnalyzer, frame::Core.Compiler.InferenceState)
-
-    caller = frame.result
-    frame_ref[] = frame
-
-    ## get the source before running `finish!` to keep the reference to `OptimizationState`
-    src = caller.src
-    ## run `finish!(::AbstractAnalyzer, ::CC.InferenceState)` first to convert the optimized `IRCode` into optimized `CodeInfo`
-    ret = @invoke CC.finish!(analyzer::AbstractAnalyzer, frame::CC.InferenceState)
-
-    if analyzer.frame_filter(frame.linfo)
-        ReportPass(analyzer)(StreamReport, analyzer, caller, src)
-    end
-
-    return ret
-end
-
-@jetreport struct StreamReport <: InferenceErrorReport
-    slottypes
-end
-
-@jetreport struct WriteReport <: InferenceErrorReport
-    slottypes
-end
-
-
-@jetreport struct ReadReport <: InferenceErrorReport
-    slottypes
-end
-
-JETInterface.print_report_message(::IO, ::WriteReport) =  "detected response io" 
-JETInterface.print_report_message(::IO, ::ReadReport) =  "detected request io" 
-JETInterface.print_report_message(::IO, ::StreamReport) =  "detected stream io" 
-
-write_ref = Ref{Any}()
-read_ref = Ref{Any}()
-
-function (::DispatchAnalysisPass)(::Type{WriteReport}, analyzer::DispatchAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
-    (; src, linfo, slottypes, sptypes) = opt
-
-    fn = get(slottypes, 1, nothing)
-    io_type = get(slottypes, 2, nothing)
-    data_type = get(slottypes, 3, nothing)
-    # probably shouldn't be adding different report types here
-    # but rather spliting them into serperate report passes...
-
-    if fn == Core.Const((@__MODULE__).read) && 
-       io_type <: Request
-
-        read_ref[] = opt
-        add_new_report!(analyzer, caller, ReadReport(caller, slottypes))
-
-    elseif fn == Core.Const((@__MODULE__).write) && 
-           io_type <: Response &&
-           data_type <: HttpParameter
-
-        write_ref[] = opt
-
-        add_new_report!(analyzer, caller, WriteReport(caller, slottypes))
-    end
-end
-
-function (::StreamAnalysisPass)(::Type{StreamReport}, analyzer::StreamAnalyzer, caller::CC.InferenceResult, opt::CC.OptimizationState)
-    (; src, linfo, slottypes, sptypes) = opt
-
-    fn = get(slottypes, 1, nothing)
-    io_type = get(slottypes, 2, nothing)
-
-    if fn == Core.Const((@__MODULE__).write) && 
-           io_type <: Stream 
-        write_ref[] = opt
-        add_new_report!(analyzer, caller, StreamReport(caller, slottypes))
-    end
-end
-
-extract_type(::Type{T}) where {T} = T
-
-write_reports = Ref{Any}()
-read_reports = Ref{Any}()
-
-arg_types_ref = Ref{Any}()
-
-function handler_writes(@nospecialize(handler))
-    l = []
-
-    for stream_report in Bonsai.handler_stream_writes(handler)
-        _, io_type, arg_type = stream_report.slottypes
-
-        types = if arg_type <: Tuple
-            Tuple{Response, arg_type.types...}
-        else
-            Tuple{Response, arg_type}
-        end
-
-        arg_types_ref[] = arg_type
-        calls = JET.report_call(Bonsai.write, types, analyzer=DispatchAnalyzer)
-        reports = JET.get_reports(calls)
-        filter!(x ->  x isa  WriteReport, reports)
-        push!(l, map(x ->  CC.widenconst(x.slottypes[3]), reports)...)
-    end
-
-    has_status_code = any(map(x -> x <: Status, l))
-
-    if !has_status_code
-        push!(l, Status{200})
-    end
-
-    unique!(l)
-    # so that the first write is always a status code
-    reverse(l)
-end
-
-function handler_stream_writes(@nospecialize(handler))
-    calls = JET.report_call(handler, Tuple{Stream}, analyzer=StreamAnalyzer)
-    reports = JET.get_reports(calls)
-    return reports
-end
-
-extract_status_code(::Type{Status{T}}) where {T} = T
-
-get_status_code(l) = 200
-
-function get_status_code(l::Type{<:Tuple})
-    for i in l.types
-        if i <: Status # Etc Status{201} => 201
-            return extract_status_code(i)
-        end
-    end
-    return 200
-end
-
-function handler_reads(@nospecialize(handler))
-    calls = JET.report_call(handler, Tuple{Stream}, analyzer=DispatchAnalyzer)
-    reports = JET.get_reports(calls)
-    filter!(x ->  x isa  ReadReport, reports)
-    map(reports) do r
-        res_type = r.slottypes[3]
-        # extracts the type from Core.Const
-        res_type = CC.widenconst(res_type)
-        return res_type
-    end |> unique!
-end
-
-handler_reads(handler::AbstractHandler) = handler_reads(handler.fn)

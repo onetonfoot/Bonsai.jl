@@ -2,17 +2,21 @@ using Core: apply_type
 using Base: datatype_fieldtypes, unwrap_unionall
 using MacroTools
 
+# currently use still need to import StructTypes for the macro to work
+# at the call site  but ideally this wouldn't be the case
+
+# using StructTypes
+
 # Shamelessly ripped from here and tweaked to support default fields 
 # https://github.com/marius311/CompositeStructs.jl
-export @composite
 
 function get_default(ex)
-	matches = @capture(ex, field_ :: T_ = value_) || 
-              @capture(ex, field_ = value_)  ||
-              @capture(ex, field_ :: T{V} = value_)
+    matches = @capture(ex, field_::T_ = value_) ||
+              @capture(ex, field_ = value_) ||
+              @capture(ex, field_::T{V} = value_)
 
-	if !matches 
-		return :(NamedTuple())
+    if !matches
+        return :(NamedTuple())
     end
 
     :(($field=$value,))
@@ -24,11 +28,11 @@ end
 reconstruct_type(__module__, s::Symbol) = getfield(__module__, s)
 function reconstruct_type(__module__, ex)
     isexpr(ex, :curly) || error("Invalid @composite syntax.")
-    foldl((t,x) -> apply_type(t, TypeVar(x)), ex.args[2:end], init=reconstruct_type(__module__,ex.args[1]))
+    foldl((t, x) -> apply_type(t, TypeVar(x)), ex.args[2:end], init=reconstruct_type(__module__, ex.args[1]))
 end
 
 # convert a type or UnionAll back to an expression
-to_expr(t::DataType) = isempty(t.parameters) ? t.name.name : :($(t.name.name){$(map(to_expr,t.parameters)...)})
+to_expr(t::DataType) = isempty(t.parameters) ? t.name.name : :($(t.name.name){$(map(to_expr, t.parameters)...)})
 to_expr(t::TypeVar) = t.name
 to_expr(t::Symbol) = QuoteNode(t)
 to_expr(t::UnionAll) = :($(to_expr(t.body)) where {$(t.var.lb) <: $(t.var.name) <: $(t.var.ub)})
@@ -40,12 +44,12 @@ to_expr(t) = t
 function reconstruct_fields(__module__, ex)
     t = reconstruct_type(__module__, ex)
     (t isa UnionAll) && error("Spliced type $ex must not have any free type parameters.")
-    map(zip(fieldnames(t),datatype_fieldtypes(t))) do (x,T)
+    map(zip(fieldnames(t), datatype_fieldtypes(t))) do (x, T)
         :($x::$(to_expr(T)))
     end
 end
 
-@doc join(readlines(joinpath(@__DIR__, "../README.md"))[6:end], "\n") 
+@doc join(readlines(joinpath(@__DIR__, "../README.md"))[6:end], "\n")
 macro composite(ex)
 
 
@@ -53,8 +57,12 @@ macro composite(ex)
     # Support where clauses!
 
     if !(
-        ((iskwdef = @capture(ex, @kwdef(structdef_) | Base.@kwdef(structdef_))) || @capture(ex, structdef_)) && 
-        @capture(structdef, struct ParentTypeDecl_ parent_body__ end | mutable struct ParentTypeDecl_ parent_body__ end) &&
+        ((iskwdef = @capture(ex, @kwdef(structdef_) | Base.@kwdef(structdef_))) || @capture(ex, structdef_)) &&
+        @capture(structdef, struct ParentTypeDecl_
+            parent_body__
+        end | mutable struct ParentTypeDecl_
+            parent_body__
+        end) &&
         @capture(ParentTypeDecl, (ParentType_ <: _) | ParentType_) &&
         @capture(ParentType, ParentName_{ParentTypeArgs__} | ParentName_)
     )
@@ -69,9 +77,9 @@ macro composite(ex)
     splatted_types = []
 
     # seem to be a bug if you put these in a single @capture
-    _field_name(ex) = @capture(ex,name_Symbol::T_=val_) || @capture(ex,name_Symbol::T_) || @capture(ex,name_Symbol=val_) || @capture(ex,name_Symbol) ? name : nothing
-    _field_kw(ex)   = @capture(ex,((name_::T_=val_) | (name_=val_))) ? Expr(:kw, name, val) : _field_name(ex)
-    _field_decl(ex) = iskwdef && @capture(ex,(decl_ = val_)) ? decl : ex
+    _field_name(ex) = @capture(ex, name_Symbol::T_ = val_) || @capture(ex, name_Symbol::T_) || @capture(ex, name_Symbol = val_) || @capture(ex, name_Symbol) ? name : nothing
+    _field_kw(ex) = @capture(ex, ((name_::T_ = val_) | (name_ = val_))) ? Expr(:kw, name, val) : _field_name(ex)
+    _field_decl(ex) = iskwdef && @capture(ex, (decl_ = val_)) ? decl : ex
     _strip_type_bound(ex) = @capture(ex, T_ <: _) ? T : ex
 
     for x in parent_body
@@ -81,8 +89,8 @@ macro composite(ex)
             child_field_names = _field_name.(child_fields)
             append!(parent_body′, child_fields)
             child_instance = gensym()
-            push!(generic_child_constructors,  :($child_instance = $ChildName(; filter(((k,_),)->(k in $child_field_names), kw)...)))
-            push!(concrete_child_constructors, :($child_instance = $ChildType(; filter(((k,_),)->(k in $child_field_names), kw)...)))
+            push!(generic_child_constructors, :($child_instance = $ChildName(; filter(((k, _),) -> (k in $child_field_names), kw)...)))
+            push!(concrete_child_constructors, :($child_instance = $ChildType(; filter(((k, _),) -> (k in $child_field_names), kw)...)))
             for f in child_field_names
                 push!(constructor_args, :($child_instance.$f))
             end
@@ -95,19 +103,23 @@ macro composite(ex)
         end
     end
 
-    structdef.args[3] = :(begin $(parent_body′...) end)
+    structdef.args[3] = :(
+        begin
+            $(parent_body′...)
+        end
+    )
 
-	# @info "stuff" explicit_parent_fields ParentName
-	# for expr in explicit_parent_fields
-	# 	show_sexpr(expr)
-	# end
+    # @info "stuff" explicit_parent_fields ParentName
+    # for expr in explicit_parent_fields
+    # 	show_sexpr(expr)
+    # end
 
     fields = if length(explicit_parent_fields) > 1
         Expr(
             :call,
             :merge,
             map(get_default, explicit_parent_fields)...
-        ) 
+        )
     else
         get_default(explicit_parent_fields[1])
     end
@@ -117,23 +129,25 @@ macro composite(ex)
     if !iskwdef
         esc(structdef)
     else
-        ret = quote Core.@__doc__ $structdef end
+        ret = quote
+            Core.@__doc__ $structdef
+        end
         push!(ret.args, quote
-            function $ParentName(;$(_field_kw.(explicit_parent_fields)...), kw...)
+            function $ParentName(; $(_field_kw.(explicit_parent_fields)...), kw...)
                 $(generic_child_constructors...)
                 $ParentName($(constructor_args...))
             end
         end)
-        if ParentTypeArgs!=nothing
+        if ParentTypeArgs != nothing
             ParentTypeArgsStripped = map(_strip_type_bound, ParentTypeArgs)
             push!(ret.args, quote
-                function $ParentName{$(ParentTypeArgsStripped...)}(;$(_field_kw.(explicit_parent_fields)...), kw...) where {$(ParentTypeArgs...)}
+                function $ParentName{$(ParentTypeArgsStripped...)}(; $(_field_kw.(explicit_parent_fields)...), kw...) where {$(ParentTypeArgs...)}
                     $(concrete_child_constructors...)
                     $ParentName{$(ParentTypeArgsStripped...)}($(constructor_args...))
                 end
             end)
         end
-        if ParentTypeArgs!=nothing
+        if ParentTypeArgs != nothing
             ParentTypeArgsStripped = map(_strip_type_bound, ParentTypeArgs)
             push!(ret.args, quote
                 function StructTypes.defaults(::Type{$ParentName{$(ParentTypeArgsStripped...)}}) where {$(ParentTypeArgs...)}
@@ -142,7 +156,7 @@ macro composite(ex)
             end)
         else
             push!(ret.args, quote
-                function StructTypes.defaults(::Type{$ParentName}) 
+                function StructTypes.defaults(::Type{$ParentName})
                     merge($fields, $default_expr...)
                 end
             end)

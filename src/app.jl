@@ -7,9 +7,7 @@ using PkgVersion
 using Term
 using Term: hstack
 
-m = @__MODULE__
-
-const VERSION = PkgVersion.@Version 
+const VERSION = PkgVersion.@Version
 
 export App
 
@@ -25,7 +23,7 @@ Base.@kwdef mutable struct App
     paths::Node = Node("*")
     _paths = Dict{Tuple{HttpMethod,String},HttpHandler}()
     # should probably change the type sig so _paths and path_docs match
-    paths_docs::Dict{Symbol,Dict{String,Union{String, Nothing}}} = Dict(
+    paths_docs::Dict{Symbol,Dict{String,Union{String,Nothing}}} = Dict(
         :get => Dict(),
         :post => Dict(),
         :put => Dict(),
@@ -189,28 +187,6 @@ function count_methods(app)
     d
 end
 
-function count_methods(app)
-
-    d = Dict(
-        "GET" => 0,
-        "POST" => 0,
-        "PUT" => 0,
-        "PATCH" => 0,
-        "DELETE" => 0,
-        "TRACE" => 0,
-        "OPTION" => 0,
-        "HEAD" => 0,
-        "CONNECT" => 0
-    )
-
-    for node in PreOrderDFS(app.paths)
-        for leaf in node.methods
-            d[leaf.method] = d[leaf.method] + 1
-        end
-    end
-    d
-end
-
 function Base.show(io::IO, app::App)
 
     n_handlers = app |> count_methods |> values |> sum |> string
@@ -222,31 +198,27 @@ function Base.show(io::IO, app::App)
     key_color = "white"
     g = grid([
         hstack([
-            RenderableText("{$key_color}Host",  width=w-length(host)), 
-            RenderableText("{bold}$(host)  "), 
+            RenderableText("{$key_color}Host", width=w - length(host)),
+            RenderableText("{bold}$(host)  "),
         ]),
         hstack([
-            RenderableText("{$key_color}Port",     width=w-length(port)),
-            RenderableText("{bold}$port"),
-
+            RenderableText("{$key_color}Port", width=w - length(port)),
+            RenderableText("{bold}$port"),]),
+        hstack([
+            RenderableText("{$key_color}Handlers", width=w - length(n_handlers)),
+            RenderableText("{bold}$n_handlers  "),
         ]),
         hstack([
-            RenderableText("{$key_color}Handlers", width=w-length(n_handlers)), 
-            RenderableText("{bold}$n_handlers  "), 
-        ]),
-        hstack([
-            RenderableText("{$key_color}PID",      width=w-length(pid)),
-            RenderableText("{bold}$pid"),
-
-        ])
-    ], )
+            RenderableText("{$key_color}PID", width=w - length(pid)),
+            RenderableText("{bold}$pid"),])
+    ],)
 
     panel = Panel(
         g,
         title="Bonsai.jl v$VERSION",
         width=38,
         fit=false,
-        padding=(2,1,1,1),
+        padding=(2, 1, 1, 1),
     )
 
     print(io, panel)
