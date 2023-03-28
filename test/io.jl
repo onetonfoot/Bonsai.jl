@@ -1,15 +1,16 @@
-using JET, InteractiveUtils
-using CodeInfoTools
-using HTTP: Stream
-using JSON3
-using Bonsai
-using StructTypes: @Struct
-using StructTypes
-using HTTP.Messages: Request, Response
-using Test
-using FilePaths: Path
-using FilePathsBase: /
-using URIs
+using Bonsai, Test
+
+using Bonsai.JET,
+    Bonsai.InteractiveUtils,
+    Bonsai.JSON3,
+    Bonsai.StructTypes,
+    Bonsai.URIs
+
+import Bonsai.StructTypes: @Struct
+import Bonsai.HTTP: Stream
+import Bonsai.FilePathsBase: /
+import Bonsai.HTTP.Messages: Request, Response
+import Bonsai.FilePaths: Path
 
 @Struct struct A1
     data

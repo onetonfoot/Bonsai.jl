@@ -1,8 +1,10 @@
-using Bonsai, Test, StructTypes, HTTP, JSON3, HTTP.Messages
-using StructTypes: @Struct
+using Bonsai, Test
+
+using Bonsai.HTTP.Messages
+using Bonsai.StructTypes: @Struct
 using Bonsai: parameter_type, headerize
-using HTTP: Request
-using URIs: URI
+using Bonsai.HTTP: Request
+using Bonsai.URIs: URI
 using Bonsai: GET
 
 @Struct struct Payload
@@ -15,7 +17,7 @@ end
 
 @Struct struct PayloadMissing
     x
-    y::Union{Float64, Nothing}
+    y::Union{Float64,Nothing}
 end
 
 @testset "Body" begin
@@ -28,11 +30,11 @@ end
     @test Body(Dict) isa Body{Dict}
 
     b = Body(error="test", message="kwconstructor")
-    @test b.t == NamedTuple{(:error, :message), Tuple{String, String}}
-    @test b.val  == (error ="test", message="kwconstructor")
+    @test b.t == NamedTuple{(:error, :message),Tuple{String,String}}
+    @test b.val == (error="test", message="kwconstructor")
 
     b = Body(x=String, y=Float64)
-    @test b.t == NamedTuple{(:x, :y), Tuple{String, Float64}}
+    @test b.t == NamedTuple{(:x, :y),Tuple{String,Float64}}
     @test isnothing(b.val)
 
     # reading
@@ -44,17 +46,17 @@ end
     io = IOBuffer(JSON3.write(Payload(10)))
     req = Request()
     req.body = take!(io)
-    payload = Bonsai.read(req, Body(PayloadMissing)) 
-    @test payload.x  == 10
-    @test isnothing(payload.y) 
+    payload = Bonsai.read(req, Body(PayloadMissing))
+    @test payload.x == 10
+    @test isnothing(payload.y)
 end
 
 @testset "Query" begin
     # constructors
-    @test Query(x=String).val |> isnothing 
+    @test Query(x=String).val |> isnothing
 
-    q = Query(y=Union{String, Nothing})
-    @test q.t.types[1] == Union{String, Nothing}
+    q = Query(y=Union{String,Nothing})
+    @test q.t.types[1] == Union{String,Nothing}
 
     # reading - requires HTTP master
     req = Request()
@@ -63,7 +65,7 @@ end
     @test Bonsai.read(req, Query(Payload)) isa Payload
     @test Bonsai.convert_numbers!(Dict{Symbol,Any}(:x => "10"), PayloadTyped)[:x] == 10
     @test Bonsai.read(req, Query(PayloadTyped)) isa PayloadTyped
-    @test Bonsai.read(req, Query(y=Union{String, Nothing})) == (y=nothing,)
+    @test Bonsai.read(req, Query(y=Union{String,Nothing})) == (y=nothing,)
 end
 
 @testset "Header" begin
@@ -78,7 +80,7 @@ end
     end
 
     @Struct struct B
-        x_missing::Union{String, Nothing}
+        x_missing::Union{String,Nothing}
     end
 
     @test Bonsai.read(req, Headers(A)).x_test == "wagwan"
@@ -95,7 +97,7 @@ end
 @testset "Route" begin
     req = HTTP.Messages.Request()
     # Base.match(app, req) should perform this for us
-    req.context[:params] = Dict{Any, Any}(:id => "10")
+    req.context[:params] = Dict{Any,Any}(:id => "10")
     @test Bonsai.read(req, Route(id=Int)).id == 10
 end
 

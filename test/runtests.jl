@@ -1,11 +1,17 @@
-using JSON3, StructTypes, Test, Bonsai
-using HTTP.Messages
+using Bonsai
+
 using Sockets
 using Sockets: InetAddr
-import StructTypes: StructType
-
 using Base.Meta: show_sexpr
-using AbstractTrees
+
+using Bonsai.StructTypes,
+    Bonsai.HTTP,
+    Bonsai.JSON3,
+    Bonsai.AbstractTrees,
+    Bonsai.HTTP.Messages
+
+import Bonsai.StructTypes: StructType
+
 
 include("http.jl")
 include("utils.jl")
@@ -17,3 +23,5 @@ include("io.jl")
 include("static_analysis.jl")
 include("app.jl")
 include("openapi.jl")
+# currently broken
+# include("server.jl") 

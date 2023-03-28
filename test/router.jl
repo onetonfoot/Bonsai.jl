@@ -1,27 +1,27 @@
 using Test
 using Bonsai
 using Bonsai: register!, Node, HttpHandler
-using URIs
-using HTTP
-using HTTP: Request
-using AbstractTrees
+using Bonsai.URIs
+using Bonsai.HTTP
+using Bonsai.HTTP: Request
+using Bonsai.AbstractTrees
 using Bonsai: gethandler, getmiddleware
 
 @testset "getmiddleware" begin
-	app = App()
-	# this doesn't match the index route is that 
-	app.middleware["**"] = [
-		function(stream, next) end
-	]
-	app.middleware.get["**"] = [
-		function(stream, next) end
-	]
-	req = Request()
-	req.method = "POST"
-	req.target = "/"
-	length(getmiddleware(app, req)) == 1
-	req.method = "GET"
-	length(getmiddleware(app, req)) == 2
+    app = App()
+    # this doesn't match the index route is that 
+    app.middleware["**"] = [
+        function (stream, next) end
+    ]
+    app.middleware.get["**"] = [
+        function (stream, next) end
+    ]
+    req = Request()
+    req.method = "POST"
+    req.target = "/"
+    length(getmiddleware(app, req)) == 1
+    req.method = "GET"
+    length(getmiddleware(app, req)) == 2
 end
 
 
@@ -33,7 +33,7 @@ end
 
     app.get["/"] = (stream) -> "index"
     @test gethandler(app, req)[2] == "/"
-	req.target = "/"
+    req.target = "/"
     @test gethandler(app, req)[2] == "/"
 
     req.target = "/files/1"

@@ -1,15 +1,15 @@
 using Bonsai, Test
 using Bonsai: ws_upgrade
-using HTTP
+using Bonsai.HTTP
 
 @testset "start and stop" begin
-	app = App()
-	@test !isopen(app)
-	@async start(app, port=10001)
-	sleep(2)
-	@test isopen(app)
-	stop(app)
-	@test !isopen(app)
+    app = App()
+    @test !isopen(app)
+    @async start(app, port=10001)
+    sleep(2)
+    @test isopen(app)
+    stop(app)
+    @test !isopen(app)
 end
 
 

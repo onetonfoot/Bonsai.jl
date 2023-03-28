@@ -1,8 +1,7 @@
 using Bonsai
-using CodeInfoTools
-using HTTP: Stream
+using Bonsai.HTTP: Stream
 using Bonsai: handler_writes
-using StructTypes
+using Bonsai: StructTypes
 using Test
 
 struct A2
@@ -13,7 +12,7 @@ StructTypes.StructType(::Type{A2}) = StructTypes.Struct()
 
 @testset "setindex! and getindex" begin
     app = App()
-    @test_nowarn app.get["/path"] = function(stream) end
+    @test_nowarn app.get["/path"] = function (stream) end
     @test_nowarn app.get["/path"]
 end
 
@@ -33,9 +32,9 @@ end
     app.get("/path/{id}") do stream
         Bonsai.read(stream, Headers(A2))
         Bonsai.read(stream, Body(A2))
-		Bonsai.read(stream, Query(color=String))
+        Bonsai.read(stream, Query(color=String))
         Bonsai.read(stream, Route(id=Int))
     end
-    h= app.get["/path/{id}"]
+    h = app.get["/path/{id}"]
     @test length(Bonsai.handler_reads(h.fn)) == 4
 end
