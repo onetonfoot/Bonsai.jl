@@ -6,6 +6,7 @@ using OrderedCollections
 using PkgVersion
 using Term
 using Term: hstack
+using Base.Threads
 
 const VERSION = PkgVersion.@Version
 
@@ -17,6 +18,8 @@ Base.@kwdef mutable struct App
     inet_addr::Union{InetAddr,Nothing} = InetAddr(ip"0.0.0.0", 8081)
     server::Union{TCPServer,Nothing} = nothing
 
+    current_connections::Int = 0
+    connection_limit::Int = typemax(Int)
     # LittleDict is ordered dict that is fast to iterate over for less than 50 elements
     _middleware::LittleDict{Tuple{HttpMethod,String},Array{Middleware}} = LittleDict() # 
 
@@ -45,30 +48,17 @@ function (app::App)(stream)
         request.body = Base.read(stream)
         closeread(stream)
     end
+    handler, middleware = gethandlers(app, request)
 
-    try
-        handler, middleware = gethandlers(app, request)
-
-        if ismissing(handler) || isnothing(handler)
-            push!(middleware, Middleware((stream, next) -> throw(NoHandler(stream))))
-        else
-            push!(middleware, Middleware((stream, next) -> handler(stream)))
-        end
-
-        combine_middleware(middleware)(stream)
-
-    catch e
-        if e isa NoHandler
-            @warn e
-        else
-            @error "Unhandled Error" e = e
-        end
-    finally
-        request.response.request = request
-        startwrite(stream)
-        Base.write(stream, request.response.body)
+    if ismissing(handler) || isnothing(handler)
+        push!(middleware, Middleware((stream, next) -> throw(NoHandler(stream))))
+    else
+        push!(middleware, Middleware((stream, next) -> handler(stream)))
     end
 
+    combine_middleware(middleware)(stream)
+    startwrite(stream)
+    Base.write(stream, request.response.body)
 end
 
 
