@@ -79,19 +79,29 @@ function write(res::Response, args...)
     end
 end
 
-# splatting breaks JET interfence so instead this stupid hack should suffice for now
-read(stream, a, b) = (read(stream, a), read(stream, b))
-read(stream, a, b, c) = (read(stream, a), read(stream, b), read(stream, c))
-read(stream, a, b, c, d) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d))
-read(stream, a, b, c, d, e) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d), read(stream, c))
+# this is super hacky but currently but  splatting breaks JET interfence so instead 
+# this stupid hack should suffice for now 
+read(stream::Stream, a, b) = (read(stream, a), read(stream, b))
+read(stream::Stream, a, b, c) = (read(stream, a), read(stream, b), read(stream, c))
+read(stream::Stream, a, b, c, d) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d))
+read(stream::Stream, a, b, c, d, e) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d), read(stream, e))
+read(stream::Stream, a, b, c, d, e, f) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d), read(stream, e), read(stream, f))
+read(stream::Stream, a, b, c, d, e, f, g) = (read(stream, a), read(stream, b), read(stream, c), read(stream, d), read(stream, e), read(stream, f), read(stream, g))
 
-# function read(stream, a,  b, c...) 
-#     (read(stream,a),  read(stream,b), [read])
+# This results in method ambiguties
+# function read(stream::Stream, tail...)
+#     tuple([read(stream, i) for i in tail]...)
 # end
 
-read(stream::Stream{<:Request}, b::Body{T}) where {T} = read(stream.message, b)
-# what does this case handle again :/  mayeb connection ppols?
+# messagetoread(http::Stream{<:Response}) = http.message.
+# messagetoread(http::Stream{<:Request}) = http.message.response
+# read(::HTTP.Streams.Stream{A, B}, ::Union{DataType, UnionAll}) where {A<:HTTP.Messages.Request, B} =
+
 read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
+# we need to be explit here to allow JET analysis to work
+# read(stream::Stream{<:Request,<:Response}, b::Body{T}) where {T} = read(stream.message, b)
+# what does this case handle again :/  mayeb connection ppols?
+# read(stream::Stream{A,B}, b) where {A<:Request,B} = read(stream.message, b)
 read(req::Request, ::Body{T}) where {T} = read(req.body, T)
 
 function read(req::Request, ::Route{T}) where {T}

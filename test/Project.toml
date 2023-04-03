@@ -1,0 +1,17 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
+StructTypes = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+FilePaths = "8fc22ac5-c921-52a6-82fd-178b2807b824"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+CodeInfoTools = "bc773b8a-8374-437a-b9f2-0e9785855863"
+
+
+[compat]
+Aqua = "0.6"
+JSON3 = "1.9"
+StructTypes = "1.10"
