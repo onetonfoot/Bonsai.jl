@@ -4,7 +4,7 @@ module Bonsai
 __revise_mode__ = :eval
 using Revise
 
-using HTTP, JSON3, StructTypes, Dates, FilePaths, SnoopPrecompile
+using HTTP, JSON3, StructTypes, Dates, FilePaths, PrecompileTools
 import HTTP: Request, Response, Stream
 
 include("compose.jl")
@@ -27,6 +27,6 @@ include("certs.jl")
 include("server.jl")
 
 precompile() = include("precompile.jl")
-@precompile_all_calls precompile()
+@compile_workload precompile()
 
 end
