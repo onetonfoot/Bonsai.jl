@@ -1,11 +1,11 @@
 using Bonsai, Test
-using Bonsai: ws_upgrade
+using Bonsai: ws_upgrade, ssl
 using Bonsai.HTTP
 
 @testset "start and stop" begin
     app = App()
     @test !isopen(app)
-    @async start(app, port=10001)
+    @async start(app, port=10001, sslconfig=ssl("localhost"))
     sleep(2)
     @test isopen(app)
     stop(app)

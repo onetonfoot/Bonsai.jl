@@ -177,7 +177,14 @@ function count_methods(app)
     d
 end
 
+function Base.isopen(app::App)
+    isnothing(app.server) && return false
+    isopen(app.server)
+end
+
 function Base.show(io::IO, app::App)
+
+    #TODO: This errors since upgrading to term v2
 
     n_handlers = app |> count_methods |> values |> sum |> string
     pid = getpid() |> string
