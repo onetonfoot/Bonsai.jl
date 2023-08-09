@@ -36,5 +36,5 @@ function Base.show(io::IO, e::DataMissingKey)
             push!(l, ":$(k)")
         end
     end
-    println(io, "DataMissingKey{$(e.t)}(", join(l, ", ")  ,")" )
+    println(io, "DataMissingKey{$(e.t)}(", join(l, ", "), ")")
 end

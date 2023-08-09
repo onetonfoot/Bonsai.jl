@@ -10,13 +10,13 @@ using FilePathsBase: AbstractPath
 import Parsers
 
 # current implementation is hacked together from the JET examples without much
-# understanding of how JET really works. Nevertheless it does the job, at a later
-# date however this should probably be cleaned up. 
+# understanding of how JET really works. Nevertheless it does the job but
+# at a later date this should probably be cleaned up. 
 
 # At some point read this to better understand the abstract compiler interface
 # https://github.com/JuliaLang/julia/blob/master/base/compiler/types.jl
 
-# avoid kwargs in write due as it makes the analysis more complicated
+# Avoid kwargs in write due as it makes the analysis more complicated
 # https://github.com/JuliaLang/julia/issues/9551
 # https://discourse.julialang.org/t/untyped-keyword-arguments/24228
 # https://discourse.julialang.org/t/closure-over-a-function-with-keyword-arguments-while-keeping-access-to-the-keyword-arguments/15574
@@ -79,7 +79,7 @@ function write(res::Response, args...)
     end
 end
 
-# this is super hacky but currently but  splatting breaks JET interfence so instead 
+# This is super hacky but splatting breaks JET interfence so instead 
 # this stupid hack should suffice for now 
 read(stream::Stream, a, b) = (read(stream, a), read(stream, b))
 read(stream::Stream, a, b, c) = (read(stream, a), read(stream, b), read(stream, c))

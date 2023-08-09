@@ -1,9 +1,6 @@
-#######
-# JET #
-#######
-
 using HTTP: Request, Response, Stream
 using JET.JETInterface
+using InteractiveUtils # to use `gen_call_with_extracted_types_and_kwargs`
 const CC = Core.Compiler
 import JET: JET
 
@@ -89,7 +86,6 @@ extract_type(::Type{T}) where {T} = T
 # So we defined our analyzer.
 # Let's set up utility analysis entries first:
 
-using InteractiveUtils # to use `gen_call_with_extracted_types_and_kwargs`
 
 ## the constructor for creating a new configured `DispatchAnalyzer` instance
 function DispatchAnalyzer(;
