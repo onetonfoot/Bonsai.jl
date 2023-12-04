@@ -186,6 +186,8 @@ function Base.show(io::IO, app::App)
 
     #TODO: This errors since upgrading to term v2
 
+    # return print(io, "dev")
+
     n_handlers = app |> count_methods |> values |> sum |> string
     pid = getpid() |> string
     host = app.inet_addr.host |> string
@@ -194,21 +196,23 @@ function Base.show(io::IO, app::App)
     h = 1
     key_color = "white"
     g = grid([
-        hstack([
+        hstack(
             RenderableText("{$key_color}Host", width=w - length(host)),
             RenderableText("{bold}$(host)  "),
-        ]),
-        hstack([
+        ),
+        hstack(
             RenderableText("{$key_color}Port", width=w - length(port)),
-            RenderableText("{bold}$port"),]),
-        hstack([
+            RenderableText("{bold}$port")
+        ),
+        hstack(
             RenderableText("{$key_color}Handlers", width=w - length(n_handlers)),
             RenderableText("{bold}$n_handlers  "),
-        ]),
-        hstack([
+        ),
+        hstack(
             RenderableText("{$key_color}PID", width=w - length(pid)),
-            RenderableText("{bold}$pid"),])
-    ],)
+            RenderableText("{bold}$pid"),
+        )
+    ])
 
     panel = Panel(
         g,

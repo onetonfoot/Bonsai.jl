@@ -38,3 +38,23 @@ end
     h = app.get["/path/{id}"]
     @test length(Bonsai.handler_reads(h.fn)) == 4
 end
+
+@testset "show" begin
+    app = Bonsai.App()
+    app.get("/path") do stream
+    end
+    app.get("/path/{id}") do stream
+    end
+    app.get("/a") do stream
+    end
+    app.get("/a/b") do stream
+    end
+    app.get("/a/b/c") do stream
+    end
+    app.get("/a/c") do stream
+    end
+
+    io = IOBuffer()
+    Base.show(io, app)
+    # Base.show(stdout, app)
+end

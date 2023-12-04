@@ -9,10 +9,9 @@ using Bonsai.StructTypes,
     Bonsai.JSON3,
     Bonsai.AbstractTrees,
     Bonsai.HTTP.Messages
+using Aqua
 
 import Bonsai.StructTypes: StructType
-
-using Aqua
 
 Aqua.test_all(Bonsai,
     #ambiguties chucks a error on the base ProgressLogging library
